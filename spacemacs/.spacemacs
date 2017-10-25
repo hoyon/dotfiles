@@ -322,6 +322,17 @@ you should place your code here."
   ;; Always follow symlinks into git repo
   (setq vc-follow-symlinks t)
 
+  ;; Switch to last buffer with gb
+  (define-key evil-normal-state-map "gb" 'mode-line-other-buffer)
+
+  ;; Scroll by screen lines instead of real lines
+  (define-key evil-normal-state-map (kbd "j") 'evil-next-visual-line)
+  (define-key evil-normal-state-map (kbd "k") 'evil-previous-visual-line)
+
+  ;; Use S for evil-surround instead of s
+  (evil-define-key 'visual evil-surround-mode-map "s" 'evil-substitute)
+  (evil-define-key 'visual evil-surround-mode-map "S" 'evil-surround-region)
+
   )
 
 ;; Do not write anything past this comment. This is where Emacs will
