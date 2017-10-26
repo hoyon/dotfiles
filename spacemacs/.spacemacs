@@ -369,6 +369,10 @@ before packages are loaded."
   (evil-define-key 'visual evil-surround-mode-map "s" 'evil-substitute)
   (evil-define-key 'visual evil-surround-mode-map "S" 'evil-surround-region)
 
+  ;; Don't quit emacs when using :q or ZZ
+  (define-key evil-normal-state-map (kbd "ZZ") (lambda () (interactive) (save-buffer) (kill-buffer)))
+  (evil-ex-define-cmd "q[uit]" (lambda () (interactive) (kill-buffer)))
+
   )
 
 ;; Do not write anything past this comment. This is where Emacs will
