@@ -150,6 +150,9 @@ nmap <silent> z<space> za
 set foldcolumn=1
 set foldlevel=99
 
+"use %% to get current dir in ex
+cnoremap %% <C-R>=expand('%:h').'/'<cr>
+
 "quickly edit this file
 nmap <leader>ev :e ~/.vimrc<cr>
 nmap <leader>sv :so ~/.vimrc<cr>
@@ -297,7 +300,7 @@ let g:tslime_ensure_trailing_newlines = 1
 "Haskell
 let g:haskell_conceal = 0
 let g:haskellmode_completion_ghc = 0
-autocmd vimrc FileType haskell setlocal omnifunc=necoghc#omnifunc
+autocmd vimrc FileType haskell setlocal omnifunc=necoghc#omnifunc shiftwidth=2 softtabstop=2 expandtab
 
 "Rust
 let g:racer_cmd = '/home/hoyon/.cargo/bin/racer'
