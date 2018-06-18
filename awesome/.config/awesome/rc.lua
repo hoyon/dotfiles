@@ -388,6 +388,8 @@ globalkeys = awful.util.table.join(
               {description = "previous track", group = "media"}),
     awful.key({ fnkey }, "e", function() media_widget:next() end,
               {description = "next track", group = "media"}),
+    awful.key({ fnkey }, "Tab", function() media_widget:rotate() end,
+              {description = "rotate mpris player", group = "media"}),
 
     -- Scrolling
     awful.key({ fnkey }, "k", function() scroll("Page_Up") end,

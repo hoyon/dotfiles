@@ -11,7 +11,12 @@ media_widget:buttons(awful.util.table.join(
 ))
 
 awful.spawn('killall mpris_wrapper.sh')
-awful.spawn.with_line_callback("/home/hoyon/.config/awesome/mpris_wrapper.sh", {
+
+file = io.popen("/home/hoyon/.config/awesome/media/freeport.sh")
+local port = file:read('*all')
+file:close()
+
+awful.spawn.with_line_callback("/home/hoyon/.config/awesome/media/mpris_wrapper.sh " .. port, {
     stdout = function(line)
         if line == '' then
             media_widget:set_markup('')
@@ -21,57 +26,17 @@ awful.spawn.with_line_callback("/home/hoyon/.config/awesome/mpris_wrapper.sh", {
     end,
     stderr = function(line)
         media_widget:set_markup(line)
-    end }) 
-
---function media_widget:update()
-    --awful.spawn.easy_async("playerctl status",
-        --function(stdout, stderr, reason, code)
-            --if code == 0 then
-                --local status = ""
-                --if stdout:find("Stopped") then
-                    --media_widget:set_markup("")
-                    --return
-                --elseif stdout:find("Playing") then
-                    --status = " "
-                --elseif stdout:find("Paused") then
-                    --status = " "
-                --end
-                --awful.spawn.easy_async("playerctl metadata artist",
-                    --function(artist)
-                        --artist = util.trim(artist)
-                        --awful.spawn.easy_async("playerctl metadata title",
-                        --function(title)
-                            --title = util.trim(title)
-                            --local media_string = ""
-                            --if artist == "" then
-                                --media_string = status .. title
-                            --elseif title == "" then
-                                --media_string = status .. artist
-                            --else
-                                --media_string = status .. artist .. " - " .. title
-                            --end
-                            --max_length = 70
-                            --if media_string:len() > max_length then
-                                --media_string = media_string:sub(0, max_length) .. "…"
-                            --end
-                            --media_widget:set_markup(media_string .. " | ")
-                        --end)
-                    --end)
-            --else
-                --media_widget:set_markup("");
-            --end
-        --end)
---end
+    end })
 
 function media_widget:action(cmd)
-    awful.spawn.easy_async("playerctl " .. cmd,
+    awful.spawn.easy_async("/home/hoyon/.config/awesome/media/send_command.sh " .. port .. " ".. cmd,
         function()
             --self:update()
         end)
 end
 
 function media_widget:toggle()
-    self:action("play-pause")
+    self:action("pause")
 end
 
 function media_widget:next()
@@ -80,6 +45,10 @@ end
 
 function media_widget:prev()
     self:action("previous")
+end
+
+function media_widget:rotate()
+    self:action("rotate")
 end
 
 --Update every second
