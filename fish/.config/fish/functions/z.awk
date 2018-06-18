@@ -1,0 +1,1 @@
+/home/hoyon/.config/fisherman/z/functions/z.awk

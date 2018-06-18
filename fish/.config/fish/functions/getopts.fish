@@ -1,0 +1,1 @@
+/home/hoyon/.config/fisherman/getopts/getopts.fish
