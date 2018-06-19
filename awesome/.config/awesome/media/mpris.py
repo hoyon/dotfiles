@@ -3,6 +3,7 @@ import re
 import os
 import sys
 import fcntl
+import cgi
 from enum import Enum
 from dbus.mainloop.glib import DBusGMainLoop
 from gi.repository import GLib
@@ -69,14 +70,14 @@ class Player:
             output = '{} - '.format(artists[0])
 
         if 'xesam:title' in self.meta:
-            output = output + self.meta['xesam:title']
+            output += self.meta['xesam:title']
 
         if self.status == 'Stopped':
             return ''
 
         status = status2sym(self.status)
 
-        return '{} {}'.format(status, output)
+        return cgi.escape('{} {}'.format(status, output))
 
     def print_output(self):
         if self.current:
@@ -145,8 +146,13 @@ def stdin_callback(line):
             rotate()
             select_current()
         elif line == "players":
+            output = ""
             for player in players:
-                print(player.name)
+                output += player.name
+                if player.current:
+                    output += "(c)"
+                output += ", "
+            print(output)
         else:
             print("なにこれ")
 

@@ -10,7 +10,7 @@ media_widget:buttons(awful.util.table.join(
     awful.button({}, 1, function() media_widget:toggle() end)
 ))
 
-awful.spawn('killall mpris_wrapper.sh')
+awful.spawn("/home/hoyon/.config/awesome/media/kill.sh")
 
 file = io.popen("/home/hoyon/.config/awesome/media/freeport.sh")
 local port = file:read('*all')
