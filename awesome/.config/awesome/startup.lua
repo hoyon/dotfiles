@@ -14,7 +14,7 @@ local startup_programs = {
 
     -- Startup gui programs
     "emacs",
-    "firefox",
+    "firefox-nightly",
     "thunderbird",
     {"rememberthemilk", "--ignore-gpu-blacklist"},
     --"spotify"

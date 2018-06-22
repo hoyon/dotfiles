@@ -549,6 +549,7 @@ awful.rules.rules = {
     },
 
     { rule = { class = "Firefox" }, properties = { screen = 2, tag = "1" }, },
+    { rule = { class = "Nightly" }, properties = { screen = 2, tag = "1" }, },
     { rule = { class = "Spotify" }, properties = { screen = 1, tag = "9" }, },
     { rule = { class = "Thunderbird" }, properties = { screen = 1, tag = "8" }, },
     { rule = { class = "Remember The Milk" }, properties = { screen = 1, tag = "7" }, },

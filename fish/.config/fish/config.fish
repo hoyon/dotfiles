@@ -29,7 +29,7 @@ function randman
 end
 
 function f
-    command nohup pcmanfm . > /dev/null 2>&1 &
+    command nohup nautilus . > /dev/null 2>&1 &
 end
 
 # Colourful man in less
