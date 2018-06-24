@@ -399,7 +399,11 @@ globalkeys = awful.util.table.join(
 
     -- Remember the milk add task
     awful.key({ fnkey }, "m", function() awful.spawn("/home/hoyon/.config/awesome/rtm_add.sh") end,
-              {description = "Add task to remember the milk", group = "misc"})
+              {description = "Add task to remember the milk", group = "misc"}),
+
+    -- Zeal search docs
+    awful.key({ fnkey }, ";", function() awful.spawn("/home/hoyon/.config/awesome/zeal_search.sh") end,
+              {description = "Search zeal docs", group = "misc"})
 
 )
 
@@ -554,6 +558,7 @@ awful.rules.rules = {
     { rule = { class = "Thunderbird" }, properties = { screen = 1, tag = "8" }, },
     { rule = { class = "Remember The Milk" }, properties = { screen = 1, tag = "7" }, },
     { rule = { class = "Emacs" }, properties = { screen = 1, tag = "2" }, },
+    { rule = { class = "Zeal" }, properties = {screen = 2, tag = "2"} },
 
     -- Set Firefox to always map on the tag named "2" on screen 1.
     -- { rule = { class = "Firefox" },
