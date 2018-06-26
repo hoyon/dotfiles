@@ -17,6 +17,15 @@ function _git_branch_name_or_revision
   end
 end
 
+function _git_tag
+  set -l tag (git describe 2> /dev/null)
+  if test (count $tag) -gt 0
+      echo $tag
+  else
+      echo ""
+  end
+end
+
 function _git_upstream_configured
   git rev-parse --abbrev-ref @"{u}" > /dev/null 2>&1
 end
@@ -97,6 +106,7 @@ function fish_prompt
 
   if _in_git_directory
     _print_in_color " "(_git_branch_name_or_revision) grey
+    _print_in_color " "(_git_tag) grey
     _print_in_color (_git_dirty) red
     _print_in_color " "(_git_upstream_status) cyan
   end
