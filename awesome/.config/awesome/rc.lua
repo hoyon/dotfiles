@@ -402,7 +402,7 @@ globalkeys = awful.util.table.join(
               {description = "Add task to remember the milk", group = "misc"}),
 
     -- Zeal search docs
-    awful.key({ fnkey }, ";", function() awful.spawn("/home/hoyon/.config/awesome/zeal_search.sh") end,
+    awful.key({ fnkey }, ";", function() awful.spawn("/home/hoyon/.config/awesome/zeal_search.fish") end,
               {description = "Search zeal docs", group = "misc"})
 
 )
