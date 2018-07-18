@@ -49,7 +49,7 @@ set -x VISUAL vim
 set -x GOPATH /home/hoyon/.go
 set -x RUSTC_WRAPPER /home/hoyon/.cargo/bin/sccache
 
-alias ls "exa --group-directories-first --color=auto"
+alias ls "exa --group-directories-first --color=auto --colour-scale"
 alias l "ls"
 alias ll "ls -l"
 alias la "ls -la"
@@ -58,7 +58,7 @@ alias pgrep "pgrep -l"
 alias gst "git status"
 alias tty-clock "tty-clock -bDBc"
 alias make "make -j4"
-alias tree "exa -T --colour=always | less -Fr"
+alias tree "exa -T --colour=always --colour-scale | less -Fr"
 alias t "tree"
 alias vim "nvim"
 alias gdb "gdb -q"
