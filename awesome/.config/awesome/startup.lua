@@ -16,9 +16,8 @@ local startup_programs = {
     "emacs",
     "firefox",
     "thunderbird",
-    "zeal",
+    --"zeal",
     {"rememberthemilk", "--ignore-gpu-blacklist"},
-    "rescuetime"
     --"spotify"
 }
 
