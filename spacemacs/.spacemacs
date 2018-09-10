@@ -33,7 +33,8 @@ This function should only modify configuration layer settings."
 
    ;; List of configuration layers to load.
    dotspacemacs-configuration-layers
-   '(lua
+   '(sql
+     lua
      erlang
      csv
      python
@@ -45,6 +46,7 @@ This function should only modify configuration layer settings."
      neotree
      emacs-lisp
      git
+     github
      markdown
      org
      yaml
@@ -373,7 +375,7 @@ It should only modify the values of Spacemacs settings."
    ;;                       text-mode
    ;;   :size-limit-kb 1000)
    ;; (default nil)
-   dotspacemacs-line-numbers nil
+   dotspacemacs-line-numbers t
 
    ;; Code folding method. Possible values are `evil' and `origami'.
    ;; (default 'evil)
@@ -434,7 +436,7 @@ It should only modify the values of Spacemacs settings."
    ;; `trailing' to delete only the whitespace at end of lines, `changed' to
    ;; delete only whitespace for changed lines or `nil' to disable cleanup.
    ;; (default nil)
-   dotspacemacs-whitespace-cleanup nil
+   dotspacemacs-whitespace-cleanup 'trailing
 
    ;; Either nil or a number of seconds. If non-nil zone out after the specified
    ;; number of seconds. (default nil)
@@ -468,7 +470,7 @@ Put your configuration code here, except for variables that should be set
 before packages are loaded."
 
   ;; Maximise window on startup if opening in MacOS
-  (if (eq system-type 'darwin)
+  (if (or (eq system-type 'darwin) (eq system-name "hoyon-thinkpad"))
       (toggle-frame-maximized))
 
   ;; Always follow symlinks into git repo
@@ -492,6 +494,11 @@ before packages are loaded."
   (define-key evil-normal-state-map (kbd "ZZ") (lambda () (interactive) (save-buffer) (kill-buffer)))
   (evil-ex-define-cmd "q[uit]" (lambda () (interactive) (kill-buffer)))
 
+  (setq-default evil-escape-key-sequence "jj")
+  (setq-default evil-escape-delay 0.2)
+  (setq evil-escape-inhibit-functions '(evil-visual-state-p))
+  (setq evil-escape-excluded-major-modes '(dired-mode neotree-mode magit-status-mode magit-diff-mode magit-log-mode))
+
   ;; Don't autocomplete with tab
   (setq tab-always-indent t)
 
@@ -506,6 +513,9 @@ before packages are loaded."
 
   ;; Remove recents from switch buffer
   (setq ivy-use-virtual-buffers nil)
+
+  ;; Use Control p to find file
+  (define-key evil-normal-state-map (kbd "C-p") 'projectile-find-file)
 
   ;; Set rust source path
   (setq racer-rust-src-path "/usr/src/rust/src")
@@ -523,6 +533,9 @@ before packages are loaded."
   (setq-default js2-basic-offset 2)
   (setq-default js-indent-level 2)
 
+  ;; CSS indentation
+  (setq css-indent-offset 2)
+
   ;; C-C++ mode configuration
   (setq-default c-basic-offset 4)
   (setq-default tab-width 4)
@@ -532,6 +545,24 @@ before packages are loaded."
 
   ;; Wrap long lines in alchemist test reports
   (setq alchemist-test-truncate-lines nil)
+
+  (fset 'elixir-collapse-do
+        (lambda (&optional arg) "Keyboard macro." (interactive "p") (kmacro-exec-ring-item '([36 97 58 escape 104 104 104 105 44 escape 74 74 100 36] 0 "%d") arg)))
+
+  (fset 'elixir-unpipe
+        (lambda (&optional arg) "Keyboard macro." (interactive "p") (kmacro-exec-ring-item '([94 100 36 106 102 40 112 97 44 32 escape 94 100 119 107 100 100] 0 "%d") arg)))
+
+
+  (fset 'elixir-pipe
+        (lambda (&optional arg) "Keyboard macro." (interactive "p") (kmacro-exec-ring-item '([94 102 40 108 100 102 44 79 escape 112 120 106 94 102 40 108 120 73 124 62 32 escape] 0 "%d") arg)))
+
+
+  (spacemacs/declare-prefix-for-mode 'elixir-mode "mf" "format")
+  (spacemacs/set-leader-keys-for-major-mode 'elixir-mode
+    "fc" 'elixir-collapse-do
+    "fu" 'elixir-unpipe
+    "fp" 'elixir-pipe)
+
 
   (with-eval-after-load 'org
     (setq org-agenda-files (list "~/Documents/drive/Documents/projects.org"))
