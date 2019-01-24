@@ -11,9 +11,6 @@ end
 function ec --description="Emacsclient"
     command emacsclient -n $argv >/dev/null
     wmctrl -x -a emacs
-    #if pgrep i3
-        #command i3-msg '[title="emacs@hoyon-desktop"] focus' >/dev/null 2>&1
-    #end
 end
 
 function pc --description="fishy pkg-config"
@@ -41,10 +38,6 @@ set -x LESS_TERMCAP_so (printf "\033[01;44;33m")
 set -x LESS_TERMCAP_ue (printf "\033[0m")
 set -x LESS_TERMCAP_us (printf "\033[01;32m")
 
-set -x PATH /home/hoyon/.cargo/bin/ /home/hoyon/bin /home/hoyon/.local/bin $PATH
-# TODO thinkpad
-# set PATH /home/hoyon/.local/bin $PATH
-
 set SHELL /usr/bin/fish
 set -x EDITOR vim
 set -x VISUAL vim
@@ -56,7 +49,6 @@ set -x GPODDER_DOWNLOAD_DIR ~/Stuff/Podcasts
 
 set -x FZF_DEFAULT_COMMAND 'fd --type f'
 
-#alias ls "exa --group-directories-first --color=auto --colour-scale"
 alias l "ls"
 alias ll "ls -l"
 alias la "ls -la"
@@ -64,10 +56,7 @@ alias pgrep "pgrep -l"
 alias gst "git status"
 alias tty-clock "tty-clock -bDBc"
 alias make "make -j4"
-alias tree "exa -T --colour=always --colour-scale"
-# TODO thinkpad
-#alias tree "exa -T --colour=always --colour-scale | less -Fr"
-alias t "tree"
+alias t "exa -T --colour=always --colour-scale"
 alias vim "nvim"
 alias gdb "gdb -q"
 alias bc "bc -ql"
@@ -102,4 +91,10 @@ end
 function fuck
     thefuck --alias | source
     fuck
+end
+
+if test (hostname) = "hoyon-desktop"
+    set -x PATH /home/hoyon/.cargo/bin/ /home/hoyon/bin /home/hoyon/.local/bin $PATH
+else if test (hostname) = "hoyon-thinkpad"
+    set -x PATH /home/hoyon/.local/bin $PATH
 end
