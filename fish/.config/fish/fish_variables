@@ -3,7 +3,8 @@
 SETUVAR PATH:/home/hoyon/\x2ecargo/bin/\x1e/usr/lib/hardening\x2dwrapper/bin\x1e/usr/local/sbin\x1e/usr/local/bin\x1e/usr/bin\x1e/usr/lib/jvm/default/bin\x1e/usr/bin/site_perl\x1e/usr/bin/vendor_perl\x1e/usr/bin/core_perl
 SETUVAR ZO_CMD:zo
 SETUVAR Z_CMD:z
-SETUVAR Z_DATA:/home/hoyon/\x2ez
+SETUVAR Z_DATA:/home/hoyon/\x2elocal/share/z/data
+SETUVAR Z_DATA_DIR:/home/hoyon/\x2elocal/share/z
 SETUVAR Z_EXCLUDE:/home/hoyon
 SETUVAR __fish_classic_git_prompt_initialized:\x1d
 SETUVAR __fish_init_1_50_0:\x1d
