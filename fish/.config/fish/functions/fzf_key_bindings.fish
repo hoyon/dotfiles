@@ -1,0 +1,1 @@
+/home/hoyon/.fzf/shell/key-bindings.fish

@@ -1,0 +1,8 @@
+# -*- mode: snippet -*-
+#name : let statement
+#key : let
+#contributor : Ho-Yon Mak
+# --
+let
+  $0
+in

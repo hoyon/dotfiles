@@ -1,0 +1,8 @@
+# -*- mode: snippet -*-
+#name : module
+#key : mod
+#contributor : Ho-Yon Mak
+# --
+module $1 exposing ($2)
+
+$0

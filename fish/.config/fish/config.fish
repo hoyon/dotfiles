@@ -33,15 +33,17 @@ function f
 end
 
 # Colourful man in less
-set -x LESS_TERMCAP_mb (printf "\033[01;31m")  
-set -x LESS_TERMCAP_md (printf "\033[01;31m")  
-set -x LESS_TERMCAP_me (printf "\033[0m")  
-set -x LESS_TERMCAP_se (printf "\033[0m")  
-set -x LESS_TERMCAP_so (printf "\033[01;44;33m")  
-set -x LESS_TERMCAP_ue (printf "\033[0m")  
+set -x LESS_TERMCAP_mb (printf "\033[01;31m")
+set -x LESS_TERMCAP_md (printf "\033[01;31m")
+set -x LESS_TERMCAP_me (printf "\033[0m")
+set -x LESS_TERMCAP_se (printf "\033[0m")
+set -x LESS_TERMCAP_so (printf "\033[01;44;33m")
+set -x LESS_TERMCAP_ue (printf "\033[0m")
 set -x LESS_TERMCAP_us (printf "\033[01;32m")
 
 set -x PATH /home/hoyon/.cargo/bin/ /home/hoyon/bin /home/hoyon/.local/bin $PATH
+# TODO thinkpad
+# set PATH /home/hoyon/.local/bin $PATH
 
 set SHELL /usr/bin/fish
 set -x EDITOR vim
@@ -54,16 +56,17 @@ set -x GPODDER_DOWNLOAD_DIR ~/Stuff/Podcasts
 
 set -x FZF_DEFAULT_COMMAND 'fd --type f'
 
-alias ls "exa --group-directories-first --color=auto --colour-scale"
+#alias ls "exa --group-directories-first --color=auto --colour-scale"
 alias l "ls"
 alias ll "ls -l"
 alias la "ls -la"
-alias time "time --portability"
 alias pgrep "pgrep -l"
 alias gst "git status"
 alias tty-clock "tty-clock -bDBc"
 alias make "make -j4"
 alias tree "exa -T --colour=always --colour-scale"
+# TODO thinkpad
+#alias tree "exa -T --colour=always --colour-scale | less -Fr"
 alias t "tree"
 alias vim "nvim"
 alias gdb "gdb -q"
@@ -94,4 +97,9 @@ set -g _host "$USER@"(cat /etc/hostname)
 
 if not __ssh_agent_is_started
     __ssh_agent_start
+end
+
+function fuck
+    thefuck --alias | source
+    fuck
 end
