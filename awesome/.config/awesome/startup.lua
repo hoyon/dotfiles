@@ -16,11 +16,8 @@ local startup_programs = {
     --"emacs",
     "firefox",
     "thunderbird",
-    --"zeal",
-    --{"rememberthemilk", "--ignore-gpu-blacklist"},
     "marvin",
     "notion",
-    --"spotify"
 }
 
 local running = function(cmd)

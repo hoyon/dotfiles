@@ -553,7 +553,7 @@ awful.rules.rules = {
     -- Set Firefox to always map on the tag named "2" on screen 1.
     -- { rule = { class = "Firefox" },
     --   properties = { screen = 1, tag = "2" } },
-    
+
     { rule = { class =  "floating"  }, properties = { floating = true } },
 }
 -- }}}
@@ -628,7 +628,7 @@ client.connect_signal("mouse::enter", function(c)
     end
 end)
 
-client.connect_signal("property::maximized", function(c) 
+client.connect_signal("property::maximized", function(c)
     c.border_width = c.maximized and 0 or beautiful.border_width
 end)
 
@@ -652,7 +652,7 @@ for s = 1, screen.count() do
         -- No borders with only one visible client or in maximized layout
         if non_floating_count == 1 or layout == "max" then
             for _, c in pairs(clients) do -- Floaters always have borders
-                if c.floating or layout == "floating" then                                     
+                if c.floating or layout == "floating" then
                     c.border_width = beautiful.border_width
                 else
                     c.border_width = 0
@@ -665,4 +665,3 @@ for s = 1, screen.count() do
         end
     end)
 end
-
