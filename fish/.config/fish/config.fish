@@ -41,7 +41,7 @@ set -x LESS_TERMCAP_so (printf "\033[01;44;33m")
 set -x LESS_TERMCAP_ue (printf "\033[0m")  
 set -x LESS_TERMCAP_us (printf "\033[01;32m")
 
-set PATH /home/hoyon/.cargo/bin/ /home/hoyon/.go/bin/ /home/hoyon/bin /home/hoyon/.gem/ruby/2.5.0/bin/ /home/hoyon/.local/bin $PATH
+set PATH /home/hoyon/.local/bin $PATH
 
 set SHELL /usr/bin/fish
 set -x EDITOR vim
@@ -49,16 +49,15 @@ set -x VISUAL vim
 set -x GOPATH /home/hoyon/.go
 set -x RUSTC_WRAPPER /home/hoyon/.cargo/bin/sccache
 
-alias ls "exa --group-directories-first --color=auto --colour-scale"
+#alias ls "exa --group-directories-first --color=auto --colour-scale"
 alias l "ls"
 alias ll "ls -l"
 alias la "ls -la"
-alias time "time --portability"
 alias pgrep "pgrep -l"
 alias gst "git status"
 alias tty-clock "tty-clock -bDBc"
 alias make "make -j4"
-alias tree "exa -T --colour=always --colour-scale | less -Fr"
+#alias tree "exa -T --colour=always --colour-scale | less -Fr"
 alias t "tree"
 alias vim "nvim"
 alias gdb "gdb -q"
@@ -91,4 +90,9 @@ if not __ssh_agent_is_started
 end
 
 # asdf
-source ~/.asdf/asdf.fish
+#source ~/.asdf/asdf.fish
+
+function fuck
+    thefuck --alias | source
+    fuck
+end
