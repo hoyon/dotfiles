@@ -41,13 +41,13 @@ set -x LESS_TERMCAP_us (printf "\033[01;32m")
 set SHELL /usr/bin/fish
 set -x EDITOR vim
 set -x VISUAL vim
-set -x GOPATH /home/hoyon/.go
-#set -x RUSTC_WRAPPER /home/hoyon/.cargo/bin/sccache
 
 set -x GPODDER_HOME ~/.config/gpodder
 set -x GPODDER_DOWNLOAD_DIR ~/Stuff/Podcasts
 
-set -x FZF_DEFAULT_COMMAND 'fd --type f'
+if type -q fd
+  set -x FZF_DEFAULT_COMMAND 'fd --type f'
+end
 
 alias l "ls"
 alias ll "ls -l"
