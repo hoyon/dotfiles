@@ -57,10 +57,17 @@ alias gst "git status"
 alias tty-clock "tty-clock -bDBc"
 alias make "make -j4"
 alias t "exa -T --colour=always --colour-scale"
-alias vim "nvim"
 alias gdb "gdb -q"
 alias bc "bc -ql"
 alias up "yay -Syu --combinedupgrade"
+
+function vim
+    if type -q nvim
+        nvim
+    else
+        vim
+    end
+end
 
 function fish_user_key_bindings
     fzf_key_bindings
