@@ -3,7 +3,7 @@ import re
 import os
 import sys
 import fcntl
-import cgi
+import html
 from enum import Enum
 from dbus.mainloop.glib import DBusGMainLoop
 from gi.repository import GLib
@@ -77,7 +77,7 @@ class Player:
 
         status = status2sym(self.status)
 
-        return cgi.escape('{} {}'.format(status, output))
+        return html.escape('{} {}'.format(status, output))
 
     def print_output(self):
         if self.current:

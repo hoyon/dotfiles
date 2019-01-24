@@ -9,13 +9,13 @@ theme.wallpaper = "~/Pictures/bg3.jpg"
 -- }}}
 
 -- {{{ Styles
-theme.font      = "Sans Regular 8"
+theme.font      = "Noto Sans Regular 8"
 
 -- {{{ Colors
 theme.fg_normal  = "#DCDCCC"
 theme.fg_focus   = "#F1ED80"
---theme.fg_urgent  = "#CC9393"
-theme.fg_urgent = theme.fg_normal
+theme.fg_urgent  = "#D64545"
+--theme.fg_urgent = theme.fg_normal
 theme.bg_normal  = "#3F3F3F"
 --theme.bg_focus  = "#3F3F3F"
 theme.bg_focus   = "#1E2320"

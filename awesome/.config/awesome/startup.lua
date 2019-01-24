@@ -8,16 +8,18 @@ local startup_programs = {
     {"ibus-daemon", "-x", "-d"},
     --{"xflux", "-l 51 -g 0 -k 3000"},
     "redshift",
-    "synergys",
+    --"synergys",
     "unclutter",
     {"volnoti", "-t 1"},
 
     -- Startup gui programs
-    "emacs",
+    --"emacs",
     "firefox",
     "thunderbird",
     --"zeal",
-    {"rememberthemilk", "--ignore-gpu-blacklist"},
+    --{"rememberthemilk", "--ignore-gpu-blacklist"},
+    "marvin",
+    "notion",
     --"spotify"
 }
 

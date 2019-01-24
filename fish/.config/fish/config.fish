@@ -41,13 +41,18 @@ set -x LESS_TERMCAP_so (printf "\033[01;44;33m")
 set -x LESS_TERMCAP_ue (printf "\033[0m")  
 set -x LESS_TERMCAP_us (printf "\033[01;32m")
 
-set PATH /home/hoyon/.cargo/bin/ /home/hoyon/.go/bin/ /home/hoyon/bin /home/hoyon/.gem/ruby/2.5.0/bin/ /home/hoyon/.local/bin $PATH
+set -x PATH /home/hoyon/.cargo/bin/ /home/hoyon/bin /home/hoyon/.local/bin $PATH
 
 set SHELL /usr/bin/fish
 set -x EDITOR vim
 set -x VISUAL vim
 set -x GOPATH /home/hoyon/.go
-set -x RUSTC_WRAPPER /home/hoyon/.cargo/bin/sccache
+#set -x RUSTC_WRAPPER /home/hoyon/.cargo/bin/sccache
+
+set -x GPODDER_HOME ~/.config/gpodder
+set -x GPODDER_DOWNLOAD_DIR ~/Stuff/Podcasts
+
+set -x FZF_DEFAULT_COMMAND 'fd --type f'
 
 alias ls "exa --group-directories-first --color=auto --colour-scale"
 alias l "ls"
@@ -58,11 +63,12 @@ alias pgrep "pgrep -l"
 alias gst "git status"
 alias tty-clock "tty-clock -bDBc"
 alias make "make -j4"
-alias tree "exa -T --colour=always --colour-scale | less -Fr"
+alias tree "exa -T --colour=always --colour-scale"
 alias t "tree"
 alias vim "nvim"
 alias gdb "gdb -q"
 alias bc "bc -ql"
+alias up "yay -Syu --combinedupgrade"
 
 function fish_user_key_bindings
     fzf_key_bindings
@@ -89,6 +95,3 @@ set -g _host "$USER@"(cat /etc/hostname)
 if not __ssh_agent_is_started
     __ssh_agent_start
 end
-
-# asdf
-source ~/.asdf/asdf.fish

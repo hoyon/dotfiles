@@ -177,13 +177,14 @@ local tasklist_buttons = awful.util.table.join(
                                                   c:raise()
                                               end
                                           end),
-                     awful.button({ }, 3, client_menu_toggle_fn()),
-                     awful.button({ }, 4, function ()
-                                              awful.client.focus.byidx(1)
-                                          end),
-                     awful.button({ }, 5, function ()
-                                              awful.client.focus.byidx(-1)
-                                          end))
+                     awful.button({ }, 3, client_menu_toggle_fn())
+                     --awful.button({ }, 4, function ()
+                     --                         awful.client.focus.byidx(1)
+                     --                     end),
+                     --awful.button({ }, 5, function ()
+                     --                         awful.client.focus.byidx(-1)
+                     --                     end)
+                     )
 
 local tasklist_style = {
     align = "left",
@@ -261,9 +262,7 @@ end)
 
 -- {{{ Mouse bindings
 root.buttons(awful.util.table.join(
-    awful.button({ }, 3, function () mymainmenu:toggle() end),
-    awful.button({ }, 4, awful.tag.viewnext),
-    awful.button({ }, 5, awful.tag.viewprev)
+    awful.button({ }, 3, function () mymainmenu:toggle() end)
 ))
 -- }}}
 
@@ -365,7 +364,7 @@ globalkeys = awful.util.table.join(
               {description = "show the menubar", group = "launcher"}),
 
     -- Rofi
-    awful.key({ modkey }, "d", function() awful.spawn("rofi -show run") end,
+    awful.key({ "Control" }, "space", function() awful.spawn("rofi -show run") end,
               {description = "rofi run", group = "launcher"}),
     awful.key({ modkey }, "o", function() awful.spawn("rofi -show window") end,
               {description = "rofi window", group = "launcher"}),
@@ -512,7 +511,6 @@ awful.rules.rules = {
     -- Floating clients.
     { rule_any = {
         instance = {
-          "DTA",  -- Firefox addon DownThemAll.
           "copyq",  -- Includes session name in class.
         },
         class = {
@@ -531,7 +529,6 @@ awful.rules.rules = {
 
         name = {
           "Event Tester",  -- xev.
-          "Fast Tab Switcher", -- Firefox Tab switcher
         },
         role = {
           "AlarmWindow",  -- Thunderbird's calendar.
@@ -545,20 +542,13 @@ awful.rules.rules = {
       }, properties = { titlebars_enabled = false }
     },
 
-    -- Fullscreen flash
-    { rule_any = { class = { "/usr/lib/firefox/plugin-container" }
-      }, callback = function(c)
-          c.fullscreen = true
-      end
-    },
-
-    { rule = { class = "Firefox" }, properties = { screen = 2, tag = "1" }, },
-    { rule = { class = "Nightly" }, properties = { screen = 2, tag = "1" }, },
+    --{ rule = { class = "Firefox" }, properties = { screen = 2, tag = "1" }, },
     { rule = { class = "Spotify" }, properties = { screen = 1, tag = "9" }, },
-    { rule = { class = "Thunderbird" }, properties = { screen = 1, tag = "8" }, },
-    { rule = { class = "Remember The Milk" }, properties = { screen = 1, tag = "7" }, },
-    { rule = { class = "Emacs" }, properties = { screen = 1, tag = "2" }, },
-    { rule = { class = "Zeal" }, properties = {screen = 2, tag = "2"} },
+    { rule = { class = "Thunderbird" }, properties = { screen = 1, tag = "9" }, },
+    { rule = { class = "Marvin" }, properties = { screen = 2, tag = "9" }, },
+    { rule = { class = "notion-nativefier-fe83e9" }, properties = { screen = 1, tag = "8" }, },
+    --{ rule = { class = "Emacs" }, properties = { screen = 1, tag = "2" }, },
+    --{ rule = { class = "Zeal" }, properties = {screen = 2, tag = "2"} },
 
     -- Set Firefox to always map on the tag named "2" on screen 1.
     -- { rule = { class = "Firefox" },

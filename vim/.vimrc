@@ -69,10 +69,13 @@ Plug 'Slava/vim-spacebars'
 Plug 'tikhomirov/vim-glsl', { 'for': 'glsl' }
 Plug 'elixir-lang/vim-elixir'
 Plug 'slashmili/alchemist.vim'
-Plug 'ElmCast/elm-vim'
+Plug 'ElmCast/elm-vim', { 'for': 'elm' }
 Plug 'lervag/vimtex', { 'for': 'tex' }
-Plug 'plasticboy/vim-markdown'
+Plug 'plasticboy/vim-markdown', { 'for': 'md' }
 Plug 'dag/vim-fish', { 'for': 'fish' }
+Plug 'zah/nim.vim', { 'for': 'nim' }
+Plug 'igankevich/mesonic'
+Plug 'ron-rs/ron.vim', { 'for': 'ron' }
 
 Plug 'junegunn/goyo.vim'
 
@@ -281,7 +284,7 @@ let g:deoplete#sources#clang#clang_header='/usr/lib/clang'
 let g:deoplete#sources#clang#sort_algo='priority'
 
 "Inccomplete
-let g:clang_user_options=' /usr/include/c++/6.1.1/ '
+let g:clang_user_options=' /usr/include/c++/8.2.1/ '
 let g:inccomplete_addclosebracket='never'
 
 "Autoformat
@@ -309,3 +312,6 @@ let $RUST_SRC_PATH='/usr/src/rust/src'
 
 "json
 let g:vim_json_syntax_conceal = 0
+
+"Ron
+autocmd vimrc FileType ron setlocal shiftwidth=2 softtabstop 2 expandtab

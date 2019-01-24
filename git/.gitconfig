@@ -10,3 +10,11 @@
     hist = log --pretty=format:'%h %ad | %s%d [%an]' --graph --date=short
 [push]
     default = simple
+[magithub]
+	online = false
+[magithub "status"]
+	includeStatusHeader = false
+	includePullRequestsSection = false
+	includeIssuesSection = false
+[github]
+	user = hoyon

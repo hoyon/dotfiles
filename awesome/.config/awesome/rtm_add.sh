@@ -1,3 +1,3 @@
 #!/bin/sh
 
-rofi -dmenu -p "Add task" | xargs /home/hoyon/.asdf/shims/rtm add
+rofi -dmenu -p "Add task" | xargs rtm add

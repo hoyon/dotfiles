@@ -8,6 +8,7 @@ SET __fish_classic_git_prompt_initialized:\x1d
 SET __fish_init_1_50_0:\x1d
 SET __fish_init_2_39_8:\x1d
 SET __fish_init_2_3_0:\x1d
+SET __fish_init_3_x:\x1d
 SET fish_color_autosuggestion:969896
 SET fish_color_command:b5bd68
 SET fish_color_comment:f0c674
@@ -35,5 +36,4 @@ SET fish_pager_color_completion:normal
 SET fish_pager_color_description:555\x1eyellow
 SET fish_pager_color_prefix:cyan
 SET fish_pager_color_progress:cyan
-SET fisher_dependency_count:getopts\x1ez\x1ebass\x1episces
 SET pisces_pairs:\x28\x2c\x29\x1e\x5b\x2c\x5d\x1e\x7b\x2c\x7d\x1e\x22\x2c\x22\x1e\x27\x2c\x27
