@@ -1,4 +1,4 @@
-;; -*- mode: emacs-lisp -*-
+;; -*- mode: emacs-lisp; lexical-binding: t -*-
 ;; This file is loaded by Spacemacs at startup.
 ;; It must be stored in your home directory.
 
@@ -13,7 +13,6 @@ This function should only modify configuration layer settings."
 
    ;; Lazy installation of layers (i.e. layers are installed only when a file
    ;; with a supported type is opened). Possible values are `all', `unused'
-
    ;; and `nil'. `unused' will lazy install only unused layers (i.e. layers
    ;; not listed in variable `dotspacemacs-configuration-layers'), `all' will
    ;; lazy install any layer that support lazy installation even the layers
@@ -74,21 +73,11 @@ This function should only modify configuration layer settings."
      syntax-checking
      (spell-checking :variables
                      spell-checking-enable-by-default nil)
-     deft
-     epub
-     (dash :variables
-           helm-dash-docset-newpath "~/.local/share/Zeal/Zeal/docsets")
-     react
      (rust :variables
            rust-backend 'racer
            rust-rls-cmd "rustup run stable rls")
-     lsp
      elixir
      phoenix
-     ruby
-     ruby-on-rails
-     nim
-     csharp
      (shell :variables
             shell-default-shell 'eshell
             shell-enable-smart-eshell t
@@ -432,8 +421,6 @@ It should only modify the values of Spacemacs settings."
    ;; (default '("rg" "ag" "pt" "ack" "grep"))
    dotspacemacs-search-tools '("rg" "ag" "pt" "ack" "grep")
 
-   dotspacemacs-helm-use-fuzzy 'always
-
    ;; Format specification for setting the frame title.
    ;; %a - the `abbreviated-file-name', or `buffer-name'
    ;; %t - `projectile-project-name'
@@ -504,7 +491,7 @@ Put your configuration code here, except for variables that should be set
 before packages are loaded."
 
   ;; Maximise window on startup if opening in MacOS
-  (if (or (eq system-type 'darwin) (eq system-name "hoyon-thinkpad"))
+  (if (eq system-name "hoyon-thinkpad")
       (toggle-frame-maximized))
 
   ;; Always follow symlinks into git repo
@@ -512,10 +499,6 @@ before packages are loaded."
 
   ;; Disable lock files
   (setq create-lockfiles nil)
-
-  ;; Prefer vertical split
-  ;; (setq split-height-threshold nil)
-  ;; (setq split-width-threshold 0)
 
   ;; Switch to last buffer with gb
   (define-key evil-normal-state-map "gb" 'spacemacs/alternate-buffer)
@@ -541,6 +524,7 @@ before packages are loaded."
   ;; Don't autocomplete with tab
   (setq tab-always-indent t)
 
+  ;; Use C-x C-o to initiate autocomplete
   (define-key evil-insert-state-map (kbd "C-x C-o") 'company-complete)
 
   ;; Use autofill mode in org mode
@@ -548,12 +532,6 @@ before packages are loaded."
 
   ;; Auto reload pdfs
   (add-hook 'doc-view-mode-hook 'auto-revert-mode)
-
-  ;; Deft directory
-  (setq deft-directory "~/Documents/drive/Documents")
-
-  ;; Remove recents from switch buffer
-  (setq ivy-use-virtual-buffers nil)
 
   ;; Use Control p to find file
   (define-key evil-normal-state-map (kbd "C-p") 'projectile-find-file)
@@ -568,7 +546,6 @@ before packages are loaded."
   ;; Web mode configuration
   (setq web-mode-markup-indent-offset 2)
   (setq web-mode-enable-engine-detection t)
-  (remove-hook 'web-mode-hook 'company-mode)
 
   ;; JavaScript indentation
   (setq-default js2-basic-offset 2)
@@ -602,25 +579,28 @@ before packages are loaded."
         (lambda (&optional arg) "Keyboard macro." (interactive "p") (kmacro-exec-ring-item '([94 102 40 108 100 102 44 79 escape 112 120 106 94 102 40 108 120 73 124 62 32 escape] 0 "%d") arg)))
 
 
-  (spacemacs/declare-prefix-for-mode 'elixir-mode "mf" "format")
-  (spacemacs/set-leader-keys-for-major-mode 'elixir-mode
-    "fc" 'elixir-collapse-do
-    "fu" 'elixir-unpipe
-    "fp" 'elixir-pipe)
-
-  (setq-default flycheck-disabled-checkers '(elm))
-
   ;; Short for running mix format
   (defun mix-format ()
     (interactive)
     (projectile-with-default-dir (projectile-project-root) (shell-command "mix format"))
     )
+
+  (spacemacs/declare-prefix-for-mode 'elixir-mode "mf" "format")
   (spacemacs/set-leader-keys-for-major-mode 'elixir-mode
+    "fc" 'elixir-collapse-do
+    "fu" 'elixir-unpipe
+    "fp" 'elixir-pipe
     "mf" 'mix-format
     )
 
-  (setq fci-rule-column 98)
-  (add-hook 'elixir-mode-hook 'fci-mode)
+  (setq-default flycheck-disabled-checkers '(elm))
+
+  (defun elixir-naughty-line ()
+    (interactive)
+    (setq fci-rule-column 98)
+    (fci-mode)
+  )
+  (add-hook 'elixir-mode-hook 'elixir-naughty-line)
 
   ;; Use S for evil-surround instead of s
   (evil-define-key 'visual evil-surround-mode-map "s" 'evil-substitute)
