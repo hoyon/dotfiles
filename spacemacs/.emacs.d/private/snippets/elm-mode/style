@@ -1,0 +1,10 @@
+# -*- mode: snippet -*-
+#name : style
+#key : style
+#contributor : Ho-Yon Mak
+# --
+$1 : Css.Style
+$1 =
+    Css.batch
+        [ $0
+        ]
