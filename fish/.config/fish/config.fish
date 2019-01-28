@@ -60,6 +60,7 @@ alias t "exa -T --colour=always --colour-scale"
 alias gdb "gdb -q"
 alias bc "bc -ql"
 alias up "yay -Syu --combinedupgrade"
+alias server "python -m SimpleHTTPServer"
 
 function vim
     if type -q nvim
