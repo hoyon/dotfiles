@@ -33,12 +33,8 @@ This function should only modify configuration layer settings."
 
    ;; List of configuration layers to load.
    dotspacemacs-configuration-layers
-   '(shell-scripts
-     sql
-     lua
-     erlang
-     csv
-     python
+   '(
+     ;; Core
      themes-megapack
      helm
      (auto-completion :variables
@@ -46,49 +42,60 @@ This function should only modify configuration layer settings."
                       auto-completion-return-key-behavior nil
                       auto-completion-idle-delay nil
                       )
-     neotree
-     emacs-lisp
-     git
-     github
-     markdown
-     org
-     yaml
-     html
-     javascript
-     typescript
-     (haskell :variables
-              haskell-completion-backend 'intero)
-     (elm :variables
-          elm-format-on-save t
-          elm-sort-imports-on-save t)
-     vimscript
-     latex
-     sml
-     (c-c++ :variables
-            c-c++-default-mode-for-headers 'c++-mode
-            c-c++-enable-clang-support t)
-     cmake
-     docker
      version-control
      syntax-checking
      (spell-checking :variables
                      spell-checking-enable-by-default nil)
-     (rust :variables
-           rust-backend 'racer
-           rust-rls-cmd "rustup run stable rls")
-     elixir
-     phoenix
+
+     ;; Tools
+
+     restclient
+     neotree
+     git
+     github
+     org
+     (ranger :variables
+             ranger-show-preview t)
      (shell :variables
             shell-default-shell 'eshell
             shell-enable-smart-eshell t
             shell-default-height 40
             shell-default-position 'bottom)
-     (ranger :variables
-             ranger-show-preview t)
-     restclient
+
+     ;; Languages
+
+     vimscript
+     latex
+     sml
+     cmake
+     lua
+     erlang
+     csv
+     python
+     elixir
+     phoenix
+     yaml
+     html
+     javascript
+     typescript
+     markdown
+     emacs-lisp
+     shell-scripts
+     docker
      (sql :variables
           sql-capitalize-keywords t
           sql-capitalize-keywords-blacklist '("name"))
+     (rust :variables
+           rust-backend 'racer
+           rust-rls-cmd "rustup run stable rls")
+     (c-c++ :variables
+            c-c++-default-mode-for-headers 'c++-mode
+            c-c++-enable-clang-support t)
+     (haskell :variables
+              haskell-completion-backend 'intero)
+     (elm :variables
+          elm-format-on-save t
+          elm-sort-imports-on-save t)
      )
 
    ;; List of additional packages that will be installed without being
