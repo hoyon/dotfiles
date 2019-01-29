@@ -7,23 +7,12 @@
 module $1.Main exposing (main)
 
 import Browser
-import Html.Styled exposing (..)
+import Html.Styled exposing (toUnstyled)
+import $1.Model exposing (..)
+import $1.Update exposing (Msg(..), update)
+import $1.View exposing (view)
 
 $0
-type Model
-    = Error String
-    | Show Page
-
-
-type alias Page =
-    { csrf : String
-    }
-
-
-type Msg
-    = NoOp
-
-
 main =
     Browser.element
         { init = init
@@ -37,19 +26,7 @@ init : List String -> ( Model, Cmd Msg )
 init flags =
     case flags of
         [ csrf ] ->
-            ( Show { csrf = csrf }, Cmd.none )
+          ( Show { csrf = csrf }, Cmd.none )
 
         _ ->
-            ( Error "Failed to load csrf token", Cmd.none )
-
-
-update : Msg -> Model -> ( Model, Cmd msg )
-update msg model =
-    case msg of
-        NoOp ->
-            ( model, Cmd.none )
-
-
-view : Model -> Html Msg
-view model =
-    div [] []
+          ( Error "Failed to load csrf token", Cmd.none )
