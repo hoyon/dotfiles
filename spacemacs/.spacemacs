@@ -81,7 +81,7 @@ This function should only modify configuration layer settings."
      (shell :variables
             shell-default-shell 'eshell
             shell-enable-smart-eshell t
-            shell-default-height 30
+            shell-default-height 40
             shell-default-position 'bottom)
      (ranger :variables
              ranger-show-preview t)
