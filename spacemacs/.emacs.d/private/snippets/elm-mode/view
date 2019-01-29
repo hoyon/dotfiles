@@ -1,0 +1,14 @@
+# -*- mode: snippet -*-
+#name : view
+#key : view
+#expand-env: ((yas-indent-line 'fixed))
+#contributor : Ho-Yon Mak
+# --
+module $1.View exposing (view)
+
+import Html.Styled exposing (..)
+import Html.Styled.Attributes exposing (..)
+import Html.Styled.Events exposing (..)
+
+
+$0
