@@ -1,6 +1,6 @@
 # -*- mode: snippet -*-
 #name : style
-#key : style
+#key : sty
 #contributor : Ho-Yon Mak
 # --
 $1 : Css.Style
