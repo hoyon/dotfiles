@@ -1,1 +1,0 @@
-/home/hoyon/.config/fisherman/z/functions/__zo.fish
