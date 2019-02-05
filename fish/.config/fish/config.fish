@@ -49,11 +49,10 @@ if type -q fd
   set -x FZF_DEFAULT_COMMAND 'fd --type f'
 end
 
-alias l "ls"
+alias l="ls"
 alias ll "ls -l"
 alias la "ls -la"
 alias pgrep "pgrep -l"
-alias gst "git status"
 alias tty-clock "tty-clock -bDBc"
 alias make "make -j4"
 alias t "exa -T --colour=always --colour-scale"
@@ -61,6 +60,10 @@ alias gdb "gdb -q"
 alias bc "bc -ql"
 alias up "yay -Syu --combinedupgrade"
 alias server "python -m SimpleHTTPServer"
+
+abbr -a -g gst "git status"
+abbr -a -g gco "git checkout"
+abbr -a -g gc "git commit -v"
 
 function vim
     if type -q nvim

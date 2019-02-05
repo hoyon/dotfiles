@@ -1,5 +1,8 @@
+set -g fish_prompt_pwd_dir_length 0
+
 function _pwd_with_tilde
-  echo $PWD | sed 's|^'$HOME'\(.*\)$|~\1|'
+  #echo $PWD | sed 's|^'$HOME'\(.*\)$|~\1|'
+  prompt_pwd
 end
 
 function _in_git_directory
