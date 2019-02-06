@@ -24,10 +24,6 @@ abbr -a -g gst "git status"
 abbr -a -g gco "git checkout"
 abbr -a -g gc "git commit -v"
 
-function fish_user_key_bindings
-    fzf_key_bindings
-end
-
 # Event hooks to calculate command running time
 function _undistract_begin --on-event fish_preexec
     set -g _undistract_timestamp (date +%s)
