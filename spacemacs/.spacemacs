@@ -410,7 +410,7 @@ It should only modify the values of Spacemacs settings."
 
    ;; If non-nil, start an Emacs server if one is not already running.
    ;; (default nil)
-   dotspacemacs-enable-server nil
+   dotspacemacs-enable-server t
 
    ;; Set the emacs server socket location.
    ;; If nil, uses whatever the Emacs default is, otherwise a directory path
@@ -445,7 +445,7 @@ It should only modify the values of Spacemacs settings."
    ;; %z - mnemonics of buffer, terminal, and keyboard coding systems
    ;; %Z - like %z, but including the end-of-line format
    ;; (default "%I@%S")
-   dotspacemacs-frame-title-format "%a - %I@%S"
+   dotspacemacs-frame-title-format "[%t] %b - %I@%S"
 
    ;; Format specification for setting the icon title format
    ;; (default nil - same as frame-title-format)
@@ -500,6 +500,9 @@ before packages are loaded."
   ;; Maximise window on startup if opening in MacOS
   (if (eq system-name "hoyon-thinkpad")
       (toggle-frame-maximized))
+
+  ;; Disable minor modes in status line
+  (spacemacs/toggle-mode-line-minor-modes-off)
 
   ;; Always follow symlinks into git repo
   (setq vc-follow-symlinks t)
@@ -589,7 +592,7 @@ before packages are loaded."
   ;; Short for running mix format
   (defun mix-format ()
     (interactive)
-    (projectile-with-default-dir (projectile-project-root) (shell-command "mix format"))
+    (projectile-with-default-dir (projectile-project-root) (shell-command "git diff --name-only HEAD | egrep '\.ex$|\.exs' | xargs mix format"))
     )
 
   (spacemacs/declare-prefix-for-mode 'elixir-mode "mf" "format")
