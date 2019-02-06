@@ -16,13 +16,13 @@ set -x VISUAL vim
 set -x GPODDER_HOME ~/.config/gpodder
 set -x GPODDER_DOWNLOAD_DIR ~/Stuff/Podcasts
 
-if command -s -q fd
+if type -q fd
   set -x FZF_DEFAULT_COMMAND 'fd --type f'
 end
 
-abbr -a -g gst "git status"
-abbr -a -g gco "git checkout"
-abbr -a -g gc "git commit -v"
+abbr -a gst "git status"
+abbr -a gco "git checkout"
+abbr -a gc "git commit -v"
 
 # Event hooks to calculate command running time
 function _undistract_begin --on-event fish_preexec
