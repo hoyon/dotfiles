@@ -1,34 +1,5 @@
 set fish_greeting ""
 
-function zathura
-    command nohup zathura $argv >/dev/null 2>&1 &
-end
-
-function evince
-    command nohup evince $argv >/dev/null 2>&1 &
-end
-
-function ec --description="Emacsclient"
-    command emacsclient -n $argv >/dev/null
-    wmctrl -x -a emacs
-end
-
-function pc --description="fishy pkg-config"
-    command pkg-config $argv | string split " "
-end
-
-function nohup
-    command nohup $argv > /dev/null 2>&1 &
-end
-
-function randman
-    apropos . | shuf -n 1 | awk '{print $1}' | xargs man
-end
-
-function f
-    command nohup nautilus . > /dev/null 2>&1 &
-end
-
 # Colourful man in less
 set -x LESS_TERMCAP_mb (printf "\033[01;31m")
 set -x LESS_TERMCAP_md (printf "\033[01;31m")
@@ -45,30 +16,13 @@ set -x VISUAL vim
 set -x GPODDER_HOME ~/.config/gpodder
 set -x GPODDER_DOWNLOAD_DIR ~/Stuff/Podcasts
 
-if type -q fd
+if command -s -q fd
   set -x FZF_DEFAULT_COMMAND 'fd --type f'
 end
 
-alias l "ls"
-alias ll "ls -l"
-alias la "ls -la"
-alias pgrep "pgrep -l"
-alias gst "git status"
-alias tty-clock "tty-clock -bDBc"
-alias make "make -j4"
-alias t "exa -T --colour=always --colour-scale"
-alias gdb "gdb -q"
-alias bc "bc -ql"
-alias up "yay -Syu --combinedupgrade"
-alias server "python -m SimpleHTTPServer"
-
-function vim
-    if type -q nvim
-        nvim $argv
-    else
-        vim $argv
-    end
-end
+abbr -a -g gst "git status"
+abbr -a -g gco "git checkout"
+abbr -a -g gc "git commit -v"
 
 function fish_user_key_bindings
     fzf_key_bindings
@@ -94,11 +48,6 @@ set -g _host "$USER@"(cat /etc/hostname)
 
 if not __ssh_agent_is_started
     __ssh_agent_start
-end
-
-function fuck
-    thefuck --alias | source
-    fuck
 end
 
 if test (hostname) = "hoyon-desktop"

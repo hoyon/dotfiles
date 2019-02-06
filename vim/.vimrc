@@ -314,4 +314,4 @@ let $RUST_SRC_PATH='/usr/src/rust/src'
 let g:vim_json_syntax_conceal = 0
 
 "Ron
-autocmd vimrc FileType ron setlocal shiftwidth=2 softtabstop 2 expandtab
+autocmd vimrc FileType ron setlocal shiftwidth=2 softtabstop=2 expandtab
