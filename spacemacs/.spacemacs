@@ -42,7 +42,9 @@ This function should only modify configuration layer settings."
                       auto-completion-return-key-behavior nil
                       auto-completion-idle-delay nil
                       )
-     version-control
+     (version-control :variables
+                      version-control-diff-tool 'diff-hl
+                      version-control-diff-side 'left)
      syntax-checking
      (spell-checking :variables
                      spell-checking-enable-by-default nil)

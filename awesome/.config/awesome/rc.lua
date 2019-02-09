@@ -525,7 +525,9 @@ awful.rules.rules = {
           "Pavucontrol",
           "feh",
           "qimgv",
-          "xtightvncviewer"},
+          "xtightvncviewer",
+          "athena"
+      },
 
         name = {
           "Event Tester",  -- xev.
