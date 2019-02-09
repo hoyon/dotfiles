@@ -46,8 +46,6 @@ This function should only modify configuration layer settings."
                       version-control-diff-tool 'diff-hl
                       version-control-diff-side 'left)
      syntax-checking
-     (spell-checking :variables
-                     spell-checking-enable-by-default nil)
      colors
 
      ;; Tools
@@ -69,18 +67,14 @@ This function should only modify configuration layer settings."
 
      vimscript
      latex
-     sml
      cmake
      lua
      erlang
-     csv
      python
      elixir
-     phoenix
      yaml
      html
      javascript
-     typescript
      markdown
      emacs-lisp
      shell-scripts
@@ -94,8 +88,6 @@ This function should only modify configuration layer settings."
      (c-c++ :variables
             c-c++-default-mode-for-headers 'c++-mode
             c-c++-enable-clang-support t)
-     (haskell :variables
-              haskell-completion-backend 'intero)
      (elm :variables
           elm-format-on-save t
           elm-sort-imports-on-save t)
