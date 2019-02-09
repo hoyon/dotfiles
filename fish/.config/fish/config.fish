@@ -23,6 +23,10 @@ end
 abbr -a gst "git status"
 abbr -a gco "git checkout"
 abbr -a gc "git commit -v"
+abbr -a gca "git commit -va"
+abbr -a gp "git push"
+abbr -a ga "git add --all"
+abbr -a gd "git diff HEAD | vim +'set buftype=nofile' -"
 
 # Event hooks to calculate command running time
 function _undistract_begin --on-event fish_preexec

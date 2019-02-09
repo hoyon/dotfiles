@@ -16,8 +16,12 @@ SETUVAR __fish_init_1_50_0:\x1d
 SETUVAR __fish_init_2_39_8:\x1d
 SETUVAR __fish_init_2_3_0:\x1d
 SETUVAR __fish_init_3_x:\x1d
+SETUVAR _fish_abbr_ga:git\x20add\x20\x2d\x2dall
 SETUVAR _fish_abbr_gc:git\x20commit\x20\x2dv
+SETUVAR _fish_abbr_gca:git\x20commit\x20\x2dva
 SETUVAR _fish_abbr_gco:git\x20checkout
+SETUVAR _fish_abbr_gd:git\x20diff\x20HEAD\x20\x7c\x20vim\x20\x2b\x27set\x20buftype\x3dnofile\x27\x20\x2d
+SETUVAR _fish_abbr_gp:git\x20push
 SETUVAR _fish_abbr_gst:git\x20status
 SETUVAR fish_color_autosuggestion:969896
 SETUVAR fish_color_command:b5bd68
