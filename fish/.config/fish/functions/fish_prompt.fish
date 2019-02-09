@@ -1,7 +1,6 @@
 set -g fish_prompt_pwd_dir_length 0
 
 function _pwd_with_tilde
-  #echo $PWD | sed 's|^'$HOME'\(.*\)$|~\1|'
   prompt_pwd
 end
 
@@ -116,7 +115,7 @@ function fish_prompt
 
   # Show hostname if ssh
   if test -n "$SSH_CONNECTION"
-      _print_in_color " [$_host]" green
+      _print_in_color " $USER@$hostname" green
   end
 
   # Show last running time if greater than 5

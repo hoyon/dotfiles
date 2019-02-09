@@ -44,14 +44,12 @@ if test -z "$SSH_ENV"
     setenv SSH_ENV $HOME/.ssh/environment
 end
 
-set -g _host "$USER@"(cat /etc/hostname)
-
 if not __ssh_agent_is_started
     __ssh_agent_start
 end
 
-if test (hostname) = "hoyon-desktop"
+if test "$hostname" = "hoyon-desktop"
     set -x PATH /home/hoyon/.cargo/bin/ /home/hoyon/bin /home/hoyon/.local/bin $PATH
-else if test (hostname) = "hoyon-thinkpad"
+else if test "$hostname" = "hoyon-thinkpad"
     set -x PATH /home/hoyon/.local/bin $PATH
 end

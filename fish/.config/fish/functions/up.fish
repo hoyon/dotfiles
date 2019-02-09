@@ -1,9 +1,7 @@
 function up --description 'bring system up to date'
-    set host (hostname)
-
-    if test "$host" = "hoyon-desktop"
+    if test "$hostname" = "hoyon-desktop"
         yay -Syu --combinedupgrade $argv
-    else if test "$host" = "hoyon-thinkpad"
+    else if test "$hostname" = "hoyon-thinkpad"
         sudo apt-get update
         sudo apt upgrade
     end
