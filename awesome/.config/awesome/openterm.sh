@@ -13,7 +13,7 @@ if [ "$CLASS" = "termite" ]; then
     # Get the PID of zsh so that it's cwd can be retrieved
     CHILD_PID=$(pgrep -P $PID)
     CWD=$(readlink "/proc/$CHILD_PID/cwd")
-    nohup env GDK_BACKEND=x11 termite -e /usr/bin/fish -d "$CWD" > /dev/null 2>&1 &
+    nohup env GDK_BACKEND=x11 termite -e "/usr/bin/fish -C 'cd $CWD'" > /dev/null 2>&1 &
 else
     # Focused window is not termite. Open termite in home directory
     nohup env GDK_BACKEND=x11 termite -e /usr/bin/fish > /dev/null 2>&1 &
