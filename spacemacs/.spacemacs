@@ -590,6 +590,7 @@ before packages are loaded."
   (defun mix-format ()
     (interactive)
     (projectile-with-default-dir (projectile-project-root) (shell-command "git diff --name-only HEAD | egrep '\.ex$|\.exs' | xargs mix format"))
+    (magit-refresh-all)
     )
 
   (spacemacs/declare-prefix-for-mode 'elixir-mode "mf" "format")
