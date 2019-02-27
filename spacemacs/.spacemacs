@@ -528,6 +528,9 @@ before packages are loaded."
   (setq evil-escape-inhibit-functions '(evil-visual-state-p))
   (setq evil-escape-excluded-major-modes '(dired-mode neotree-mode magit-status-mode magit-diff-mode magit-log-mode magit-revision-mode ranger-mode))
 
+  ;; Don't auto escape quotes in string
+  (setq sp-escape-quotes-after-insert nil)
+
   ;; Don't autocomplete with tab
   (setq tab-always-indent t)
 
