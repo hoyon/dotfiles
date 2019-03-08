@@ -19,6 +19,7 @@ SETUVAR __fish_init_3_x:\x1d
 SETUVAR _fish_abbr_ga:git\x20add\x20\x2d\x2dall
 SETUVAR _fish_abbr_gc:git\x20commit\x20\x2dv
 SETUVAR _fish_abbr_gca:git\x20commit\x20\x2dva
+SETUVAR _fish_abbr_gcm:git\x20checkout\x20master\x3b\x20git\x20pull
 SETUVAR _fish_abbr_gco:git\x20checkout
 SETUVAR _fish_abbr_gd:git\x20diff\x20HEAD\x20\x7c\x20vim\x20\x2b\x27set\x20buftype\x3dnofile\x27\x20\x2d
 SETUVAR _fish_abbr_gp:git\x20push

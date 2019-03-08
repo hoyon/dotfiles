@@ -589,19 +589,25 @@ before packages are loaded."
         (lambda (&optional arg) "Keyboard macro." (interactive "p") (kmacro-exec-ring-item '([94 102 40 108 100 102 44 79 escape 112 120 106 94 102 40 108 120 73 124 62 32 escape] 0 "%d") arg)))
 
 
-  ;; Short for running mix format
-  (defun mix-format ()
+  (defun mix-format-all ()
     (interactive)
     (projectile-with-default-dir (projectile-project-root) (shell-command "git diff --name-only HEAD | egrep '\.ex$|\.exs' | xargs mix format"))
     (if (fboundp 'magit-refresh-all) (magit-refresh-all) nil)
     )
 
-  (spacemacs/declare-prefix-for-mode 'elixir-mode "mf" "format")
+  (defun mix-format-current ()
+    (interactive)
+    (projectile-with-default-dir (projectile-project-root) (shell-command (format "mix format %s" buffer-file-name)))
+    (if (fboundp 'magit-refresh-all) (magit-refresh-all) nil)
+    )
+
+
   (spacemacs/set-leader-keys-for-major-mode 'elixir-mode
     "fc" 'elixir-collapse-do
     "fu" 'elixir-unpipe
     "fp" 'elixir-pipe
-    "mf" 'mix-format
+    "mfa" 'mix-format-all
+    "mff" 'mix-format-current
     )
 
   (setq-default flycheck-disabled-checkers '(elm))
