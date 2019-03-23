@@ -17,7 +17,6 @@ local startup_programs = {
     "firefox",
     "thunderbird",
     "marvin",
-    "notion",
 }
 
 local running = function(cmd)

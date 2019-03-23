@@ -548,7 +548,6 @@ awful.rules.rules = {
     { rule = { class = "Spotify" }, properties = { screen = 1, tag = "9" }, },
     { rule = { class = "Thunderbird" }, properties = { screen = 1, tag = "9" }, },
     { rule = { class = "Marvin" }, properties = { screen = 2, tag = "9" }, },
-    { rule = { class = "notion-nativefier-fe83e9" }, properties = { screen = 1, tag = "8" }, },
     --{ rule = { class = "Emacs" }, properties = { screen = 1, tag = "2" }, },
     --{ rule = { class = "Zeal" }, properties = {screen = 2, tag = "2"} },
 
