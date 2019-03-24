@@ -50,7 +50,7 @@ if not __ssh_agent_is_started
 end
 
 if test "$hostname" = "hoyon-desktop"
-    set -x PATH /home/hoyon/.cargo/bin/ /home/hoyon/bin /home/hoyon/.local/bin $PATH
+    set -x PATH /home/hoyon/.cargo/bin/ /home/hoyon/bin /home/hoyon/.local/bin /home/hoyon/.yarn/bin $PATH
 else if test "$hostname" = "hoyon-thinkpad"
     set -x PATH /home/hoyon/.local/bin $PATH
 end
