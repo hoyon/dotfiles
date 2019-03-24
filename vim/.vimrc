@@ -76,6 +76,7 @@ Plug 'dag/vim-fish', { 'for': 'fish' }
 Plug 'zah/nim.vim', { 'for': 'nim' }
 Plug 'igankevich/mesonic'
 Plug 'ron-rs/ron.vim', { 'for': 'ron' }
+Plug 'reasonml-editor/vim-reason-plus', { 'for': 're' }
 
 Plug 'junegunn/goyo.vim'
 
