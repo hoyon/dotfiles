@@ -1,4 +1,9 @@
 # Defined in - @ line 1
-function server --description 'alias server python2 -m SimpleHTTPServer'
-    python2 -m SimpleHTTPServer $argv;
+function server --description 'start server in current directory' -a 'port'
+    string length -q -- $port; or set port 8000
+    if type -q livereload
+        livereload -p $port
+    else
+        python2 -m SimpleHTTPServer $port;
+    end
 end
