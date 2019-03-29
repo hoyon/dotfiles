@@ -16,6 +16,8 @@ set -x VISUAL vim
 set -x GPODDER_HOME ~/.config/gpodder
 set -x GPODDER_DOWNLOAD_DIR ~/Stuff/Podcasts
 
+set -x ERL_AFLAGS "-kernel shell_history enabled"
+
 if type -q fd
   set -x FZF_DEFAULT_COMMAND 'fd --type f'
 end
