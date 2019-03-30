@@ -364,7 +364,7 @@ globalkeys = awful.util.table.join(
               {description = "show the menubar", group = "launcher"}),
 
     -- Rofi
-    awful.key({ "Control" }, "space", function() awful.spawn("rofi -show run") end,
+    awful.key({ modkey }, "d", function() awful.spawn("rofi -show drun") end,
               {description = "rofi run", group = "launcher"}),
     awful.key({ modkey }, "o", function() awful.spawn("rofi -show window") end,
               {description = "rofi window", group = "launcher"}),
