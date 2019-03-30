@@ -7,5 +7,4 @@ function up --description 'bring system up to date'
     end
 
     git -C ~/.dotfiles pull
-    git -C ~/.emacs.d pull
 end
