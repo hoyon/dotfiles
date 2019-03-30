@@ -79,6 +79,7 @@ This function should only modify configuration layer settings."
      emacs-lisp
      shell-scripts
      docker
+     ocaml
      (sql :variables
           sql-capitalize-keywords t
           sql-capitalize-keywords-blacklist '("name"))
