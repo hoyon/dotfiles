@@ -2,6 +2,14 @@
 
 ;; Place your private configuration here
 
+(global-visual-line-mode) ;; Always wrap long lines
+(setq visual-line-fringe-indicators '(left-curly-arrow right-curly-arrow)) ;; Show arrows on wrapped lines
+
+;; popup rules
+(set-popup-rule! "^\\*compilation\\*$" :side 'right :size 0.4)
+(set-popup-rule! "^\\*alchemist test report\\*$" :side 'right :size 0.4)
+
+;;; ELIXIR
 (map! :map elixir-mode-map
       (:localleader
         (:prefix ("t" . "test")

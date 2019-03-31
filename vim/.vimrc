@@ -207,7 +207,7 @@ endif
 nmap <F12> :UndotreeToggle<cr>
 
 "Switch to last buffer
-nmap gb :b#<cr>
+nmap gb <C-^>
 
 "NERDTree
 "let NERDTreeQuitOnOpen = 1
