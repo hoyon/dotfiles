@@ -20,6 +20,30 @@
           :desc "Run tests at point"              "t" #'alchemist-mix-test-at-point
           :desc "Rerun last run tests"            "r" #'alchemist-mix-rerun-last-test)
         (:prefix ("g" . "goto")
-          :desc "Toggle file and test"            "t" #'alchemist-project-toggle-file-and-tests)))
+          :desc "Toggle file and test"            "t" #'alchemist-project-toggle-file-and-tests)
+        (:prefix ("f" . "format")
+          :desc "Format all files"                "a" #'mix-format-all
+          :desc "Format current file"             "f" #'mix-format-current)))
+
+(defun mix-format-all ()
+  "Format all staged elixir files in project using .formatter in project root"
+  (interactive)
+  (projectile-with-default-dir
+      (projectile-project-root)
+    (shell-command "git diff --name-only HEAD | egrep '\.ex$|\.exs' | xargs mix format"))
+  (if (fboundp 'magit-refresh-all)
+      (magit-refresh-all)
+    nil))
+
+(defun mix-format-current ()
+  "Format current Elixr file using .formatter in project root"
+  (interactive)
+  (projectile-with-default-dir
+      (projectile-project-root)
+    (shell-command (format "mix format %s" buffer-file-name)))
+  (if
+      (fboundp 'magit-refresh-all)
+      (magit-refresh-all)
+    nil))
 
 (setq alchemist-test-ask-about-save nil)
