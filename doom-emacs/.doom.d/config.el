@@ -7,6 +7,8 @@
 (global-visual-line-mode) ;; Always wrap long lines
 (setq visual-line-fringe-indicators '(left-curly-arrow right-curly-arrow)) ;; Show arrows on wrapped lines
 
+(define-key evil-normal-state-map (kbd "C-p") 'projectile-find-file)
+
 ;; popup rules
 (set-popup-rule! "^\\*compilation\\*$" :side 'right :size 0.4)
 (set-popup-rule! "^\\*alchemist test report\\*$" :side 'right :size 0.4)
