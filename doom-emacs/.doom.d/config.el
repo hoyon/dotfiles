@@ -3,6 +3,7 @@
 ;; Place your private configuration here
 
 (setq doom-font (font-spec :family "Source Code Pro" :size 12))
+(setq doom-big-font (font-spec :family "Source Code Pro" :size 18))
 
 (global-visual-line-mode) ;; Always wrap long lines
 (setq visual-line-fringe-indicators '(left-curly-arrow right-curly-arrow)) ;; Show arrows on wrapped lines
