@@ -6,4 +6,6 @@
 ;; (package! another-package :recipe (:fetcher github :repo "username/repo"))
 ;; (package! builtin-package :disable t)
 
+(package! reason-mode)
+
 (package! ox-pandoc :disable t)
