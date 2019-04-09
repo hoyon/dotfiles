@@ -15,18 +15,18 @@
 (set-popup-rule! "^\\*alchemist test report\\*$" :side 'right :size 0.4)
 
 ;;; ELIXIR
-(map! :map elixir-mode-map
-      (:localleader
-        (:prefix ("t" . "test")
-          :desc "Run all tests"                   "a" #'alchemist-mix-test
-          :desc "Run tests in this buffer"        "b" #'alchemist-mix-test-this-buffer
-          :desc "Run tests at point"              "t" #'alchemist-mix-test-at-point
-          :desc "Rerun last run tests"            "r" #'alchemist-mix-rerun-last-test)
-        (:prefix ("g" . "goto")
-          :desc "Toggle file and test"            "t" #'alchemist-project-toggle-file-and-tests)
-        (:prefix ("f" . "format")
-          :desc "Format all files"                "a" #'mix-format-all
-          :desc "Format current file"             "f" #'mix-format-current)))
+(map! (:localleader
+        (:map elixir-mode-map
+            (:prefix ("t" . "test")
+                "a" #'alchemist-mix-test
+                "b" #'alchemist-mix-test-this-buffer
+                "t" #'alchemist-mix-test-at-point
+                "r" #'alchemist-mix-rerun-last-test)
+            (:prefix ("g" . "goto")
+                "t" #'alchemist-project-toggle-file-and-tests)
+            (:prefix ("f" . "format")
+                "a" #'mix-format-all
+                "f" #'mix-format-current))))
 
 (defun mix-format-all ()
   "Format all staged elixir files in project using .formatter in project root"
