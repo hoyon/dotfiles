@@ -30,6 +30,7 @@ abbr -a gp "git push"
 abbr -a ga "git add --all"
 abbr -a gd "git diff HEAD | vim +'set buftype=nofile' -"
 abbr -a gcm "git checkout master; git pull"
+abbr -a gb "git branch"
 
 # Event hooks to calculate command running time
 function _undistract_begin --on-event fish_preexec
