@@ -94,7 +94,7 @@ set showcmd
 set shell=sh
 
 set background=dark
-colorscheme zenburn
+colorscheme gruvbox
 
 set noswapfile
 set nobackup
