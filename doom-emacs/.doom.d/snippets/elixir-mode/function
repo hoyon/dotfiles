@@ -1,0 +1,6 @@
+# key: fn
+# name: function
+# --
+def $1 do
+  $0
+end

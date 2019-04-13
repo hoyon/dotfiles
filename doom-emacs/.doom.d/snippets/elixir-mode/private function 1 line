@@ -1,0 +1,6 @@
+# -*- mode: snippet -*-
+# name: private function 1 line
+# key: fnp1
+# --
+
+defp $1, do: $0

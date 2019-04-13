@@ -1,0 +1,8 @@
+# -*- mode: snippet -*-
+# name: module
+# key: modu
+# --
+
+defmodule $1 do
+  $0
+end

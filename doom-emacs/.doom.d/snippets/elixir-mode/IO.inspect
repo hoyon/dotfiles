@@ -1,0 +1,4 @@
+# key: ioi
+# name: IO.inspect
+# --
+IO.inspect($1)

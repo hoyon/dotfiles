@@ -1,0 +1,4 @@
+# key: fn1
+# name: function 1 line
+# --
+def $1, do: $0
