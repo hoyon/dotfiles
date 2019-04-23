@@ -4,12 +4,11 @@ import os
 import sys
 import fcntl
 import html
-from enum import Enum
 from dbus.mainloop.glib import DBusGMainLoop
 from gi.repository import GLib
-from functools import partial
 
 DBusGMainLoop(set_as_default=True)
+
 
 class IODriver(object):
     def __init__(self, line_callback):
@@ -30,6 +29,7 @@ class IODriver(object):
 
         return True
 
+
 def status2sym(status):
     if status == 'Playing':
         return ''
@@ -40,16 +40,25 @@ def status2sym(status):
     else:
         return '?'
 
+
 class Player:
     def __init__(self, bus):
         self.bus = bus
         obj = session_bus.get_object(bus, '/org/mpris/MediaPlayer2')
-        self.root_iface = dbus.Interface(obj, dbus_interface='org.mpris.MediaPlayer2')
-        self.player_iface = dbus.Interface(obj, dbus_interface='org.mpris.MediaPlayer2.Player')
-        self.prop_iface = dbus.Interface(obj, dbus_interface='org.freedesktop.DBus.Properties')
+
+        self.root_iface = dbus.Interface(
+            obj, dbus_interface='org.mpris.MediaPlayer2')
+
+        self.player_iface = dbus.Interface(
+            obj, dbus_interface='org.mpris.MediaPlayer2.Player')
+
+        self.prop_iface = dbus.Interface(
+            obj, dbus_interface='org.freedesktop.DBus.Properties')
+
         self.name = str(self.get_root_prop('Identity'))
         self.status = str(self.get_player_prop('PlaybackStatus'))
-        self.prop_iface.connect_to_signal('PropertiesChanged', self.prop_changed_cb)
+        self.prop_iface.connect_to_signal('PropertiesChanged',
+                                          self.prop_changed_cb)
         self.meta = self.get_player_prop('Metadata')
 
         # Methods
@@ -70,7 +79,11 @@ class Player:
             output = '{} - '.format(artists[0])
 
         if 'xesam:title' in self.meta:
-            output += self.meta['xesam:title']
+            title = self.meta['xesam:title']
+            if isinstance(title, list):
+                output += title[0]
+            else:
+                output += title
 
         if self.status == 'Stopped':
             return ''
@@ -105,7 +118,9 @@ def is_mpris_bus(name):
     match = re.search(r'^org\.mpris\.MediaPlayer2\.*', name)
     return bool(match)
 
+
 players = []
+
 
 def select_current():
     if len(players) > 0:
@@ -116,9 +131,11 @@ def select_current():
     else:
         print('')
 
+
 def rotate():
     global players
     players = players[1:] + players[:1]
+
 
 def name_changed_cb(name, old_owner, new_owner):
     if is_mpris_bus(name):
@@ -132,6 +149,7 @@ def name_changed_cb(name, old_owner, new_owner):
                     players.remove(p)
 
         select_current()
+
 
 def stdin_callback(line):
     line = line.strip()
@@ -154,7 +172,8 @@ def stdin_callback(line):
                 output += ", "
             print(output)
         else:
-            print("なにこれ")
+            print("Unknown command")
+
 
 session_bus = dbus.SessionBus()
 
