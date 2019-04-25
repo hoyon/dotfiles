@@ -369,6 +369,9 @@ globalkeys = awful.util.table.join(
     awful.key({ modkey }, "o", function() awful.spawn("rofi -show window") end,
               {description = "rofi window", group = "launcher"}),
 
+    awful.key({ modkey }, "/", function() awful.spawn(gears.filesystem.get_configuration_dir() .. "./ddg") end,
+              {description = "rofi ddg", group = "launcher"}),
+
     awful.key({}, "Print", function() awful.spawn("scrot -e 'mv $f ~/Pictures/screenshots/'") end),
 
     -----------------------------
@@ -394,16 +397,7 @@ globalkeys = awful.util.table.join(
     awful.key({ fnkey }, "k", function() scroll("Page_Up") end,
               {description = "scroll other window up", group = "misc"}),
     awful.key({ fnkey }, "j", function() scroll("Page_Down") end,
-              {description = "scroll other window down", group = "misc"}),
-
-    -- Remember the milk add task
-    awful.key({ fnkey }, "m", function() awful.spawn("/home/hoyon/.config/awesome/rtm_add.sh") end,
-              {description = "Add task to remember the milk", group = "misc"}),
-
-    -- Zeal search docs
-    awful.key({ fnkey }, ";", function() awful.spawn("/home/hoyon/.config/awesome/zeal_search.fish") end,
-              {description = "Search zeal docs", group = "misc"})
-
+              {description = "scroll other window down", group = "misc"})
 )
 
 clientkeys = awful.util.table.join(
