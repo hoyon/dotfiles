@@ -50,3 +50,7 @@
     nil))
 
 (setq alchemist-test-ask-about-save nil)
+
+;; C/C++
+(setq-default c-basic-offset 4)
+(setq-default tab-width 4)
