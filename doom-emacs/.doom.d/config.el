@@ -54,3 +54,17 @@
 ;; C/C++
 (setq-default c-basic-offset 4)
 (setq-default tab-width 4)
+
+(defun cpp-error-filter (errors)
+  "Filters out false positive errors"
+  (interactive)
+  (seq-filter 'is-dependency-gen-error errors)
+  )
+
+(defun is-dependency-gen-error (error)
+  "Checks if an error is a dependency gen error"
+  (interactive)
+  (not (string-match "error opening '.*\\.cpp\\.o\\.d': No such file or directory" (flycheck-error-message error)))
+  )
+
+(custom-set-variables '(flycheck-irony-error-filter #'cpp-error-filter))
