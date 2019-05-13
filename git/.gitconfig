@@ -3,7 +3,6 @@
     email = hoyon.mak@gmail.com
 [core]
     editor = vim
-    excludesfile = ~/.gitignore
 [alias]
     st = status
     co = checkout
