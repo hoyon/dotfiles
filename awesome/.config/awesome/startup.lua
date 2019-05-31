@@ -3,7 +3,7 @@ local awful = require("awful")
 
 -- string for commands without args
 -- table for commands with args
-local startup_programs = {
+local startup_home = {
     --"compton",
     {"ibus-daemon", "-x", "-d"},
     --{"xflux", "-l 51 -g 0 -k 3000"},
@@ -11,12 +11,6 @@ local startup_programs = {
     --"synergys",
     "unclutter",
     {"volnoti", "-t 1"},
-
-    -- Startup gui programs
-    --"emacs",
-    "firefox",
-    "thunderbird",
-    "marvin",
 }
 
 local running = function(cmd)
@@ -24,9 +18,8 @@ local running = function(cmd)
     return tonumber(out) ~= 0
 end
 
--- Only start programs which aren't already running
-local startup = function()
-    for _,i in pairs(startup_programs) do
+local start_programs = function(programs)
+    for _,i in pairs(programs) do
         if type(i) == "string" then
             if not running(i) then
                 awful.spawn(i, false)
@@ -36,6 +29,15 @@ local startup = function()
                 awful.spawn(i[1] .. " " .. i[2], false)
             end
         end
+    end
+end
+
+-- Only start programs which aren't already running
+local startup = function()
+    hostname = io.popen("uname -n"):read()
+
+    if hostname == "hoyon-desktop" then
+        start_programs(startup_home)
     end
 end
 
