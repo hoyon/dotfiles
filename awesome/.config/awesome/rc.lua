@@ -533,6 +533,7 @@ awful.rules.rules = {
     { rule = { class = "Spotify" }, properties = { screen = 1, tag = "9" }, },
     { rule = { class = "Thunderbird" }, properties = { screen = 1, tag = "9" }, },
     { rule = { class = "Marvin" }, properties = { screen = 2, tag = "9" }, },
+    { rule = { maximized = true }, properties = { border_width = 0 }, },
     --{ rule = { class = "Emacs" }, properties = { screen = 1, tag = "2" }, },
     --{ rule = { class = "Zeal" }, properties = {screen = 2, tag = "2"} },
 
@@ -638,7 +639,7 @@ for s = 1, screen.count() do
         -- No borders with only one visible client or in maximized layout
         if non_floating_count == 1 or layout == "max" then
             for _, c in pairs(clients) do -- Floaters always have borders
-                if c.floating or layout == "floating" then
+                if not c.maximized and (c.floating or layout == "floating") then
                     c.border_width = beautiful.border_width
                 else
                     c.border_width = 0
@@ -646,7 +647,11 @@ for s = 1, screen.count() do
             end
         else
             for _, c in pairs(clients) do
-                c.border_width = beautiful.border_width
+                if not c.maximized then
+                    c.border_width = beautiful.border_width
+                else
+                    c.border_width = 0
+                end
             end
         end
     end)
