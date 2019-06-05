@@ -33,7 +33,7 @@
   (interactive)
   (projectile-with-default-dir
       (projectile-project-root)
-    (shell-command "git diff --name-only HEAD | egrep '\.ex$|\.exs' | xargs mix format"))
+    (shell-command "git diff --name-only HEAD | egrep '\\.ex$|\\.exs' | xargs mix format"))
   (if (fboundp 'magit-refresh-all)
       (magit-refresh-all)
     nil))
