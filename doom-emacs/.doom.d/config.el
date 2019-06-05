@@ -51,6 +51,9 @@
 
 (setq alchemist-test-ask-about-save nil)
 
+(add-hook 'elixir-mode-hook
+          (lambda () (add-hook 'before-save-hook 'elixir-format nil t)))
+
 ;; C/C++
 (setq-default c-basic-offset 4)
 (setq-default tab-width 4)
