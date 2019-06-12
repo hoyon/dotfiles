@@ -10,10 +10,6 @@
 
 (define-key evil-normal-state-map (kbd "C-p") 'projectile-find-file)
 
-;; popup rules
-(set-popup-rule! "^\\*compilation\\*$" :side 'right :size 0.4)
-(set-popup-rule! "^\\*alchemist test report\\*$" :side 'right :size 0.4)
-
 ;;; ELIXIR
 (map! (:localleader
         (:map elixir-mode-map
