@@ -30,6 +30,7 @@ abbr -a gp "git push"
 abbr -a ga "git add --all"
 abbr -a gd "git diff HEAD | vim +'set buftype=nofile' -"
 abbr -a gdm "git diff master | vim +'set buftype=nofile' -"
+abbr -a gdms "git diff master --stat"
 abbr -a gcm "git checkout master; git pull"
 abbr -a gb "git branch"
 
