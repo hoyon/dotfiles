@@ -17,9 +17,11 @@
                 "a" #'alchemist-mix-test
                 "b" #'alchemist-mix-test-this-buffer
                 "t" #'alchemist-mix-test-at-point
-                "r" #'alchemist-mix-rerun-last-test)
+                "r" #'alchemist-mix-rerun-last-test
+                "s" #'elixir-test-side-by-side)
             (:prefix ("g" . "goto")
-                "t" #'alchemist-project-toggle-file-and-tests)
+                "t" #'alchemist-project-toggle-file-and-tests
+                "T" #'alchemist-project-toggle-file-and-tests-other-window)
             (:prefix ("f" . "format")
                 "a" #'mix-format-all
                 "f" #'mix-format-current))))
@@ -44,6 +46,13 @@
       (fboundp 'magit-refresh-all)
       (magit-refresh-all)
     nil))
+
+(defun elixir-test-side-by-side ()
+  "Split view between current file and its test"
+  (interactive)
+  (doom/window-maximize-buffer)
+  (alchemist-project-toggle-file-and-tests-other-window)
+  )
 
 (setq alchemist-test-ask-about-save nil)
 
