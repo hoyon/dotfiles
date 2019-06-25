@@ -5,7 +5,8 @@
 (setq doom-font (font-spec :family "Source Code Pro" :size 12)
       doom-big-font (font-spec :family "Source Code Pro" :size 18)
       dired-dwim-target t
-      projectile-indexing-method 'hybrid)
+      projectile-indexing-method 'hybrid
+      company-idle-delay nil)
 
 (global-visual-line-mode) ;; Always wrap long lines
 (setq visual-line-fringe-indicators '(left-curly-arrow right-curly-arrow)) ;; Show arrows on wrapped lines
