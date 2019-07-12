@@ -57,7 +57,6 @@ end
 # device specific config
 if test "$hostname" = "hoyon-desktop"
     set -x PATH /home/hoyon/.cargo/bin/ /home/hoyon/bin /home/hoyon/.local/bin /home/hoyon/.yarn/bin ~/.nimble/bin $PATH
-    source /home/hoyon/.opam/opam-init/init.fish > /dev/null 2> /dev/null; or true
 else if test "$hostname" = "hoyon-thinkpad"
     set -x PATH /home/hoyon/.local/bin $PATH
 else if test "$hostname" = "penguin"
