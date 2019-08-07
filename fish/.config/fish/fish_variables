@@ -23,6 +23,8 @@ SETUVAR _fish_abbr_gca:git\x20commit\x20\x2dva
 SETUVAR _fish_abbr_gcm:git\x20checkout\x20master\x3b\x20git\x20pull
 SETUVAR _fish_abbr_gco:git\x20checkout
 SETUVAR _fish_abbr_gd:git\x20diff\x20HEAD\x20\x7c\x20vim\x20\x2b\x27set\x20buftype\x3dnofile\x27\x20\x2d
+SETUVAR _fish_abbr_gdb:git\x20diff\x20\x28git\x20merge\x2dbase\x20\x2d\x2dfork\x2dpoint\x20master\x29\x20\x7c\x20vim\x20\x2b\x27set\x20buftype\x3dnofile\x27\x20\x2d
+SETUVAR _fish_abbr_gdbs:git\x20diff\x20\x28git\x20merge\x2dbase\x20\x2d\x2dfork\x2dpoint\x20master\x29\x20\x2d\x2dstat
 SETUVAR _fish_abbr_gdm:git\x20diff\x20master\x20\x7c\x20vim\x20\x2b\x27set\x20buftype\x3dnofile\x27\x20\x2d
 SETUVAR _fish_abbr_gdms:git\x20diff\x20master\x20\x2d\x2dstat
 SETUVAR _fish_abbr_gp:git\x20push
