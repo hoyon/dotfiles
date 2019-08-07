@@ -33,8 +33,8 @@ abbr -a gdm "git diff master | vim +'set buftype=nofile' -"
 abbr -a gdms "git diff master --stat"
 abbr -a gcm "git checkout master; git pull"
 abbr -a gb "git branch"
-abbr -a gdb "git diff (git merge-base --fork-point master) | vim +'set buftype=nofile' -"
-abbr -a gdbs "git diff (git merge-base --fork-point master) --stat"
+abbr -a gdf "git diff (git merge-base --fork-point master) | vim +'set buftype=nofile' -"
+abbr -a gdfs "git diff (git merge-base --fork-point master) --stat"
 
 # Event hooks to calculate command running time
 function _undistract_begin --on-event fish_preexec
