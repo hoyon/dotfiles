@@ -1,0 +1,9 @@
+# key: tests
+# name: tests
+# --
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    $0
+}

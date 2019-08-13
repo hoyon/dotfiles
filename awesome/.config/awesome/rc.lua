@@ -110,9 +110,10 @@ end
 -- {{{ Menu
 -- Create a launcher widget and a main menu
 myawesomemenu = {
+   { "toggle loopback", function() awful.spawn("/home/hoyon/.config/awesome/media/loopback.sh") end},
    { "hotkeys", function() return false, hotkeys_popup.show_help end},
    { "restart", awesome.restart },
-   { "quit", function() awesome.quit() end},
+   { "quit", function() awesome.quit() end}
 }
 
 mymainmenu = awful.menu({ items = myawesomemenu })
