@@ -36,6 +36,8 @@ abbr -a gb "git branch"
 abbr -a gdf "git diff (git merge-base --fork-point master) | vim +'set buftype=nofile' -"
 abbr -a gdfs "git diff (git merge-base --fork-point master) --stat"
 
+abbr -a mr "lab mr create -d -s"
+
 # Event hooks to calculate command running time
 function _undistract_begin --on-event fish_preexec
     set -g _undistract_timestamp (date +%s)

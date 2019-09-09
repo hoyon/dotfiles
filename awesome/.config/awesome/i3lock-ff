@@ -1,6 +1,6 @@
 #!/bin/bash
 
-LOCK=/usr/share/i3lock-fancy/icons/lock.png
+LOCK=/usr/share/i3lock-fancy/lock.png
 RES=$(xdpyinfo | grep dimensions | sed -r 's/^[^0-9]*([0-9]+x[0-9]+).*$/\1/')
 IMAGE=$(mktemp).png
 

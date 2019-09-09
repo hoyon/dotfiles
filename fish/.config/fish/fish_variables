@@ -29,6 +29,7 @@ SETUVAR _fish_abbr_gdm:git\x20diff\x20master\x20\x7c\x20vim\x20\x2b\x27set\x20bu
 SETUVAR _fish_abbr_gdms:git\x20diff\x20master\x20\x2d\x2dstat
 SETUVAR _fish_abbr_gp:git\x20push
 SETUVAR _fish_abbr_gst:git\x20status
+SETUVAR _fish_abbr_mr:lab\x20mr\x20create\x20\x2dd\x20\x2ds
 SETUVAR fish_color_autosuggestion:969896
 SETUVAR fish_color_command:b5bd68
 SETUVAR fish_color_comment:f0c674
