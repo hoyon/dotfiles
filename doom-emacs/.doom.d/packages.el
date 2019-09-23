@@ -7,5 +7,7 @@
 ;; (package! builtin-package :disable t)
 
 (package! reason-mode)
+(package! geiser)
 
 (package! ox-pandoc :disable t)
+(package! rtags :disable t)

@@ -60,6 +60,13 @@
 (add-hook 'elixir-mode-hook
           (lambda () (add-hook 'before-save-hook 'elixir-format nil t)))
 
+;; Web mode
+(require 'web-mode)
+(add-to-list 'auto-mode-alist '("\\.html\\.eex\\'" . web-mode))
+(setq web-mode-markup-indent-offset 2
+      web-mode-css-indent-offset 2
+      web-mode-code-indent-offset 2)
+
 ;; C/C++
 (setq-default c-basic-offset 4)
 (setq-default tab-width 4)
@@ -77,3 +84,11 @@
   )
 
 (custom-set-variables '(flycheck-irony-error-filter #'cpp-error-filter))
+
+(defun my-cpp-setup ()
+  "My setup for C++"
+  (interactive)
+  (c-set-offset 'access-label '--)
+  (c-set-offset 'topmost-intro '-))
+
+(add-hook 'c++-mode-hook 'my-cpp-setup)
