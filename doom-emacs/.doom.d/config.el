@@ -94,3 +94,6 @@
   (c-set-offset 'topmost-intro '-))
 
 (add-hook 'c++-mode-hook 'my-cpp-setup)
+
+;; dir local variables
+(put 'magit-todos-exclude-globs 'safe-local-variable #'listp)
