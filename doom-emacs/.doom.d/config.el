@@ -69,6 +69,8 @@
       web-mode-css-indent-offset 2
       web-mode-code-indent-offset 2)
 
+(setq js-indent-level 2)
+
 ;; C/C++
 (setq-default c-basic-offset 4)
 (setq-default tab-width 4)
