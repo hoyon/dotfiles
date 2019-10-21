@@ -90,13 +90,5 @@
 
 (custom-set-variables '(flycheck-irony-error-filter #'cpp-error-filter))
 
-(defun my-cpp-setup ()
-  "My setup for C++"
-  (interactive)
-  (c-set-offset 'access-label '--)
-  (c-set-offset 'topmost-intro '-))
-
-(add-hook 'c++-mode-hook 'my-cpp-setup)
-
 ;; dir local variables
 (put 'magit-todos-exclude-globs 'safe-local-variable #'listp)
