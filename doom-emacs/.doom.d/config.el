@@ -72,6 +72,9 @@
 
 (setq js-indent-level 2)
 
+;; Elm
+(add-hook 'elm-mode-hook 'elm-format-on-save-mode)
+
 ;; C/C++
 (setq-default c-basic-offset 4)
 (setq-default tab-width 4)
