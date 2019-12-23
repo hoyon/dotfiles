@@ -1,0 +1,37 @@
+// vim:ft=json5
+
+{
+    "modules-left": [
+        "sway/workspaces",
+        "sway/mode"
+    ],
+    "modules-center": [
+        "sway/window"
+    ],
+    "modules-right": [
+        "custom/media",
+        "pulseaudio",
+        "clock"
+    ],
+
+    "clock": {
+        "format": "{:%a %d %B %H:%M}"
+    },
+
+    "pulseaudio": {
+        "scroll-step": 5.0
+    },
+
+    "custom/media": {
+        "format": "{icon} {}",
+        "return-type": "json",
+        "max-length": 40,
+        "format-icons": {
+            "spotify": "",
+            "default": "🎜"
+        },
+        "escape": true,
+        "exec": "$HOME/.config/waybar/mediaplayer.py 2> /dev/null",
+        "on-click": "playerctl play-pause"
+    }
+}
