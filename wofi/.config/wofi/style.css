@@ -1,0 +1,31 @@
+window {
+    background-color: #282828; /* gruvbox bg */
+    color: #ebdbb2; /* gruvbox fg */
+    font-family: monospace;
+}
+
+#input {
+    border: none;
+    box-shadow: none;
+    background-color: #282828; /* gruvbox bg */
+    color: #ebdbb2; /* gruvbox fg */
+    border-radius: 0;
+    border-bottom: 1px solid #3c3836; /* gruvbox bg1 */
+}
+
+#outer-box {
+    margin: 0.5em;
+}
+
+#inner-box {
+    margin: 2px;
+}
+
+#inner-box > * {
+    background-color: #282828; /* gruvbox bg */
+    outline: 0;
+}
+
+#selected {
+    color: #b8bb26;
+}
