@@ -15,11 +15,13 @@
     ],
 
     "clock": {
-        "format": "{:%a %d %B %H:%M}"
+        "format": "{:%a %d %B %H:%M}",
+        "tooltip": false
     },
 
     "pulseaudio": {
-        "scroll-step": 5.0
+        "scroll-step": 5.0,
+        "tooltip": false
     },
 
     "custom/media": {
@@ -28,6 +30,7 @@
         "max-length": 40,
         "format-icons": {
             "spotify": "",
+            "plasma-browser-integration": "",
             "default": "🎜"
         },
         "escape": true,
