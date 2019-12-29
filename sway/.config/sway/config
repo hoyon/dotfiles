@@ -8,12 +8,12 @@ font pango:Source\ Code\ Pro, FontAwesome 9
 floating_modifier $mod
 
 # start a terminal
-bindsym $mod+Return exec --no-startup-id ~/.config/sway/openterm.sh
+bindsym $mod+Return exec ~/.config/sway/openterm.sh
 
 # kill focused window
 bindsym $mod+Shift+q kill
 
-bindsym $mod+d exec --no-startup-id wofi --show drun --insensitive
+bindsym $mod+d exec wofi --show drun --insensitive
 
 # change focus
 bindsym $mod+h focus left
@@ -98,7 +98,7 @@ bindsym $mod+Shift+0 move container to workspace 10
 bindsym $mod+x move workspace to output right
 
 # rename workspace
-bindsym $mod+n exec --no-startup-id i3-input -F 'rename workspace to "%s"' -P 'New name: '
+bindsym $mod+n exec  i3-input -F 'rename workspace to "%s"' -P 'New name: '
 
 # reload the configuration file
 bindsym $mod+Shift+c reload
@@ -137,11 +137,11 @@ bindsym $mod+r mode "resize"
 
 set $mode_shutdown (l) Logout, (s) Suspend, (r) Reboot, (p) Shutdown, (b) Blank
 mode "$mode_shutdown" {
-    bindsym l exec --no-startup-id swaymsg exit, mode "default"
-    bindsym s exec --no-startup-id systemctl suspend, mode "default"
-    bindsym r exec --no-startup-id systemctl reboot, mode "default"
-    bindsym p exec --no-startup-id systemctl poweroff, mode "default"
-    bindsym b exec --no-startup-id xset dpms force off, mode "default"
+    bindsym l exec swaymsg exit, mode "default"
+    bindsym s exec systemctl suspend, mode "default"
+    bindsym r exec systemctl reboot, mode "default"
+    bindsym p exec systemctl poweroff, mode "default"
+    bindsym b exec xset dpms force off, mode "default"
 
     # back to normal: Enter or Escape
     bindsym Return mode "default"
@@ -164,14 +164,14 @@ bar {
 hide_edge_borders both
 
 # Media keys
-bindsym XF86AudioRaiseVolume exec --no-startup-id $HOME/.i3/volume.sh up
-bindsym XF86AudioLowerVolume exec --no-startup-id $HOME/.i3/volume.sh down
-bindsym XF86AudioMute exec --no-startup-id $HOME/.i3/volume.sh mute
+bindsym XF86AudioRaiseVolume exec  $HOME/.i3/volume.sh up
+bindsym XF86AudioLowerVolume exec  $HOME/.i3/volume.sh down
+bindsym XF86AudioMute exec  $HOME/.i3/volume.sh mute
 
-bindsym XF86AudioPlay exec --no-startup-id $HOME/.i3/media.sh play
-bindsym XF86AudioStop exec --no-startup-id $HOME/.i3/media.sh stop
-bindsym XF86AudioPrev exec --no-startup-id $HOME/.i3/media.sh prev
-bindsym XF86AudioNext exec --no-startup-id $HOME/.i3/media.sh next
+bindsym XF86AudioPlay exec $HOME/.i3/media.sh play
+bindsym XF86AudioStop exec $HOME/.i3/media.sh stop
+bindsym XF86AudioPrev exec $HOME/.i3/media.sh prev
+bindsym XF86AudioNext exec $HOME/.i3/media.sh next
 
 ### Floating window exceptions ###
 for_window [title="^Project Mayhem$"] floating enable
