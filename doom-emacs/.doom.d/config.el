@@ -2,7 +2,7 @@
 
 ;; Place your private configuration here
 
-(setq doom-font (font-spec :family "Source Code Pro" :size 12)
+(setq doom-font (font-spec :family "Source Code Pro" :size 13)
       doom-big-font (font-spec :family "Source Code Pro" :size 18)
       dired-dwim-target t
       projectile-indexing-method 'hybrid
