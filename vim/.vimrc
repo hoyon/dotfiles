@@ -10,6 +10,9 @@ Plug 'vim-airline/vim-airline-themes'
 Plug 'Raimondi/delimitMate'
 Plug 'sfiera/vim-emacsmodeline'
 
+" Use :w suda://% to save current file as sudo
+Plug 'lambdalisue/suda.vim'
+
 Plug 'tpope/vim-sensible'
 Plug 'tpope/vim-surround'
 Plug 'tpope/vim-dispatch'
