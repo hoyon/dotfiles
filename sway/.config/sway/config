@@ -174,9 +174,6 @@ bindsym XF86AudioStop exec --no-startup-id $HOME/.i3/media.sh stop
 bindsym XF86AudioPrev exec --no-startup-id $HOME/.i3/media.sh prev
 bindsym XF86AudioNext exec --no-startup-id $HOME/.i3/media.sh next
 
-# Disable touchpad toggle
-bindsym $mod+t exec --no-startup-id $HOME/.i3/toggle_touchpad.sh toggle
-
 ### Floating window exceptions ###
 for_window [title="^Project Mayhem$"] floating enable
 for_window [title="^Volume Control$"] floating enable
@@ -198,24 +195,9 @@ input type:keyboard {
     repeat_rate 70
 }
 
-### Init ###
+output * background ~/Pictures/bg3.jpg fill
 
-workspace 10 output DVI-D-0
+seat seat0 hide_cursor 5000
 
-# Start compton
-# exec --no-startup-id compton -b
-
-# Enable xflux
-exec --no-startup-id xflux -l 51 -g 0 &
-
-# Set background
-exec --no-startup-id swaybg --image ~/Pictures/bg3.jpg
-
-# Start volnoti
-exec --no-startup-id volnoti -t 1
-
-# Stop screen from blanking after 10 minutes
-exec --no-startup-id xset s off -dpms
-
-# Start unclutter daemon
-exec --no-startup-id unclutter --fork
+# Notification daemon
+exec mako
