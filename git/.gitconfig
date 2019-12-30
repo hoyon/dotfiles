@@ -1,19 +1,13 @@
 [user]
-    name = Ho-Yon Mak
-    email = hoyon.mak@gmail.com
+	name = Ho-Yon Mak
+	email = hoyon.mak@gmail.com
 [core]
-    editor = vim
+	editor = vim
 [alias]
-    st = status
-    co = checkout
-    hist = log --pretty=format:'%h %ad | %s%d [%an]' --graph --date=short
+	st = status
+	co = checkout
+	hist = log --pretty=format:'%h %ad | %s%d [%an]' --graph --date=short
 [push]
-    default = simple
-[magithub]
-	online = false
-[magithub "status"]
-	includeStatusHeader = false
-	includePullRequestsSection = false
-	includeIssuesSection = false
+	default = simple
 [github]
 	user = hoyon
