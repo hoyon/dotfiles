@@ -1,4 +1,4 @@
-// vim:ft=json5
+// -*- mode: json -*-
 
 {
     "modules-left": [
@@ -21,6 +21,10 @@
 
     "pulseaudio": {
         "scroll-step": 5.0,
+        "tooltip": false
+    },
+
+    "sway/window": {
         "tooltip": false
     },
 
