@@ -60,9 +60,6 @@ bindsym $mod+e layout toggle split
 # toggle tiling / floating
 bindsym $mod+Shift+space floating toggle
 
-# change focus between tiling / floating windows
-bindsym $mod+space focus mode_toggle
-
 # focus the parent container
 bindsym $mod+a focus parent
 
@@ -192,6 +189,10 @@ input type:keyboard {
     repeat_delay 160
     repeat_rate 70
 }
+
+# ibus
+bindsym $mod+space exec ~/.config/sway/ibus-toggle.sh
+exec ibus-daemon -drx
 
 output * background ~/Pictures/bg3.jpg fill
 
