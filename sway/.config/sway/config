@@ -36,7 +36,6 @@ bindsym $mod+Shift+l move right
 # change workspace
 bindsym $mod+minus workspace prev
 bindsym $mod+plus workspace next
-bindsym $mod+grave workspace back_and_forth
 
 # alternatively, you can use the cursor keys:
 bindsym $mod+Shift+Left move left
@@ -197,6 +196,11 @@ input type:keyboard {
 output * background ~/Pictures/bg3.jpg fill
 
 seat seat0 hide_cursor 5000
+
+# Dropdown terminal
+for_window [app_id="terminal_scratchpad"] move scratchpad, resize set 1000 610
+bindsym $mod+grave exec swaymsg [app_id="terminal_scratchpad"] scratchpad show
+exec ~/.config/sway/dropdown_term.sh
 
 # Notification daemon
 exec mako
