@@ -6,7 +6,10 @@
       doom-big-font (font-spec :family "Source Code Pro" :size 18)
       dired-dwim-target t
       projectile-indexing-method 'hybrid
-      company-idle-delay nil)
+      company-idle-delay nil
+      lsp-ui-flycheck-live-reporting nil
+      lsp-enable-symbol-highlighting nil)
+
 
 (global-visual-line-mode) ;; Always wrap long lines
 (setq visual-line-fringe-indicators '(left-curly-arrow right-curly-arrow)) ;; Show arrows on wrapped lines
@@ -16,6 +19,10 @@
 ;; Disable evil snipe (restore standard vim behaviour for s and S)
 (after! evil-snipe
   (evil-snipe-mode -1))
+
+;; Automatically run flycheck when idleing
+(after! flycheck
+  (setq flycheck-check-syntax-automatically '(save idle-change mode-enabled idle-buffer-switch)))
 
 ;;; ELIXIR
 (map! (:localleader
