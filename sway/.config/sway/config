@@ -21,33 +21,11 @@ bindsym $mod+j focus down
 bindsym $mod+k focus up
 bindsym $mod+l focus right
 
-# alternatively, you can use the cursor keys:
-bindsym $mod+Left focus left
-bindsym $mod+Down focus down
-bindsym $mod+Up focus up
-bindsym $mod+Right focus right
-
 # move focused window
 bindsym $mod+Shift+h move left
 bindsym $mod+Shift+j move down
 bindsym $mod+Shift+k move up
 bindsym $mod+Shift+l move right
-
-# change workspace
-bindsym $mod+minus workspace prev
-bindsym $mod+plus workspace next
-
-# alternatively, you can use the cursor keys:
-bindsym $mod+Shift+Left move left
-bindsym $mod+Shift+Down move down
-bindsym $mod+Shift+Up move up
-bindsym $mod+Shift+Right move right
-
-# split in horizontal orientation
-bindsym $mod+Shift+v split h
-
-# split in vertical orientation
-bindsym $mod+v split v
 
 # enter fullscreen mode for the focused container
 bindsym $mod+f fullscreen toggle
@@ -59,12 +37,6 @@ bindsym $mod+e layout toggle split
 
 # toggle tiling / floating
 bindsym $mod+Shift+space floating toggle
-
-# focus the parent container
-bindsym $mod+a focus parent
-
-# focus the child container
-#bindsym $mod+d focus child
 
 # switch to workspace
 bindsym $mod+1 workspace number 1
@@ -96,43 +68,11 @@ bindsym $mod+x move workspace to output right
 # move focus to other monitor
 bindsym $mod+Tab focus output right
 
-# rename workspace
-bindsym $mod+n exec  i3-input -F 'rename workspace to "%s"' -P 'New name: '
-
 # reload the configuration file
 bindsym $mod+Shift+c reload
-# restart i3 inplace (preserves your layout/session, can be used to upgrade i3)
-bindsym $mod+Shift+r restart
 
 focus_follows_mouse yes
 mouse_warping output
-
-# resize window (you can also use the mouse for that)
-mode "resize" {
-        # These bindings trigger as soon as you enter the resize mode
-
-        # Pressing left will shrink the window’s width.
-        # Pressing right will grow the window’s width.
-        # Pressing up will shrink the window’s height.
-        # Pressing down will grow the window’s height.
-        bindsym h resize shrink width 10 px or 10 ppt
-        bindsym j resize grow height 10 px or 10 ppt
-        bindsym k resize shrink height 10 px or 10 ppt
-        bindsym l resize grow width 10 px or 10 ppt
-
-        # same bindings, but for the arrow keys
-        bindsym Left resize shrink width 10 px or 10 ppt
-        bindsym Down resize grow height 10 px or 10 ppt
-        bindsym Up resize shrink height 10 px or 10 ppt
-        bindsym Right resize grow width 10 px or 10 ppt
-
-        # back to normal: Enter or Escape
-        bindsym Return mode "default"
-        bindsym Escape mode "default"
-        bindsym $mod+r mode "default"
-}
-
-bindsym $mod+r mode "resize"
 
 set $mode_shutdown (l) Logout, (s) Suspend, (r) Reboot, (p) Shutdown, (b) Blank
 mode "$mode_shutdown" {
@@ -173,11 +113,7 @@ bindsym XF86AudioPrev exec $HOME/.i3/media.sh prev
 bindsym XF86AudioNext exec $HOME/.i3/media.sh next
 
 ### Floating window exceptions ###
-for_window [title="^Project Mayhem$"] floating enable
-for_window [title="^Volume Control$"] floating enable
 for_window [title="^feh \["] floating enable
-for_window [class="^Godot$"] floating enable
-for_window [title="^Godot Engine"] floating disable
 
 # Gaps
 for_window [class="^.*"] border pixel 0
