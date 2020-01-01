@@ -13,6 +13,10 @@
 
 (add-to-list 'face-ignored-fonts "Noto Color Emoji")
 
+;; Disable evil snipe (restore standard vim behaviour for s and S)
+(after! evil-snipe
+  (evil-snipe-mode -1))
+
 ;;; ELIXIR
 (map! (:localleader
         (:map elixir-mode-map
