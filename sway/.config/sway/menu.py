@@ -10,6 +10,9 @@ def sway_cmd(cmd):
 commands = {
     "Split horizontal": sway_cmd("split horizontal"),
     "Split vertical": sway_cmd("split vertical"),
+    "Tabbed layout": sway_cmd("layout tabbed"),
+    "Stacking layout": sway_cmd("layout stacking"),
+    "Default layout": sway_cmd("layout default"),
 }
 
 keys = list(commands.keys())
