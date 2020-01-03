@@ -7,13 +7,18 @@ def sway_cmd(cmd):
     return lambda: subprocess.run(["swaymsg", cmd])
 
 
+def run_script(script_name):
+    return lambda: subprocess.run([f"~/.config/sway/{script_name}"], shell=True)
+
+
 commands = {
     "Split horizontal": sway_cmd("split horizontal"),
     "Split vertical": sway_cmd("split vertical"),
     "Tabbed layout": sway_cmd("layout tabbed"),
     "Stacking layout": sway_cmd("layout stacking"),
     "Default layout": sway_cmd("layout default"),
-    "Lock": lambda: subprocess.run(["swaylock"]),
+    "Lock": lambda: subprocess.run("swaylock"),
+    "Quick add task - Todoist": run_script("todoist-quick-add.sh"),
 }
 
 keys = list(commands.keys())
