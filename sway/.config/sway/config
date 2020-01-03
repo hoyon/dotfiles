@@ -83,7 +83,7 @@ mode "$mode_shutdown" {
 }
 bindsym $mod+Shift+e mode "$mode_shutdown"
 
-# color class           border  backgr. text    inicator
+# colour class           border  backgr. text    inicator
 client.focused          #333338 #3e3e42 #dcdccc #aaaaaa #aaaaaa
 client.focused_inactive #504d48 #5e5b57 #dcdccc #aaaaaa #aaaaaa
 client.unfocused        #504d48 #5e5b57 #dcdccc #aaaaaa #aaaaaa
@@ -107,7 +107,7 @@ bindsym XF86AudioStop exec $HOME/.i3/media.sh stop
 bindsym XF86AudioPrev exec $HOME/.i3/media.sh prev
 bindsym XF86AudioNext exec $HOME/.i3/media.sh next
 
-### Floating window exceptions ###
+# Floating windows
 for_window [title="^feh \["] floating enable
 
 # Gaps
