@@ -117,9 +117,6 @@ gaps outer 2
 default_border pixel 3
 
 input type:keyboard {
-    xkb_layout gb
-    xkb_options ctrl:nocaps
-
     repeat_delay 160
     repeat_rate 70
 }
@@ -142,3 +139,6 @@ bindsym $mod+p exec ~/.config/sway/menu.py
 
 # Notification daemon
 exec mako
+
+# Include machine specific config
+include "~/.config/sway/`hostname`.config"
