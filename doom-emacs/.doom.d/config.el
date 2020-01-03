@@ -20,10 +20,6 @@
 (after! evil-snipe
   (evil-snipe-mode -1))
 
-;; Automatically run flycheck when idleing
-(after! flycheck
-  (setq flycheck-check-syntax-automatically '(save idle-change mode-enabled idle-buffer-switch)))
-
 ;;; ELIXIR
 (map! (:localleader
         (:map elixir-mode-map
