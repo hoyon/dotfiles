@@ -1,7 +1,7 @@
 local wibox = require("wibox")
 local awful = require("awful")
 local gears = require("gears")
-local dbus = require("dbus")
+-- local dbus = require("dbus")
 local util = require("util")
 
 media_widget = wibox.widget.textbox()

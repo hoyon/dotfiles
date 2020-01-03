@@ -8,12 +8,13 @@ font pango:Source\ Code\ Pro, FontAwesome 9
 floating_modifier $mod
 
 # start a terminal
-bindsym $mod+Return exec ~/.config/sway/openterm.sh
+# bindsym $mod+Return exec ~/.config/sway/openterm.sh
+bindsym $mod+Return exec terminator
 
 # kill focused window
 bindsym $mod+Shift+q kill
 
-bindsym $mod+d exec wofi --show drun --insensitive
+bindsym $mod+d exec wofi --show drun --insensitive --cache-file ~/.cache/wofi-sway-drun
 
 # change focus
 bindsym $mod+h focus left
@@ -117,7 +118,7 @@ gaps outer 2
 default_border pixel 3
 
 input type:keyboard {
-    xkb_layout gb
+    xkb_layout us
     xkb_options ctrl:nocaps
 
     repeat_delay 160
@@ -130,12 +131,18 @@ exec ibus-daemon -drx
 
 output * background ~/Pictures/bg3.jpg fill
 
+# LG monitor
+output DP-1 pos 0 0
+
+# Dell monitor
+output HDMI-A-2 pos 3840 500
+
 seat seat0 hide_cursor 5000
 
 # Dropdown terminal
-for_window [app_id="terminal_scratchpad"] move scratchpad, resize set 1000 610
-bindsym $mod+grave exec swaymsg [app_id="terminal_scratchpad"] scratchpad show
-exec ~/.config/sway/dropdown_term.sh
+# for_window [app_id="terminal_scratchpad"] move scratchpad, resize set 1000 610
+# bindsym $mod+grave exec swaymsg [app_id="terminal_scratchpad"] scratchpad show
+# exec ~/.config/sway/dropdown_term.sh
 
 # Command menu
 bindsym $mod+p exec ~/.config/sway/menu.py

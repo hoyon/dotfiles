@@ -16,6 +16,9 @@ local scroll = require("scroll")
 local startup = require("startup")
 startup()
 
+os.execute("xset r rate 200 70")
+os.execute("/home/hoyon/.screenlayout/layout.sh")
+
 -- {{{ Error handling
 -- Check if awesome encountered an error during startup and fell back to
 -- another config (This code will only ever execute for the fallback config)
@@ -46,7 +49,7 @@ end
 beautiful.init(awful.util.get_configuration_dir() .. "zenburn/theme.lua")
 
 -- This is used later as the default terminal and editor to run.
-terminal = "termite"
+terminal = "terminator"
 editor = "vim"
 editor_cmd = terminal .. " -e " .. editor
 
@@ -309,7 +312,7 @@ globalkeys = awful.util.table.join(
     awful.key({ modkey, "Shift"   }, "e", shutdown_menu,
               {description = "quit awesome", group = "awesome"}),
 
-    awful.key({ modkey,           }, "l",     function () awful.tag.incmwfact( 0.05)          end,
+    awful.key({ modkey,           }, "Escape",     function () awful.spawn(awful.util.get_configuration_dir() .. "i3lock-ff", false)          end,
               {description = "increase master width factor", group = "layout"}),
     awful.key({ modkey,           }, "h",     function () awful.tag.incmwfact(-0.05)          end,
               {description = "decrease master width factor", group = "layout"}),
@@ -344,7 +347,7 @@ globalkeys = awful.util.table.join(
     awful.key({ modkey }, "\\",
               function ()
                   awful.prompt.run {
-                    prompt       = "Run Lua code: ",
+                    prompt       = "Run lua code: ",
                     textbox      = awful.screen.focused().mypromptbox.widget,
                     exe_callback = awful.util.eval,
                     history_path = awful.util.get_cache_dir() .. "/history_eval"

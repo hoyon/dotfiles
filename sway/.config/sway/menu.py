@@ -13,6 +13,7 @@ commands = {
     "Tabbed layout": sway_cmd("layout tabbed"),
     "Stacking layout": sway_cmd("layout stacking"),
     "Default layout": sway_cmd("layout default"),
+    "Lock": lambda: subprocess.run(["swaylock"]),
 }
 
 keys = list(commands.keys())
