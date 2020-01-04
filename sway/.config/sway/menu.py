@@ -19,6 +19,7 @@ commands = {
     "Default layout": sway_cmd("layout default"),
     "Lock": lambda: subprocess.run("swaylock"),
     "Quick add task - Todoist": run_script("todoist-quick-add.sh"),
+    "Switch to window": run_script("switch-window.sh"),
 }
 
 keys = list(commands.keys())

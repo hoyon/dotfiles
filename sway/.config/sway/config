@@ -137,6 +137,9 @@ exec ~/.config/sway/dropdown_term.sh
 # Command menu
 bindsym $mod+p exec ~/.config/sway/menu.py
 
+# Window switcher
+bindsym $mod+b exec ~/.config/sway/switch-window.sh
+
 # Notification daemon
 exec mako
 
