@@ -28,6 +28,7 @@ window#waybar.solo {
 }
 */
 
+/*
 window#waybar.termite {
     background-color: #3F3F3F;
 }
@@ -36,6 +37,7 @@ window#waybar.chromium {
     background-color: #000000;
     border: none;
 }
+*/
 
 #workspaces button {
     padding: 0 5px;
@@ -152,7 +154,7 @@ label:focus {
 #custom-media {
     background-color: #66cc99;
     color: #2a5c45;
-    min-width: 100px;
+    /* min-width: 100px; */
 }
 
 #custom-media.custom-spotify {
