@@ -2,6 +2,6 @@
 
 while true
 do
-    termite --name=terminal_scratchpad
+    kitty --class=terminal_scratchpad
     sleep 0.1
 done
