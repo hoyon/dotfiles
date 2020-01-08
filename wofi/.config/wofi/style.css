@@ -2,6 +2,7 @@ window {
     background-color: #282828; /* gruvbox bg */
     color: #ebdbb2; /* gruvbox fg */
     font-family: monospace;
+    border: 2px solid #3c3836; /* gruvbox bg1 */
 }
 
 #input {
