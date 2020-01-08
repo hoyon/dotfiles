@@ -114,7 +114,7 @@ for_window [title="^feh \["] floating enable
 for_window [class="^.*"] border pixel 0
 gaps inner 4
 gaps outer 2
-default_border pixel 3
+default_border none
 
 input type:keyboard {
     repeat_delay 160
