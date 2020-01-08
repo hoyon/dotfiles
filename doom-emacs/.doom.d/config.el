@@ -10,6 +10,10 @@
       lsp-ui-flycheck-live-reporting nil
       lsp-enable-symbol-highlighting nil)
 
+;; Use bar cursor when in insert mode in terminal
+(unless (display-graphic-p)
+  (require 'evil-terminal-cursor-changer)
+  (evil-terminal-cursor-changer-activate))
 
 (global-visual-line-mode) ;; Always wrap long lines
 (setq visual-line-fringe-indicators '(left-curly-arrow right-curly-arrow)) ;; Show arrows on wrapped lines

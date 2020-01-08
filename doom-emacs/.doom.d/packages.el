@@ -8,6 +8,7 @@
 
 (package! reason-mode)
 (package! geiser)
+(package! evil-terminal-cursor-changer)
 
 (package! ox-pandoc :disable t)
 (package! rtags :disable t)
