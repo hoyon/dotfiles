@@ -15,6 +15,10 @@
   (require 'evil-terminal-cursor-changer)
   (evil-terminal-cursor-changer-activate))
 
+;; Use different theme in terminal mode
+(unless (display-graphic-p)
+  (load-theme 'doom-acario-dark))
+
 (global-visual-line-mode) ;; Always wrap long lines
 (setq visual-line-fringe-indicators '(left-curly-arrow right-curly-arrow)) ;; Show arrows on wrapped lines
 
