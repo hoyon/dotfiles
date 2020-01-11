@@ -36,7 +36,7 @@
         "format-icons": {
             "spotify": "",
             "plasma-browser-integration": "",
-            "default": "🎜"
+            "default": ""
         },
         "escape": true,
         "exec": "$HOME/.config/waybar/mediaplayer.py 2> /dev/null",
