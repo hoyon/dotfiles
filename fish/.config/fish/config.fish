@@ -67,3 +67,4 @@ else if test "$hostname" = "penguin"
     source ~/.asdf/asdf.fish
 end
 
+source ~/.config/fish/nnn.fish
