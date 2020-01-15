@@ -130,9 +130,9 @@ output * background ~/Pictures/bg3.jpg fill
 seat seat0 hide_cursor 5000
 
 # Dropdown terminal
-for_window [app_id="terminal_scratchpad"] move scratchpad, resize set 1000 610
-bindsym $mod+grave exec swaymsg [app_id="terminal_scratchpad"] scratchpad show
-exec ~/.config/sway/dropdown_term.sh
+# for_window [app_id="terminal_scratchpad"] move scratchpad, resize set 1000 610
+# bindsym $mod+grave exec swaymsg [app_id="terminal_scratchpad"] scratchpad show
+# exec ~/.config/sway/dropdown_term.sh
 
 # Command menu
 bindsym $mod+p exec ~/.config/sway/menu.py
