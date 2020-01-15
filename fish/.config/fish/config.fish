@@ -13,9 +13,6 @@ set SHELL /usr/bin/fish
 set -x EDITOR vim
 set -x VISUAL vim
 
-set -x GPODDER_HOME ~/.config/gpodder
-set -x GPODDER_DOWNLOAD_DIR ~/Stuff/Podcasts
-
 set -x ERL_AFLAGS "-kernel shell_history enabled"
 
 if type -q fd
@@ -35,8 +32,6 @@ abbr -a gcm "git checkout master; git pull"
 abbr -a gb "git branch"
 abbr -a gdf "git diff (git merge-base --fork-point master) | vim +'set buftype=nofile' -"
 abbr -a gdfs "git diff (git merge-base --fork-point master) --stat"
-
-abbr -a mr "lab mr create -d -s"
 
 # Event hooks to calculate command running time
 function _undistract_begin --on-event fish_preexec
