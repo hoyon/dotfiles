@@ -19,19 +19,19 @@ if type -q fd
   set -x FZF_DEFAULT_COMMAND 'fd --type f'
 end
 
-abbr -a gst "git status"
-abbr -a gco "git checkout"
-abbr -a gc "git commit -v"
-abbr -a gca "git commit -va"
-abbr -a gp "git push"
-abbr -a ga "git add --all"
-abbr -a gd "git diff HEAD | vim +'set buftype=nofile' -"
-abbr -a gdm "git diff master | vim +'set buftype=nofile' -"
-abbr -a gdms "git diff master --stat"
-abbr -a gcm "git checkout master; git pull"
-abbr -a gb "git branch"
-abbr -a gdf "git diff (git merge-base --fork-point master) | vim +'set buftype=nofile' -"
-abbr -a gdfs "git diff (git merge-base --fork-point master) --stat"
+abbr -ag gst "git status"
+abbr -ag gco "git checkout"
+abbr -ag gc "git commit -v"
+abbr -ag gca "git commit -va"
+abbr -ag gp "git push"
+abbr -ag ga "git add --all"
+abbr -ag gd "git diff HEAD | vim +'set buftype=nofile' -"
+abbr -ag gdm "git diff master | vim +'set buftype=nofile' -"
+abbr -ag gdms "git diff master --stat"
+abbr -ag gcm "git checkout master; git pull"
+abbr -ag gb "git branch"
+abbr -ag gdf "git diff (git merge-base --fork-point master) | vim +'set buftype=nofile' -"
+abbr -ag gdfs "git diff (git merge-base --fork-point master) --stat"
 
 # Event hooks to calculate command running time
 function _undistract_begin --on-event fish_preexec
