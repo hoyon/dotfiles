@@ -21,7 +21,7 @@
     },
 
     "pulseaudio": {
-        "scroll-step": 5.0,
+        "scroll-step": 1.0,
         "tooltip": false
     },
 
