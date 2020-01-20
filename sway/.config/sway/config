@@ -98,9 +98,8 @@ bar {
 hide_edge_borders both
 
 # Media keys
-bindsym XF86AudioRaiseVolume exec  $HOME/.i3/volume.sh up
-bindsym XF86AudioLowerVolume exec  $HOME/.i3/volume.sh down
-bindsym XF86AudioMute exec  $HOME/.i3/volume.sh mute
+bindsym $mod+up exec pulsemixer --change-volume +1
+bindsym $mod+down exec pulsemixer --change-volume -1
 
 bindsym XF86AudioPlay exec $HOME/.i3/media.sh play
 bindsym XF86AudioStop exec $HOME/.i3/media.sh stop
