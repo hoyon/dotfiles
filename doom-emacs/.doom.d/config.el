@@ -26,6 +26,8 @@
 (after! evil-snipe
   (evil-snipe-mode -1))
 
+(menu-bar-mode -1)
+
 ;;; ELIXIR
 (map! (:localleader
         (:map elixir-mode-map
