@@ -5,6 +5,7 @@
 (setq doom-font (font-spec :family "Source Code Pro" :size 13)
       doom-big-font (font-spec :family "Source Code Pro" :size 18)
       doom-localleader-key ","
+      evil-respect-visual-line-mode nil ;; workaround to fix S/cc not behaviour
       dired-dwim-target t
       projectile-indexing-method 'hybrid
       company-idle-delay nil
