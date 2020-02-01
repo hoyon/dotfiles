@@ -10,8 +10,14 @@ set -x LESS_TERMCAP_ue (printf "\033[0m")
 set -x LESS_TERMCAP_us (printf "\033[01;32m")
 
 set SHELL /usr/bin/fish
-set -x EDITOR vim
-set -x VISUAL vim
+
+if type -q nvim
+    set -x EDITOR nvim
+    set -x VISUAL nvim
+else
+    set -x EDITOR vim
+    set -x VISUAL vim
+end
 
 set -x ERL_AFLAGS "-kernel shell_history enabled"
 
