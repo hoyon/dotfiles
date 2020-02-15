@@ -112,3 +112,4 @@
 (put 'magit-todos-exclude-globs 'safe-local-variable #'listp)
 (put 'projectile-project-test-cmd 'safe-local-variable #'stringp)
 (put 'projectile-project-run-cmd 'safe-local-variable #'stringp)
+(put 'projectile-project-compilation-cmd 'safe-local-variable #'stringp)
