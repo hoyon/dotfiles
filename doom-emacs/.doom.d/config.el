@@ -8,6 +8,7 @@
       evil-respect-visual-line-mode nil ;; workaround to fix S/cc not behaviour
       dired-dwim-target t
       projectile-indexing-method 'hybrid
+      projectile-enable-caching nil
       company-idle-delay nil
       lsp-ui-flycheck-live-reporting nil
       lsp-enable-symbol-highlighting nil)
