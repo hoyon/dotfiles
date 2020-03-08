@@ -6,10 +6,10 @@
 ;; (package! another-package :recipe (:fetcher github :repo "username/repo"))
 ;; (package! builtin-package :disable t)
 
-(package! reason-mode)
 (package! geiser)
 (package! evil-terminal-cursor-changer)
 (package! nim-mode)
+(package! meson-mode)
 
 (package! ox-pandoc :disable t)
 (package! rtags :disable t)
