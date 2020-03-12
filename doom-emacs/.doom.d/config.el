@@ -113,3 +113,12 @@
 (put 'projectile-project-test-cmd 'safe-local-variable #'stringp)
 (put 'projectile-project-run-cmd 'safe-local-variable #'stringp)
 (put 'projectile-project-compilation-cmd 'safe-local-variable #'stringp)
+
+(defun touch-file ()
+  "Force modification of current file, unless already modified."
+  (interactive)
+  (if (and (verify-visited-file-modtime (current-buffer))
+           (not (buffer-modified-p)))
+      (progn
+        (set-buffer-modified-p t)
+        (save-buffer 0))))
