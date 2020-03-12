@@ -11,6 +11,10 @@ def run_script(script_name):
     return lambda: subprocess.run([f"~/.config/sway/{script_name}"], shell=True)
 
 
+def run_shell(args):
+    return lambda: subprocess.run(args)
+
+
 commands = {
     "Split horizontal": sway_cmd("split horizontal"),
     "Split vertical": sway_cmd("split vertical"),
@@ -20,6 +24,7 @@ commands = {
     "Lock": run_script("swaylock-fancy.sh"),
     "Quick add task - Todoist": run_script("todoist-quick-add.sh"),
     "Switch to window": run_script("switch-window.sh"),
+    "Dismiss notifications": run_shell(["makoctl", "dismiss", "--all"]),
 }
 
 keys = list(commands.keys())
