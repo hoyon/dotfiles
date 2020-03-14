@@ -43,6 +43,8 @@ def on_metadata(player, metadata, manager):
 
     if player.props.status != 'Playing' and track_info:
         track_info = ' ' + track_info
+
+    manager.move_player_to_top(player)
     write_output(track_info, player)
 
 
@@ -74,6 +76,21 @@ def signal_handler(sig, frame):
     sys.stdout.flush()
     # loop.quit()
     sys.exit(0)
+
+
+def pause_handler(manager):
+    players = manager.props.players
+    if len(players) > 0:
+        player = players[0]
+        player.play_pause()
+
+
+def next_player_handler(manager):
+    players = manager.props.players
+    if len(players) > 1:
+        new_player = players[len(players) - 1]
+        manager.move_player_to_top(new_player)
+        on_metadata(new_player, new_player.props.metadata, manager)
 
 
 def parse_arguments():
@@ -110,6 +127,9 @@ def main():
 
     signal.signal(signal.SIGINT, signal_handler)
     signal.signal(signal.SIGTERM, signal_handler)
+
+    signal.signal(signal.SIGUSR1, lambda *args: pause_handler(manager))
+    signal.signal(signal.SIGUSR2, lambda *args: next_player_handler(manager))
 
     for player in manager.props.player_names:
         if arguments.player is not None and arguments.player != player.name:

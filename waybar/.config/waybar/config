@@ -40,7 +40,8 @@
         },
         "escape": true,
         "exec": "python $HOME/.config/waybar/mediaplayer.py 2> /dev/null",
-        "on-click": "playerctl play-pause"
+        "on-click": "$HOME/.config/waybar/pause-media.sh",
+        "on-scroll-down": "$HOME/.config/waybar/next-player.sh"
     },
 
     "custom/ibus": {

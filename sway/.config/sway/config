@@ -100,11 +100,10 @@ hide_edge_borders both
 # Media keys
 bindsym $mod+up exec pulsemixer --change-volume +1
 bindsym $mod+down exec pulsemixer --change-volume -1
-
-bindsym XF86AudioPlay exec $HOME/.i3/media.sh play
-bindsym XF86AudioStop exec $HOME/.i3/media.sh stop
-bindsym XF86AudioPrev exec $HOME/.i3/media.sh prev
-bindsym XF86AudioNext exec $HOME/.i3/media.sh next
+# Pause media
+bindsym $mod+End exec ~/.config/waybar/pause-media.sh
+# Next player - mod+page down
+bindsym $mod+Next exec ~/.config/waybar/next-player.sh
 
 # Floating windows
 for_window [title="^feh \["] floating enable
