@@ -107,6 +107,7 @@ bindsym $mod+Next exec ~/.config/waybar/next-player.sh
 
 # Floating windows
 for_window [title="^feh \["] floating enable
+for_window [title="Firefox - Sharing Indicator"] floating enable
 
 # Gaps
 for_window [class="^.*"] border pixel 0
