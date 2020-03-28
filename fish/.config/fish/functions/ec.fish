@@ -1,6 +1,16 @@
-function ec --description Emacsclient
+function ec --description="Open in emacs"
+    if test -z "$argv"
+        echo "Usage: ec filename[:line]"
+        return 1
+    end
+
     set file (echo $argv | cut -d':' -f1)
     set line (echo $argv | cut -d':' -f2 -s)
+
+    if ! test "$line" -ge 0 2> /dev/null
+        echo "Invalid line number"
+        return 1
+    end
 
     if test -n "$line"
         set line_flag "+$line"
