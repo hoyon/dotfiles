@@ -2,10 +2,9 @@
 
 ;; Place your private configuration here
 
-(setq doom-font (font-spec :family "Source Code Pro" :size 13)
+(setq doom-font (font-spec :family "Source Code Pro" :size 15)
       doom-big-font (font-spec :family "Source Code Pro" :size 18)
       doom-localleader-key ","
-      evil-respect-visual-line-mode nil ;; workaround to fix S/cc not behaviour
       dired-dwim-target t
       projectile-indexing-method 'hybrid
       projectile-enable-caching nil
@@ -47,7 +46,6 @@
 
 (defun mix-format-all ()
   "Format all staged elixir files in project using .formatter in project root"
-  (interactive)
   (projectile-with-default-dir
       (projectile-project-root)
     (shell-command "git diff --name-only HEAD | egrep '\\.ex$|\\.exs' | xargs mix format"))
@@ -57,7 +55,6 @@
 
 (defun mix-format-current ()
   "Format current Elixr file using .formatter in project root"
-  (interactive)
   (projectile-with-default-dir
       (projectile-project-root)
     (shell-command (format "mix format %s" buffer-file-name)))
@@ -68,10 +65,8 @@
 
 (defun elixir-test-side-by-side ()
   "Split view between current file and its test"
-  (interactive)
   (doom/window-maximize-buffer)
-  (alchemist-project-toggle-file-and-tests-other-window)
-  )
+  (alchemist-project-toggle-file-and-tests-other-window))
 
 (setq alchemist-test-ask-about-save nil)
 
@@ -96,15 +91,11 @@
 
 (defun cpp-error-filter (errors)
   "Filters out false positive errors"
-  (interactive)
-  (seq-filter 'is-dependency-gen-error errors)
-  )
+  (seq-filter 'is-dependency-gen-error-p errors))
 
-(defun is-dependency-gen-error (error)
+(defun is-dependency-gen-error-p (error)
   "Checks if an error is a dependency gen error"
-  (interactive)
-  (not (string-match "error opening '.*\\.cpp\\.o\\.d': No such file or directory" (flycheck-error-message error)))
-  )
+  (not (string-match "error opening '.*\\.cpp\\.o\\.d': No such file or directory" (flycheck-error-message error))))
 
 (custom-set-variables '(flycheck-irony-error-filter #'cpp-error-filter))
 
@@ -122,3 +113,18 @@
       (progn
         (set-buffer-modified-p t)
         (save-buffer 0))))
+
+(defun zeal-search ()
+  "Search in zeal docs"
+  (interactive)
+  (if (zeal-running-p)
+      (let ((query (read-string "Search Zeal docs: ")))
+        (call-process "zeal" nil nil nil query)
+        (call-process "sway" nil nil nil "[title=\"- Zeal$\"] focus"))
+    (message "Zeal must be started before searching the docs")))
+
+(defun zeal-running-p ()
+  "Checks if zeal is running in the background"
+  (if (= 0 (call-process "pgrep" nil nil nil "zeal"))
+      t
+    nil))
