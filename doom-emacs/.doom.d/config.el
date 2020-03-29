@@ -120,11 +120,13 @@
   (if (zeal-running-p)
       (let ((query (read-string "Search Zeal docs: ")))
         (call-process "zeal" nil nil nil query)
-        (call-process "sway" nil nil nil "[title=\"- Zeal$\"] focus"))
+        (call-process "swaymsg" nil nil nil "[title=\"- Zeal$\"] focus"))
     (message "Zeal must be started before searching the docs")))
 
 (defun zeal-running-p ()
   "Checks if zeal is running in the background"
-  (if (= 0 (call-process "pgrep" nil nil nil "zeal"))
-      t
-    nil))
+   (= 0 (call-process "pgrep" nil nil nil "zeal")))
+
+(map! :leader
+      (:prefix-map ("l" . "user")
+        :desc "Search in zeal" "z" #'zeal-search))
