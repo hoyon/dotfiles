@@ -7,7 +7,7 @@ function ec --description="Open in emacs"
     set file (echo $argv | cut -d':' -f1)
     set line (echo $argv | cut -d':' -f2 -s)
 
-    if ! test "$line" -ge 0 2> /dev/null
+    if test -n "$line" && ! test "$line" -ge 0 2> /dev/null
         echo "Invalid line number"
         return 1
     end
