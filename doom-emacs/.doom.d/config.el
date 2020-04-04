@@ -65,6 +65,7 @@
 
 (defun elixir-test-side-by-side ()
   "Split view between current file and its test"
+  (interactive)
   (doom/window-maximize-buffer)
   (alchemist-project-toggle-file-and-tests-other-window))
 
