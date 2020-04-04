@@ -109,6 +109,9 @@ bindsym $mod+Next exec ~/.config/waybar/next-player.sh
 for_window [title="^feh \["] floating enable
 for_window [title="Firefox - Sharing Indicator"] floating enable
 
+# Always have an emoji in the title bar to stop height jumping (sway#4992)
+for_window [title=".*"] title_format ▪️ %title ▪️
+
 # Gaps
 for_window [class="^.*"] border pixel 0
 gaps inner 4
