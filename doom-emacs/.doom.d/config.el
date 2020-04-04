@@ -118,15 +118,15 @@
 (defun zeal-search ()
   "Search in zeal docs"
   (interactive)
-  (if (zeal-running-p)
-      (let ((query (read-string "Search Zeal docs: ")))
-        (call-process "zeal" nil nil nil query)
-        (call-process "swaymsg" nil nil nil "[title=\"- Zeal$\"] focus"))
-    (message "Zeal must be started before searching the docs")))
+  (let ((query (zeal-get-query)))
+    (call-process "setsid" nil nil nil "zeal" query)
+    (call-process "swaymsg" nil nil nil "[title=\"- Zeal$\"] focus")))
 
-(defun zeal-running-p ()
-  "Checks if zeal is running in the background"
-   (= 0 (call-process "pgrep" nil nil nil "zeal")))
+(defun zeal-get-query ()
+  "Get the search query"
+  (if (use-region-p)
+      (buffer-substring-no-properties (region-beginning) (region-end))
+    (read-string "Search Zeal docs: ")))
 
 (map! :leader
       (:prefix-map ("l" . "user")
