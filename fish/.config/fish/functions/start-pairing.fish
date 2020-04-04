@@ -1,3 +1,3 @@
 function start-pairing
-    tmux -S /var/tmux/pairing
+    sg tmux-pairing "tmux -S /var/tmux/pairing"
 end
