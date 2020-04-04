@@ -36,6 +36,7 @@ abbr -ag gdm "git diff master | vim +'set buftype=nofile' -"
 abbr -ag gdms "git diff master --stat"
 abbr -ag gcm "git checkout master; git pull"
 abbr -ag gb "git branch"
+abbr -ag gbs "git checkout (git branch | cut -c 3- | fzf)"
 abbr -ag gdf "git diff (git merge-base --fork-point master) | vim +'set buftype=nofile' -"
 abbr -ag gdfs "git diff (git merge-base --fork-point master) --stat"
 
