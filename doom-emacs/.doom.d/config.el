@@ -12,6 +12,8 @@
       lsp-ui-flycheck-live-reporting nil
       lsp-enable-symbol-highlighting nil)
 
+(server-start)
+
 ;; Use bar cursor when in insert mode in terminal
 (unless (display-graphic-p)
   (require 'evil-terminal-cursor-changer)
