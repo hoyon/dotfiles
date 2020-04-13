@@ -40,18 +40,6 @@ abbr -ag gbs "git checkout (git branch | cut -c 3- | fzf)"
 abbr -ag gdf "git diff (git merge-base --fork-point master) | vim +'set buftype=nofile' -"
 abbr -ag gdfs "git diff (git merge-base --fork-point master) --stat"
 
-# Event hooks to calculate command running time
-function _undistract_begin --on-event fish_preexec
-    set -g _undistract_timestamp (date +%s)
-end
-
-function _undistract_end --on-event fish_postexec
-    set -g _undistract_last (math (date +%s) - $_undistract_timestamp)
-    if test $_undistract_last -gt 5
-        printf "\a"
-    end
-end
-
 if test -z "$SSH_ENV"
     set -x SSH_ENV $HOME/.ssh/environment
 end

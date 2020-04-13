@@ -1,20 +1,16 @@
 set -g fish_prompt_pwd_dir_length 0
 
-function _pwd_with_tilde
-  prompt_pwd
-end
-
 function _in_git_directory
   git rev-parse --git-dir > /dev/null 2>&1
 end
 
 function _git_branch_name_or_revision
   set -l branch (git symbolic-ref HEAD 2> /dev/null | sed -e 's|^refs/heads/||')
-  set -l revision (git rev-parse HEAD 2> /dev/null | cut -b 1-7)
 
   if test (count $branch) -gt 0
     echo $branch
   else
+    set -l revision (git rev-parse HEAD 2> /dev/null | cut -b 1-7)
     echo $revision
   end
 end
@@ -22,9 +18,9 @@ end
 function _git_tag
   set -l tag (git describe 2> /dev/null)
   if test (count $tag) -gt 0
-      echo $tag
+    echo $tag
   else
-      echo ""
+    echo ""
   end
 end
 
@@ -88,9 +84,11 @@ function _print_in_color
   set -l string $argv[1]
   set -l color  $argv[2]
 
-  set_color $color
-  printf $string
-  set_color normal
+  if test -n (string trim $string)
+    set_color $color
+    printf $string
+    set_color normal
+  end
 end
 
 function _prompt_color_for_status
@@ -104,7 +102,7 @@ end
 function fish_prompt
   set -l last_status $status
 
-  _print_in_color "\n"(_pwd_with_tilde) blue
+  _print_in_color "\n"(prompt_pwd) blue
 
   if _in_git_directory
     _print_in_color " "(_git_branch_name_or_revision) grey
@@ -119,9 +117,8 @@ function fish_prompt
   end
 
   # Show last running time if greater than 5
-  set -q _undistract_last; or set _undistract_last 0
-  if test $_undistract_last -gt 5
-      _print_in_color " "(display_time $_undistract_last) yellow
+  if test $CMD_DURATION -gt 5000
+      _print_in_color " "(display_time (math $CMD_DURATION / 1000)) yellow
   end
 
   _print_in_color "\n❯ " (_prompt_color_for_status $last_status)
