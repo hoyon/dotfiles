@@ -104,9 +104,11 @@ bindsym $mod+down exec pulsemixer --change-volume -1
 bindsym $mod+End exec ~/.config/waybar/pause-media.sh
 # Next player - mod+page down
 bindsym $mod+Next exec ~/.config/waybar/next-player.sh
+bindsym $mod+Home exec ~/.config/sway/toggle-pavucontrol.sh
 
 # Floating windows
 for_window [title="^feh \["] floating enable
+for_window [app_id="pavucontrol"] floating enable
 for_window [title="Firefox - Sharing Indicator"] floating enable
 
 # Always have an emoji in the title bar to stop height jumping (sway#4992)
