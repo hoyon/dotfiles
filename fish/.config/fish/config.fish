@@ -10,6 +10,7 @@ set -x LESS_TERMCAP_us (printf "\\e[1;92m")    # start underlining
 set -x LESS_TERMCAP_ue (printf "\\e[0m")       # end underlining
 
 set SHELL /usr/bin/fish
+set -x PAGER less
 
 if type -q nvim
     set -x EDITOR nvim
