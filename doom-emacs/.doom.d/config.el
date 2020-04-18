@@ -34,10 +34,10 @@
 (map! (:localleader
         (:map elixir-mode-map
             (:prefix ("t" . "test")
-                "a" #'alchemist-mix-test
-                "b" #'alchemist-mix-test-this-buffer
-                "t" #'alchemist-mix-test-at-point
-                "r" #'alchemist-mix-rerun-last-test
+                "a" #'mix-test
+                "b" #'mix-test-current-buffer
+                "t" #'mix-test-current-test
+                "r" #'mix-last-command
                 "s" #'elixir-test-side-by-side)
             (:prefix ("g" . "goto")
                 "t" #'alchemist-project-toggle-file-and-tests
