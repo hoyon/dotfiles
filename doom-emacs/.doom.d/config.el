@@ -79,11 +79,11 @@
 ;; Web mode
 (require 'web-mode)
 (add-to-list 'auto-mode-alist '("\\.scss\\'" . web-mode))
+(add-to-list 'auto-mode-alist '("\\.js\\'" . web-mode))
 (setq web-mode-markup-indent-offset 2
       web-mode-css-indent-offset 2
-      web-mode-code-indent-offset 2)
-
-(setq js-indent-level 2)
+      web-mode-code-indent-offset 2
+      js-indent-level 2)
 
 ;; Elm
 (add-hook 'elm-mode-hook 'elm-format-on-save-mode)
