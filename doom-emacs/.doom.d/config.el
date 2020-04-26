@@ -11,7 +11,10 @@
       company-idle-delay nil
       display-line-numbers-type nil
       lsp-ui-flycheck-live-reporting nil
-      lsp-enable-symbol-highlighting nil)
+      lsp-enable-symbol-highlighting nil
+      doom-modeline-buffer-encoding nil
+      doom-modeline-vcs-max-length 12
+      doom-modeline-env-version nil)
 
 (load "server")
 (unless (server-running-p) (server-start))
@@ -134,4 +137,5 @@
 
 (map! :leader
       (:prefix-map ("l" . "user")
-        :desc "Search in zeal" "z" #'zeal-search))
+        :desc "Search in zeal" "z" #'zeal-search
+        :desc "Touch current file" "t" #'touch-file))
