@@ -31,11 +31,7 @@ def on_metadata(player, metadata, manager):
     logger.info('Received new metadata')
     track_info = ''
 
-    if player.props.player_name == 'spotify' and \
-            'mpris:trackid' in metadata.keys() and \
-            ':ad:' in player.props.metadata['mpris:trackid']:
-        track_info = 'AD PLAYING'
-    elif player.get_artist() != '' and player.get_title() != '':
+    if player.get_artist() != '' and player.get_title() != '':
         track_info = '{artist} - {title}'.format(artist=player.get_artist(),
                                                  title=player.get_title())
     else:
@@ -62,7 +58,7 @@ def on_player_vanished(manager, player):
 
 
 def init_player(manager, name):
-    logger.debug('Initialize player: {player}'.format(player=name.name))
+    logger.debug('Initialize player: %s', name.name)
     player = Playerctl.Player.new_from_name(name)
     player.connect('playback-status', on_play, manager)
     player.connect('metadata', on_metadata, manager)
@@ -133,9 +129,7 @@ def main():
 
     for player in manager.props.player_names:
         if arguments.player is not None and arguments.player != player.name:
-            logger.debug('{player} is not the filtered player, skipping it'
-                         .format(player=player.name)
-                         )
+            logger.debug('%s is not the filtered player, skipping it', player.name)
             continue
 
         init_player(manager, player)
