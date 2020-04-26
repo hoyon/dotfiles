@@ -13,7 +13,8 @@
       lsp-ui-flycheck-live-reporting nil
       lsp-enable-symbol-highlighting nil)
 
-(server-start)
+(load "server")
+(unless (server-running-p) (server-start))
 
 ;; Use bar cursor when in insert mode in terminal
 (unless (display-graphic-p)
