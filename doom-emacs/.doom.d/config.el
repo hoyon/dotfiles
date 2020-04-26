@@ -12,6 +12,7 @@
       display-line-numbers-type nil
       lsp-ui-flycheck-live-reporting nil
       lsp-enable-symbol-highlighting nil
+      doom-themes-enable-bold nil
       doom-modeline-buffer-encoding nil
       doom-modeline-vcs-max-length 12
       doom-modeline-env-version nil)
@@ -29,13 +30,7 @@
 
 (add-to-list 'face-ignored-fonts "Noto Color Emoji")
 
-;; Disable evil snipe (restore standard vim behaviour for s and S)
-(after! evil-snipe
-  (evil-snipe-mode -1))
-
-(menu-bar-mode -1)
-
-;;; ELIXIR
+;; Elixir
 (map! (:localleader
         (:map elixir-mode-map
             (:prefix ("t" . "test")
@@ -135,7 +130,21 @@
       (buffer-substring-no-properties (region-beginning) (region-end))
     (read-string "Search Zeal docs: ")))
 
+(defun load-light-theme ()
+  "Switch to the doom-one-light theme"
+  (interactive)
+  (load-theme 'doom-one-light t)
+  (doom/reload-theme))
+
+(defun load-dark-theme ()
+  "Switch to the doom-one theme"
+  (interactive)
+  (load-theme 'doom-one t)
+  (doom/reload-theme))
+
 (map! :leader
       (:prefix-map ("l" . "user")
         :desc "Search in zeal" "z" #'zeal-search
+        :desc "Use light theme" "l" #'load-light-theme
+        :desc "Use dark theme" "d" #'load-dark-theme
         :desc "Touch current file" "t" #'touch-file))
