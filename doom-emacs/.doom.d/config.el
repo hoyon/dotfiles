@@ -9,6 +9,7 @@
       projectile-indexing-method 'hybrid
       projectile-enable-caching nil
       company-idle-delay nil
+      display-line-numbers-type nil
       lsp-ui-flycheck-live-reporting nil
       lsp-enable-symbol-highlighting nil)
 
