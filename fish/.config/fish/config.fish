@@ -51,7 +51,7 @@ end
 
 # device specific config
 if test "$hostname" = "hoyon-desktop"
-    set -x PATH /home/hoyon/.cargo/bin/ /home/hoyon/bin /home/hoyon/.local/bin /home/hoyon/.yarn/bin ~/.nimble/bin $PATH
+    set -x PATH /home/hoyon/.cargo/bin/ /home/hoyon/bin /home/hoyon/.local/bin /home/hoyon/.yarn/bin ~/.nimble/bin ~/.pi/pi/bin $PATH
 else if test "$hostname" = "hoyon-work"
     set -x PATH /home/hoyon/.local/bin /home/hoyon/.yarn/bin $PATH
 else if test "$hostname" = "penguin"
