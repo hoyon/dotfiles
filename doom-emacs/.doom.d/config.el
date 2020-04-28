@@ -76,6 +76,9 @@
 (add-hook 'elixir-mode-hook
           (lambda () (add-hook 'before-save-hook 'elixir-format nil t)))
 
+; Alchemist mode is generally pretty pointless
+(remove-hook 'elixir-mode-hook #'alchemist-mode)
+
 ;; Web mode
 (require 'web-mode)
 (add-to-list 'auto-mode-alist '("\\.scss\\'" . web-mode))
