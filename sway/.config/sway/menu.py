@@ -1,18 +1,19 @@
 #!/bin/python3
 
 import subprocess
+import sys
 
 
 def sway_cmd(cmd):
-    return lambda: subprocess.run(["swaymsg", cmd])
+    return lambda: subprocess.run(["swaymsg", cmd], check=True)
 
 
 def run_script(script_name):
-    return lambda: subprocess.run([f"~/.config/sway/{script_name}"], shell=True)
+    return lambda: subprocess.run([f"~/.config/sway/{script_name}"], shell=True, check=True)
 
 
 def run_shell(args):
-    return lambda: subprocess.run(args)
+    return lambda: subprocess.run(args, check=True)
 
 
 commands = {
@@ -35,14 +36,17 @@ selection = subprocess.run(["wofi",
                             "--dmenu",
                             "--insensitive",
                             "--cache-file", "/dev/null",
-                            "--prompt", "Enter a command..."],
+                            "--prompt", "Enter a command...",
+                            "--location", "top",
+                            "--lines", "10"],
                            capture_output=True,
-                           input=options.encode())
+                           input=options.encode(),
+                           check=True)
 
 trimmed = selection.stdout.decode().strip()
 
 if trimmed == "":
-    exit()
+    sys.exit()
 
 command = commands.get(trimmed)
 
@@ -50,4 +54,4 @@ if command:
     command()
 else:
     message = f"Invalid command: {trimmed}"
-    subprocess.run(["notify-send", "-t", "2000", message])
+    subprocess.run(["notify-send", "-t", "2000", message], check=True)

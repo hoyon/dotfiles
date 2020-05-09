@@ -13,7 +13,7 @@ bindsym $mod+Return exec ~/.config/sway/openterm.sh
 # kill focused window
 bindsym $mod+Shift+q kill
 
-bindsym $mod+d exec wofi --show drun --insensitive
+bindsym $mod+d exec wofi --show drun --insensitive --location top --lines 10 --no-actions
 
 # change focus
 bindsym $mod+h focus left
