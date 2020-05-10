@@ -41,29 +41,7 @@
                 "s" #'elixir-test-side-by-side)
             (:prefix ("g" . "goto")
                 "t" #'alchemist-project-toggle-file-and-tests
-                "T" #'alchemist-project-toggle-file-and-tests-other-window)
-            (:prefix ("f" . "format")
-                "a" #'mix-format-all
-                "f" #'mix-format-current))))
-
-(defun mix-format-all ()
-  "Format all staged elixir files in project using .formatter in project root"
-  (projectile-with-default-dir
-      (projectile-project-root)
-    (shell-command "git diff --name-only HEAD | egrep '\\.ex$|\\.exs' | xargs mix format"))
-  (if (fboundp 'magit-refresh-all)
-      (magit-refresh-all)
-    nil))
-
-(defun mix-format-current ()
-  "Format current Elixr file using .formatter in project root"
-  (projectile-with-default-dir
-      (projectile-project-root)
-    (shell-command (format "mix format %s" buffer-file-name)))
-  (if
-      (fboundp 'magit-refresh-all)
-      (magit-refresh-all)
-    nil))
+                "T" #'alchemist-project-toggle-file-and-tests-other-window))))
 
 (defun elixir-test-side-by-side ()
   "Split view between current file and its test"
@@ -73,12 +51,6 @@
 
 (setq alchemist-test-ask-about-save nil)
 
-(add-hook 'elixir-mode-hook
-          (lambda () (add-hook 'before-save-hook 'elixir-format nil t)))
-
-; Alchemist mode is generally pretty pointless
-(remove-hook 'elixir-mode-hook #'alchemist-mode)
-
 ;; Web mode
 (require 'web-mode)
 (add-to-list 'auto-mode-alist '("\\.scss\\'" . web-mode))
@@ -87,9 +59,6 @@
       web-mode-css-indent-offset 2
       web-mode-code-indent-offset 2
       js-indent-level 2)
-
-;; Elm
-(add-hook 'elm-mode-hook 'elm-format-on-save-mode)
 
 ;; C/C++
 (setq-default c-basic-offset 4)
