@@ -113,7 +113,7 @@ for_window [title="Firefox - Sharing Indicator"] floating enable
 for_window [app_id="firefox" title="Picture-in-Picture"] floating enable
 
 # Always have an emoji in the title bar to stop height jumping (sway#4992)
-for_window [title=".*"] title_format ▪️ %title
+for_window [title=".*"] title_format 。%title
 
 # Gaps
 for_window [class="^.*"] border pixel 0
