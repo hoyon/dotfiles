@@ -23,7 +23,7 @@ end
 set -x ERL_AFLAGS "-kernel shell_history enabled"
 
 if type -q fd
-  set -x FZF_DEFAULT_COMMAND 'fd --type f'
+    set -x FZF_DEFAULT_COMMAND 'fd --type f'
 end
 
 abbr -ag gst "git status"
@@ -51,12 +51,24 @@ if not __ssh_agent_is_started
     __ssh_agent_start
 end
 
+function path_var
+    if not string match -qe $argv[1] $PATH
+        set -x PATH $argv[1] $PATH
+    end
+end
+
 # device specific config
-if test "$hostname" = "hoyon-desktop"
-    set -x PATH /home/hoyon/.cargo/bin/ /home/hoyon/bin /home/hoyon/.local/bin /home/hoyon/.yarn/bin ~/.nimble/bin ~/.pi/pi/bin ~/san/go/bin $PATH
+if test "$hostname" = hoyon-desktop
+    path_var /home/hoyon/.cargo/bin
+    path_var /home/hoyon/bin
+    path_var /home/hoyon/.local/bin
+    path_var /home/hoyon/.yarn/bin
+    path_var /home/hoyon/.nimble/bin
+    path_var /home/hoyon/.pi/pi/bin
+    path_var /home/hoyon/san/go/bin
+
     set -x GOPATH /home/hoyon/san/go
-else if test "$hostname" = "hoyon-work"
-    set -x PATH /home/hoyon/.local/bin /home/hoyon/.yarn/bin $PATH
-else if test "$hostname" = "penguin"
-    source ~/.asdf/asdf.fish
+else if test "$hostname" = hoyon-work
+    path_var /home/hoyon/.local/bin
+    path_var /home/hoyon/.yarn/bin
 end
