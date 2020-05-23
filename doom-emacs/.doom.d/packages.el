@@ -14,3 +14,4 @@
 
 (package! ox-pandoc :disable t)
 (package! rtags :disable t)
+(package! org-superstar :disable t)
