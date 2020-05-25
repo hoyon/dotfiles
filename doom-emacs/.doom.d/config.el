@@ -30,6 +30,11 @@
 
 (add-to-list 'face-ignored-fonts "Noto Color Emoji")
 
+;; Format on save
+(add-hook 'elixir-mode-hook '+format-enable-on-save-h)
+(add-hook 'elm-mode-hook '+format-enable-on-save-h)
+(add-hook 'rustic-mode-hook '+format-enable-on-save-h)
+
 ;; Elixir
 (map! (:localleader
         (:map elixir-mode-map
