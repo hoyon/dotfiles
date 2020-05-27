@@ -1,6 +1,6 @@
 #!/usr/bin/sh
 
-TASK=$(wofi --dmenu --exec-search --cache-file /dev/null --prompt "Add task" --lines 1 --location top)
+TASK=$(wofi --dmenu --exec-search --cache-file /dev/null --prompt "" --lines 1 --location top)
 
 TRIMMED=$(echo "$TASK" | xargs)
 

@@ -145,6 +145,9 @@ bindsym $mod+p exec ~/.config/sway/menu.py
 # Window switcher
 bindsym $mod+o exec ~/.config/sway/switch-window.sh
 
+# Todoist add task
+bindsym $mod+slash exec ~/.config/sway/todoist-quick-add.sh
+
 # Notification daemon
 exec mako
 
