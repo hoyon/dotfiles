@@ -5,6 +5,4 @@ function up --description 'bring system up to date'
         sudo apt-get update
         sudo apt upgrade
     end
-
-    git -C ~/.dotfiles pull
 end
