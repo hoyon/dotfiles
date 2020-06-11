@@ -33,7 +33,8 @@
 ;; Format on save
 (add-hook 'elixir-mode-hook '+format-enable-on-save-h)
 (add-hook 'elm-mode-hook '+format-enable-on-save-h)
-(add-hook 'rustic-mode-hook '+format-enable-on-save-h)
+(add-hook 'go-mode-hook '+format-enable-on-save-h)
+(setq rustic-format-trigger 'on-save)
 
 ;; Elixir
 (map! (:localleader
