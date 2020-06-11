@@ -9,3 +9,5 @@
 	default = simple
 [github]
 	user = hoyon
+[pull]
+	rebase = false
