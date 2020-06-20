@@ -53,7 +53,6 @@ set shell=sh
 
 set background=dark
 colorscheme gruvbox
-set termguicolors
 
 set noswapfile
 set nobackup
