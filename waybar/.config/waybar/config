@@ -47,6 +47,6 @@
     "custom/ibus": {
         "format": "{}",
         "return-type": "json",
-        "exec": "$HOME/.config/waybar/ibus-engine"
+        "exec": "$HOME/.config/waybar/ibus/ibus-engine"
     }
 }

@@ -1,7 +1,7 @@
 #!/usr/bin/bash
 
 ENGINE=$(ibus engine)
-JP=mozc-jp
+JP=kkc
 GB=xkb:gb:extd:eng
 
 if [ "$ENGINE" = $JP ]; then
