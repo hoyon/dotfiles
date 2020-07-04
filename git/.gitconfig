@@ -1,13 +1,14 @@
 [user]
-	name = Ho-Yon Mak
-	email = hoyon.mak@gmail.com
+    name = Ho-Yon Mak
+    email = hoyon.mak@gmail.com
 [alias]
-	st = status
-	co = checkout
-	hist = log --pretty=format:'%h %ad | %s%d [%an]' --graph --date=short
+    st = status
+    co = checkout
+    hist = log --abbrev-commit --decorate --format=format:'%C(bold yellow)%h%C(reset) %C(bold green)(%ar)%C(reset) %s%C(reset) %C(white)- %an%C(reset)%C(bold yellow)%d%C(reset)' --all
+    graph = hist --graph
 [push]
-	default = simple
+    default = simple
 [github]
-	user = hoyon
+    user = hoyon
 [pull]
-	rebase = false
+    rebase = false
