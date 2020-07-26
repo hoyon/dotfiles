@@ -71,4 +71,8 @@ if test "$hostname" = hoyon-desktop
 else if test "$hostname" = hoyon-work
     path_var /home/hoyon/.local/bin
     path_var /home/hoyon/.yarn/bin
+
+else if test "$hostname" = hoyon-arch
+    path_var /home/hoyon/.local/bin
+
 end
