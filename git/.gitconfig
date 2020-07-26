@@ -4,8 +4,8 @@
 [alias]
     st = status
     co = checkout
-    hist = log --abbrev-commit --decorate --format=format:'%C(bold yellow)%h%C(reset) %C(bold green)(%ar)%C(reset) %s%C(reset) %C(white)- %an%C(reset)%C(bold yellow)%d%C(reset)' --all
-    graph = hist --graph
+    hist = log --abbrev-commit --decorate --format=format:'%C(bold yellow)%h%C(reset) %C(bold green)(%ar)%C(reset) %s%C(reset) %C(white)- %an%C(reset)%C(bold yellow)%d%C(reset)'
+    graph = hist --graph --all
 [push]
     default = simple
 [github]
