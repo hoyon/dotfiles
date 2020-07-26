@@ -80,6 +80,9 @@
 
 (custom-set-variables '(flycheck-irony-error-filter #'cpp-error-filter))
 
+;; Rust
+(setq rustic-flycheck-clippy-params "--message-format=json")
+
 ;; dir local variables
 (put 'magit-todos-exclude-globs 'safe-local-variable #'listp)
 (put 'projectile-project-test-cmd 'safe-local-variable #'stringp)
