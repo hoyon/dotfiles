@@ -15,7 +15,11 @@
       doom-themes-enable-bold nil
       doom-modeline-buffer-encoding nil
       doom-modeline-vcs-max-length 12
-      doom-modeline-env-version nil)
+      doom-modeline-env-version nil
+      undo-limit 80000000
+      evil-want-fine-undo t)
+
+(setq-default uniquify-buffer-name-style 'forward)
 
 (load "server")
 (unless (server-running-p) (server-start))
