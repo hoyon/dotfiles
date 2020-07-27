@@ -71,7 +71,7 @@ inoremap <S-Tab> <C-V><Tab>
 set ttimeoutlen=0
 
 "Use I-beam when in insert mode
-if &term ==# 'xterm-256color' || &term ==# 'screen-256color' || &term ==# 'xterm-termite'
+if &term ==# 'xterm-256color' || &term ==# 'screen-256color' || &term ==# 'xterm-termite' || &term ==# 'xterm-kitty'
     let &t_SI = "\<Esc>[5 q"
     let &t_EI = "\<Esc>[1 q"
 endif
