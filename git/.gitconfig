@@ -12,3 +12,5 @@
     user = hoyon
 [pull]
     rebase = false
+[diff]
+    renameLimit = 10000
