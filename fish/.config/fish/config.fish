@@ -75,4 +75,6 @@ else if test "$hostname" = hoyon-work
 else if test "$hostname" = hoyon-arch
     path_var /home/hoyon/.local/bin
 
+    source /opt/asdf-vm/asdf.fish
+
 end
