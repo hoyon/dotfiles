@@ -1,9 +1,9 @@
 #!/usr/bin/sh
 
-TASK=$(wofi --dmenu --exec-search --cache-file /dev/null --prompt "" --lines 1 --location top)
+TASK=$(wofi --dmenu --exec-search --cache-file /dev/null --lines 1 --location top --hide-scroll)
 
 TRIMMED=$(echo "$TASK" | xargs)
 
 if [ -n "$TRIMMED" ]; then
-    todoist-cli quick "$TRIMMED"
+    todoist quick "$TRIMMED"
 fi
