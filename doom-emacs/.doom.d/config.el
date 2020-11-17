@@ -12,6 +12,7 @@
       display-line-numbers-type nil
       lsp-ui-flycheck-live-reporting nil
       lsp-enable-symbol-highlighting nil
+      lsp-signature-auto-activate nil
       doom-themes-enable-bold nil
       doom-modeline-buffer-encoding nil
       doom-modeline-vcs-max-length 12
@@ -30,7 +31,6 @@
 (add-to-list 'face-ignored-fonts "Noto Color Emoji")
 
 ;; Format on save
-(add-hook 'elixir-mode-hook '+format-enable-on-save-h)
 (add-hook 'elm-mode-hook '+format-enable-on-save-h)
 (add-hook 'go-mode-hook '+format-enable-on-save-h)
 (setq rustic-format-trigger 'on-save)
@@ -60,6 +60,8 @@
 (require 'web-mode)
 (add-to-list 'auto-mode-alist '("\\.scss\\'" . web-mode))
 (add-to-list 'auto-mode-alist '("\\.js\\'" . web-mode))
+(add-to-list 'auto-mode-alist '("\\.ts\\'" . web-mode))
+(add-to-list 'auto-mode-alist '("\\.tsx\\'" . web-mode))
 (setq web-mode-markup-indent-offset 2
       web-mode-css-indent-offset 2
       web-mode-code-indent-offset 2
