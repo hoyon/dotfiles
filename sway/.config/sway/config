@@ -127,8 +127,9 @@ input type:keyboard {
 }
 
 # ibus
-bindsym $mod+space exec ~/.config/sway/ibus-toggle.sh
-exec ibus-daemon -drx
+# bindsym $mod+space exec ~/.config/sway/ibus-toggle.sh
+# exec ibus-daemon -drx
+exec fcitx5
 
 output * background ~/Pictures/bg3.jpg fill
 
