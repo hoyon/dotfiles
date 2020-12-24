@@ -6,8 +6,6 @@
       doom-big-font (font-spec :family "Source Code Pro" :size 18)
       doom-localleader-key ","
       dired-dwim-target t
-      projectile-indexing-method 'hybrid
-      projectile-enable-caching nil
       company-idle-delay nil
       display-line-numbers-type nil
       lsp-ui-flycheck-live-reporting nil
@@ -19,6 +17,10 @@
       doom-modeline-env-version nil
       undo-limit 80000000
       evil-want-fine-undo t)
+
+(after! projectile
+  (setq projectile-indexing-method 'alien
+        projectile-files-cache-expire 5))
 
 (setq-default uniquify-buffer-name-style 'forward)
 
@@ -83,6 +85,18 @@
 
 ;; Rust
 (setq rustic-flycheck-clippy-params "--message-format=json")
+
+;; Zig
+(setq zig-format-on-save nil)
+
+(defun zig-test-current-buffer ()
+  "Run zig test on the current buffer"
+  (interactive)
+  (zig--run-cmd "test" (buffer-file-name)))
+
+(map! (:localleader
+        (:map zig-mode-map
+            ("t" #'zig-test-current-buffer))))
 
 ;; dir local variables
 (put 'magit-todos-exclude-globs 'safe-local-variable #'listp)
