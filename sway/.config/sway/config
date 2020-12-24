@@ -13,7 +13,7 @@ bindsym $mod+Return exec ~/.config/sway/openterm.sh
 # kill focused window
 bindsym $mod+Shift+q kill
 
-bindsym $mod+d exec wofi --show drun --insensitive --location top --lines 10 --no-actions
+bindsym $mod+d exec ~/.config/sway/dmenu.sh
 
 # change focus
 bindsym $mod+h focus left
@@ -98,10 +98,10 @@ bar {
 hide_edge_borders both
 
 # Media keys
-bindsym $mod+up exec pulsemixer --change-volume +1
-bindsym $mod+down exec pulsemixer --change-volume -1
+bindsym XF86AudioRaiseVolume exec pulsemixer --change-volume +1
+bindsym XF86AudioLowerVolume exec pulsemixer --change-volume -1
 # Pause media
-bindsym $mod+End exec ~/.config/waybar/pause-media.sh
+bindsym XF86AudioPlay exec ~/.config/waybar/pause-media.sh
 # Next player - mod+page down
 bindsym $mod+Next exec ~/.config/waybar/next-player.sh
 bindsym $mod+Home exec ~/.config/sway/toggle-pavucontrol.sh
@@ -109,8 +109,12 @@ bindsym $mod+Home exec ~/.config/sway/toggle-pavucontrol.sh
 # Floating windows
 for_window [title="^feh \["] floating enable
 for_window [app_id="pavucontrol"] floating enable
-for_window [title="Firefox - Sharing Indicator"] floating enable
+for_window [title="Firefox – Sharing Indicator"] floating enable
+for_window [title="Firefox – Sharing Indicator"] move up 570px
+for_window [title="Firefox – Sharing Indicator"] move left 800px
+
 for_window [app_id="firefox" title="Picture-in-Picture"] floating enable
+for_window [title=".*is sharing your screen.$"] floating enable
 
 # Always have an emoji in the title bar to stop height jumping (sway#4992)
 for_window [title=".*"] title_format ▪️%title
