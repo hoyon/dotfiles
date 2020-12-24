@@ -4,6 +4,6 @@ function server --description 'start server in current directory' -a 'port'
     if type -q livereload
         livereload -p $port
     else
-        python2 -m SimpleHTTPServer $port;
+        python -m http.server $port;
     end
 end
