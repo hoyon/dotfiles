@@ -1,0 +1,4 @@
+# key: dbg
+# name: std debug print
+# --
+std.debug.print("{}\n", .{$1});
