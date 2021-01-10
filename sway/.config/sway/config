@@ -90,6 +90,9 @@ client.unfocused        #504d48 #5e5b57 #dcdccc #aaaaaa #aaaaaa
 client.urgent           #000000 #db3d3d #dcdccc #aaaaaa #aaaaaa
 client.placeholder      #000000 #ffffff #dcdccc #aaaaaa #aaaaaa
 
+titlebar_border_thickness 1
+titlebar_padding 1 2
+
 bar {
     swaybar_command waybar
 }
