@@ -14,6 +14,10 @@ SETUVAR Z_EXCLUDE:\x5e/home/hoyon\x24
 SETUVAR __fish_init_2_3_0:\x1d
 SETUVAR __fish_init_3_x:\x1d
 SETUVAR __fish_initialized:3100
+SETUVAR _fisher_fisherman_2F_z_files:/home/hoyon/\x2econfig/fish/functions/__z\x2efish\x1e/home/hoyon/\x2econfig/fish/functions/__z_add\x2efish\x1e/home/hoyon/\x2econfig/fish/functions/__z_clean\x2efish\x1e/home/hoyon/\x2econfig/fish/functions/__z_complete\x2efish\x1e/home/hoyon/\x2econfig/fish/conf\x2ed/z\x2efish
+SETUVAR _fisher_jethrokuan_2F_fzf_files:/home/hoyon/\x2econfig/fish/functions/__fzf_cd\x2efish\x1e/home/hoyon/\x2econfig/fish/functions/__fzf_complete\x2efish\x1e/home/hoyon/\x2econfig/fish/functions/__fzf_complete_preview\x2efish\x1e/home/hoyon/\x2econfig/fish/functions/__fzf_find_file\x2efish\x1e/home/hoyon/\x2econfig/fish/functions/__fzf_get_dir\x2efish\x1e/home/hoyon/\x2econfig/fish/functions/__fzf_open\x2efish\x1e/home/hoyon/\x2econfig/fish/functions/__fzf_parse_commandline\x2efish\x1e/home/hoyon/\x2econfig/fish/functions/__fzf_reverse_isearch\x2efish\x1e/home/hoyon/\x2econfig/fish/functions/__fzfcmd\x2efish\x1e/home/hoyon/\x2econfig/fish/conf\x2ed/fzf\x2efish
+SETUVAR _fisher_jorgebucaran_2F_fisher_files:/home/hoyon/\x2econfig/fish/functions/fisher\x2efish\x1e/home/hoyon/\x2econfig/fish/completions/fisher\x2efish
+SETUVAR _fisher_plugins:jorgebucaran/fisher\x1efisherman/z\x1ejethrokuan/fzf
 SETUVAR fish_color_autosuggestion:grey
 SETUVAR fish_color_cancel:\x2dr
 SETUVAR fish_color_command:brgreen
