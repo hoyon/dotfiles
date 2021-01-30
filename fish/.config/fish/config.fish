@@ -84,3 +84,7 @@ else if test "$hostname" = hoyon-arch
 
     source /opt/asdf-vm/asdf.fish
 end
+
+# fzf.fish bindings
+bind \ct '__fzf_search_current_dir'
+bind \cr '__fzf_search_history'
