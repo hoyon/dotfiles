@@ -57,6 +57,11 @@ if not __ssh_agent_is_started
     __ssh_agent_start
 end
 
+# set fish opts if ls --color=auto is supported
+if command ls --color=auto / >/dev/null 2>/dev/null
+    set -g __fish_ls_color_opt --color=auto --hyperlink=auto
+end
+
 function __path_var
     if not string match -qe $argv[1] $PATH
         set -x PATH $argv[1] $PATH
