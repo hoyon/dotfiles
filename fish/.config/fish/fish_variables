@@ -41,4 +41,5 @@ SETUVAR fish_pager_color_completion:normal
 SETUVAR fish_pager_color_description:555\x1eyellow
 SETUVAR fish_pager_color_prefix:cyan
 SETUVAR fish_pager_color_progress:cyan
+SETUVAR fish_user_paths:/home/hoyon/\x2egem/ruby/2\x2e7\x2e0/bin\x1e/home/hoyon/\x2elocal/bin
 SETUVAR fzf_fish_custom_keybindings:\x1d

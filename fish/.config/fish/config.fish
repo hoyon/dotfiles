@@ -62,34 +62,32 @@ if command ls --color=auto / >/dev/null 2>/dev/null
     set -g __fish_ls_color_opt --color=auto --hyperlink=auto
 end
 
-function __path_var
-    if not string match -qe $argv[1] $PATH
-        set -x PATH $argv[1] $PATH
-    end
-end
-
 # device specific config
 if test "$hostname" = hoyon-desktop
-    __path_var /home/hoyon/.cargo/bin
-    __path_var /home/hoyon/bin
-    __path_var /home/hoyon/.local/bin
-    __path_var /home/hoyon/.yarn/bin
-    __path_var /home/hoyon/.nimble/bin
-    __path_var /home/hoyon/.pi/pi/bin
-    __path_var /home/hoyon/san/go/bin
+    fish_add_path /home/hoyon/.cargo/bin
+    fish_add_path /home/hoyon/bin
+    fish_add_path /home/hoyon/.local/bin
+    fish_add_path /home/hoyon/.yarn/bin
+    fish_add_path /home/hoyon/.nimble/bin
+    fish_add_path /home/hoyon/.pi/pi/bin
+    fish_add_path /home/hoyon/san/go/bin
 
     set -x GOPATH /home/hoyon/san/go
 else if test "$hostname" = hoyon-work
-    __path_var /home/hoyon/.local/bin
-    __path_var /home/hoyon/.yarn/bin
+    fish_add_path /home/hoyon/.local/bin
+    fish_add_path /home/hoyon/.yarn/bin
 
 else if test "$hostname" = hoyon-arch
-    __path_var /home/hoyon/.local/bin
-    __path_var /home/hoyon/.gem/ruby/2.7.0/bin
+    fish_add_path /home/hoyon/.local/bin
+    fish_add_path /home/hoyon/.gem/ruby/2.7.0/bin
 
     source /opt/asdf-vm/asdf.fish
 end
 
 # fzf.fish bindings
+set --universal fzf_fish_custom_keybindings
 bind \ct '__fzf_search_current_dir'
 bind \cr '__fzf_search_history'
+bind \cv $fzf_search_vars_cmd
+bind \e\cl __fzf_search_git_log
+bind \e\cs __fzf_search_git_status
