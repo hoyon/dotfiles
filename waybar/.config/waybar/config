@@ -35,6 +35,7 @@
         "max-length": 40,
         "format-icons": {
             "spotify": "",
+            "Spot": "",
             "plasma-browser-integration": "",
             "default": ""
         },
@@ -44,9 +45,9 @@
         "on-scroll-down": "$HOME/.config/waybar/next-player.sh"
     },
 
-    "custom/ibus": {
-        "format": "{}",
-        "return-type": "json",
-        "exec": "$HOME/.config/waybar/ibus/ibus-engine"
-    }
+    // "custom/ibus": {
+    //     "format": "{}",
+    //     "return-type": "json",
+    //     "exec": "$HOME/.config/waybar/ibus/ibus-engine"
+    // }
 }
