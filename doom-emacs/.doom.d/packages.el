@@ -12,4 +12,4 @@
 (package! zig-mode)
 (package! mix :recipe (:host github :repo "ayrat555/mix.el"))
 
-(package! rtags :disable t)
+(disable-packages! irony rtags)
