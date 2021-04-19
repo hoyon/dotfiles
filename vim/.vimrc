@@ -12,6 +12,7 @@ call plug#begin('~/.vim/plugged')
 
 Plug 'morhetz/gruvbox'
 Plug 'NLKNguyen/papercolor-theme'
+Plug 'chriskempson/base16-vim'
 
 Plug 'vim-airline/vim-airline'
 Plug 'vim-airline/vim-airline-themes'
@@ -51,6 +52,7 @@ set mouse=a
 set showcmd
 set shell=sh
 
+set termguicolors
 set background=dark
 colorscheme gruvbox
 
@@ -142,19 +144,15 @@ endif
 "Switch to last buffer
 nmap gb <C-^>
 
+"vim airline
+let g:airline_powerline_fonts = 1
+let g:airline_theme = 'base16_gruvbox_dark_hard'
+let g:airline#extensions#whitespace#enabled = 0
+
 " fzf
 nmap <C-p> :Files<cr>
 nmap <leader>b :Buffers<cr>
 nmap <leader>/ :Ag<space>
-
-"vim airline
-let g:airline_powerline_fonts = 1
-let g:airline_theme= 'base16_eighties'
-"if !exists('g:airline_symbols')
-"let g:airline_symbols = {}
-"endif
-"let g:airline_symbols.space = "\ua0"
-let g:airline#extensions#whitespace#enabled = 0
 
 "delimitMate
 let g:delimitMate_expand_cr = 2
