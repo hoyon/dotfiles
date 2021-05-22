@@ -1,4 +1,5 @@
 set $mod Mod4
+set $hyper Mod1+Shift+Mod4+Ctrl
 
 # Font for window titles. Will also be used by the bar unless a different font
 # is used in the bar {} block below.
@@ -112,9 +113,7 @@ bindsym $mod+Home exec ~/.config/sway/toggle-pavucontrol.sh
 # Floating windows
 for_window [title="^feh \["] floating enable
 for_window [app_id="pavucontrol"] floating enable
-for_window [title="Firefox – Sharing Indicator"] floating enable
-for_window [title="Firefox – Sharing Indicator"] move up 570px
-for_window [title="Firefox – Sharing Indicator"] move left 800px
+for_window [title="Firefox . Sharing Indicator"] kill
 
 for_window [app_id="firefox" title="Picture-in-Picture"] floating enable
 for_window [title=".*is sharing your screen.$"] floating enable
@@ -133,10 +132,17 @@ input type:keyboard {
     repeat_rate 70
 }
 
+input type:touchpad {
+    natural_scroll enabled
+    pointer_accel 0.3
+    scroll_factor 0.5
+}
+
 # ibus
-# bindsym $mod+space exec ~/.config/sway/ibus-toggle.sh
+bindsym $mod+space exec ~/.config/sway/ibus-toggle.sh
 # exec ibus-daemon -drx
-exec fcitx5
+# exec ibus-daemon -drx --panel /usr/lib/ibus/ibus-ui-gtk3
+# exec fcitx5
 
 output * background ~/Pictures/bg3.jpg fill
 
@@ -156,11 +162,20 @@ bindsym $mod+o exec ~/.config/sway/switch-window.sh
 # Todoist add task
 bindsym $mod+slash exec ~/.config/sway/todoist-quick-add.sh
 
+bindsym $hyper+s exec grimshot copy area
+bindsym $hyper+a exec ~/.config/sway/screenshot-annotate.sh
+bindsym $hyper+i exec pkill ibus
+
 # Polkit agent
 exec /usr/lib/polkit-gnome/polkit-gnome-authentication-agent-1
 
 # Notification daemon
 exec mako
+
+exec systemctl --user import-environment
+exec systemctl --user restart libinput-gestures.service
+
+# xwayland disable
 
 # Include machine specific config
 include "~/.config/sway/`hostname`.config"
