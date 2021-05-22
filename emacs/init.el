@@ -1,27 +1,34 @@
-(setq package-archives
-      '(("gnu" . "http://elpa.gnu.org/packages/")
-        ("melpa" . "http://melpa.org/packages/")))
+(defvar bootstrap-version)
+(setq straight-use-package-by-default 't)
+(let ((bootstrap-file
+       (expand-file-name "straight/repos/straight.el/bootstrap.el" user-emacs-directory))
+      (bootstrap-version 5))
+  (unless (file-exists-p bootstrap-file)
+    (with-current-buffer
+        (url-retrieve-synchronously
+         "https://raw.githubusercontent.com/raxod502/straight.el/develop/install.el"
+         'silent 'inhibit-cookies)
+      (goto-char (point-max))
+      (eval-print-last-sexp)))
+  (load bootstrap-file nil 'nomessage))
 
- ;; put all backups in a single directory to avoid making a mess everywhere
+(straight-use-package 'use-package)
+
+(menu-bar-mode -1)
+(toggle-scroll-bar -1)
+(tool-bar-mode -1)
+
 (setq backup-directory-alist `(("" . ,(format "%sbackup" user-emacs-directory))))
 
-(custom-set-variables
- ;; custom-set-variables was added by Custom.
- ;; If you edit it by hand, you could mess it up, so be careful.
- ;; Your init file should contain only one such instance.
- ;; If there is more than one, they won't work right.
- '(custom-enabled-themes '(moe-light))
- '(custom-safe-themes
-   '("27a1dd6378f3782a593cc83e108a35c2b93e5ecc3bd9057313e1d88462701fcd" "0feb7052df6cfc1733c1087d3876c26c66410e5f1337b039be44cb406b6187c6" default))
- '(fido-mode t)
- '(package-selected-packages '(moe-theme))
- '(recentf-mode t)
- '(scroll-bar-mode nil)
- '(warning-suppress-types '((comp)))
- '(winner-mode t))
-(custom-set-faces
- ;; custom-set-faces was added by Custom.
- ;; If you edit it by hand, you could mess it up, so be careful.
- ;; Your init file should contain only one such instance.
- ;; If there is more than one, they won't work right.
- )
+(setq custom-file (expand-file-name "custom.el" user-emacs-directory))
+(load custom-file)
+
+(use-package evil
+  :config
+  (evil-mode 1))
+
+(use-package magit)
+
+(use-package moe-theme
+  :config
+  (load-theme 'moe-light))
