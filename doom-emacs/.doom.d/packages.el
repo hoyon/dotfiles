@@ -9,7 +9,6 @@
 (package! geiser)
 (package! nim-mode)
 (package! meson-mode)
-(package! zig-mode)
 (package! mix :recipe (:host github :repo "ayrat555/mix.el"))
 
 (disable-packages! irony rtags)
