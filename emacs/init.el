@@ -32,8 +32,16 @@
 (load custom-file)
 
 (use-package evil
+  :init
+  (setq evil-want-integration t
+	evil-want-keybinding nil)
   :config
   (evil-mode 1))
+
+(use-package evil-collection
+  :after evil
+  :config
+  (evil-collection-init))
 
 (use-package magit)
 
@@ -194,3 +202,10 @@
   :config
   (setq web-mode-engines-alist
 	'(("elixir" . "\\.mvx"))))
+
+(use-package markdown-mode
+  :commands (markdown-mode gfm-mode)
+  :mode (("\\.md\\'" . markdown-mode)
+	 ("\\.markdown\\'" . markdown-mode)
+	 ("README\\.md\\'" . gfm-mode))
+  :init (setq markdown-command "multimarkdown"))
