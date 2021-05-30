@@ -2,9 +2,11 @@
       gc-cons-percentage 0.6)
 
 (add-hook 'emacs-startup-hook
-	  (lambda ()
-	    (setq gc-cons-threshold 16777216
-		  gc-cons-percentage 0.1)))
+          (lambda ()
+            (setq gc-cons-threshold 16777216
+                  gc-cons-percentage 0.1)))
+
+(setq comp-async-report-warning-errors nil)
 
 (defvar bootstrap-version)
 (setq straight-use-package-by-default 't)
@@ -26,24 +28,27 @@
 (toggle-scroll-bar -1)
 (tool-bar-mode -1)
 
-(setq backup-directory-alist `(("" . ,(format "%sbackup" user-emacs-directory))))
+(setq backup-directory-alist `(("" . ,(format "%sbackup" user-emacs-directory)))
+      create-lockfiles nil)
 
 (setq custom-file (expand-file-name "custom.el" user-emacs-directory))
 (load custom-file)
 
-(use-package evil
-  :init
-  (setq evil-want-integration t
-	evil-want-keybinding nil)
-  :config
-  (evil-mode 1))
+(load "server")
+(unless (server-running-p) (server-start))
 
-(use-package evil-collection
-  :after evil
-  :config
-  (evil-collection-init))
+(defun load-config (filename)
+  "Load config file"
+  (load (expand-file-name filename user-emacs-directory)))
+
+(load-config "evil.el")
 
 (use-package magit)
+
+(use-package forge
+  :after magit)
+
+(use-package github-review)
 
 (use-package moe-theme
   :config
@@ -55,7 +60,7 @@
 
 (use-package marginalia
   :bind (:map minibuffer-local-map
-	      ("M-A" . marginalia-cycle))
+              ("M-A" . marginalia-cycle))
   :init
   (marginalia-mode))
 
@@ -155,22 +160,11 @@
   ;; Optionally make narrowing help available in the minibuffer.
   ;; You may want to use `embark-prefix-help-command' or which-key instead.
   ;; (define-key consult-narrow-map (vconcat consult-narrow-key "?") #'consult-narrow-help)
-
-  ;; Optionally configure a function which returns the project root directory.
-  ;; There are multiple reasonable alternatives to chose from.
-  ;;;; 1. project.el (project-roots)
   (setq consult-project-root-function
         (lambda ()
           (when-let (project (project-current))
-            (car (project-roots project)))))
-  ;;;; 2. projectile.el (projectile-project-root)
-  ;; (autoload 'projectile-project-root "projectile")
-  ;; (setq consult-project-root-function #'projectile-project-root)
-  ;;;; 3. vc.el (vc-root-dir)
-  ;; (setq consult-project-root-function #'vc-root-dir)
-  ;;;; 4. locate-dominating-file
-  ;; (setq consult-project-root-function (lambda () (locate-dominating-file "." ".git")))
-)
+            (project-root project))))
+  )
 
 (use-package affe
   :after orderless
@@ -179,33 +173,30 @@
   ;; Configure Orderless
   (setq affe-regexp-function #'orderless-pattern-compiler
         affe-highlight-function #'orderless-highlight-matches
-	affe-find-command "fd -H -t f"
-	affe-count 40)
+        affe-find-command "fd -H -t f"
+        affe-count 40)
 
   ;; Manual preview key for `affe-grep'
   (consult-customize affe-grep :preview-key (kbd "M-.")))
 
-(setq js-indent-level 2)
-
-(use-package elixir-mode)
-(use-package elm-mode)
-
-(defun hym-web-mode-hook ()
-  "Hooks for web mode"
-  (setq web-mode-markup-indent-offset 2
-	web-mode-css-indent-offset 2
-	web-mode-code-indent-offset 2))
-
-(use-package web-mode
-  :mode ("\\.eex" "\\.mvx" "\\.tsx" "\\.ts")
-  :hook (web-mode . hym-web-mode-hook)
+(use-package general
   :config
-  (setq web-mode-engines-alist
-	'(("elixir" . "\\.mvx"))))
+  (general-create-definer my-leader-def
+    :prefix "SPC")
+  (general-create-definer my-local-leader-dev
+    :prefix "SPC m")
+  (my-leader-def
+    :keymaps 'normal
+    ":" 'execute-extended-command
+    "fs" 'evil-write
+    "pf" 'project-find-file
+    "pp" 'project-switch-project
+    "pg" 'project-find-regexp
+    "pc" 'project-compile
+    "gg" 'magit-status))
 
-(use-package markdown-mode
-  :commands (markdown-mode gfm-mode)
-  :mode (("\\.md\\'" . markdown-mode)
-	 ("\\.markdown\\'" . markdown-mode)
-	 ("README\\.md\\'" . gfm-mode))
-  :init (setq markdown-command "multimarkdown"))
+(load-config "lang.el")
+
+;; TODO:
+;; - cargo key bindings
+;; - make Y yank to end of line?
