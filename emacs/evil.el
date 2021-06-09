@@ -11,7 +11,10 @@
     "j" 'evil-next-visual-line
     "k" 'evil-previous-visual-line
     "u" 'undo-fu-only-undo
-    "\C-r" 'undo-fu-only-redo))
+    "\C-r" 'undo-fu-only-redo)
+  ;; :custom
+  ;; (evil-search-module 'isearch)
+  )
 
 (use-package evil-collection
   :after evil

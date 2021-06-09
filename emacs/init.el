@@ -24,9 +24,13 @@
 
 (straight-use-package 'use-package)
 
+(setq frame-title-format "%b - %F"
+      column-number-mode t
+      scroll-conservatively 10)
 (menu-bar-mode -1)
 (toggle-scroll-bar -1)
 (tool-bar-mode -1)
+(blink-cursor-mode -1)
 
 (setq backup-directory-alist `(("" . ,(format "%sbackup" user-emacs-directory)))
       create-lockfiles nil)
@@ -43,160 +47,115 @@
 
 (load-config "evil.el")
 
-(use-package magit)
+(use-package general
+  :config
+  (general-create-definer hym/leader-def
+    :prefix "SPC"
+    :keymaps 'normal)
+  (general-create-definer hym/local-leader-def
+    :prefix ","
+    :states 'normal
+    :keymaps 'local))
+
+(hym/local-leader-def
+  "tt" (lambda () message "hi"))
+
+(load-config "selectrum.el")
+
+(use-package magit
+  :config
+  (with-eval-after-load 'project
+    (define-key project-prefix-map "m" #'magit-project-status)
+    (add-to-list 'project-switch-commands '(magit-project-status "Magit") t))
+  (hym/leader-def
+    "gg" 'magit-status))
 
 (use-package forge
   :after magit)
 
+(setq smerge-command-prefix "C-c v")
+
 (use-package github-review)
 
-(use-package moe-theme
+(use-package git-timemachine
   :config
-  (load-theme 'moe-light))
+  (hym/leader-def
+    "gt" 'git-timemachine))
 
-(use-package selectrum
+(use-package moe-theme)
+
+(use-package doom-themes
   :config
-  (selectrum-mode +1))
+  (load-theme 'doom-one-light t))
 
-(use-package marginalia
-  :bind (:map minibuffer-local-map
-              ("M-A" . marginalia-cycle))
-  :init
-  (marginalia-mode))
+(defun hym/grep-for-symbol-at-point ()
+  (interactive)
+  (consult-ripgrep nil (symbol-name (symbol-at-point))))
 
-(use-package orderless
-  :ensure t
-  :custom (completion-styles '(orderless)))
+(defun hym/format-buffer ()
+  (interactive)
+  (funcall
+   (pcase major-mode
+     ('elixir-mode 'elixir-format)
+     (_ (lambda () (message "I don't know how to format the current buffer"))))))
 
-;; Example configuration for Consult
-(use-package consult
-  ;; Replace bindings. Lazily loaded due by `use-package'.
-  :bind (;; C-c bindings (mode-specific-map)
-         ("C-c h" . consult-history)
-         ("C-c m" . consult-mode-command)
-         ("C-c b" . consult-bookmark)
-         ("C-c k" . consult-kmacro)
-         ;; C-x bindings (ctl-x-map)
-         ("C-x M-:" . consult-complex-command)     ;; orig. repeat-complex-command
-         ("C-x b" . consult-buffer)                ;; orig. switch-to-buffer
-         ("C-x 4 b" . consult-buffer-other-window) ;; orig. switch-to-buffer-other-window
-         ("C-x 5 b" . consult-buffer-other-frame)  ;; orig. switch-to-buffer-other-frame
-         ;; Custom M-# bindings for fast register access
-         ("M-#" . consult-register-load)
-         ("M-'" . consult-register-store)          ;; orig. abbrev-prefix-mark (unrelated)
-         ("C-M-#" . consult-register)
-         ;; Other custom bindings
-         ("M-y" . consult-yank-pop)                ;; orig. yank-pop
-         ("<help> a" . consult-apropos)            ;; orig. apropos-command
-         ;; M-g bindings (goto-map)
-         ("M-g e" . consult-compile-error)
-         ("M-g f" . consult-flymake)               ;; Alternative: consult-flycheck
-         ("M-g g" . consult-goto-line)             ;; orig. goto-line
-         ("M-g M-g" . consult-goto-line)           ;; orig. goto-line
-         ("M-g o" . consult-outline)
-         ("M-g m" . consult-mark)
-         ("M-g k" . consult-global-mark)
-         ("M-g i" . consult-imenu)
-         ("M-g I" . consult-project-imenu)
-         ;; M-s bindings (search-map)
-         ("M-s f" . consult-find)
-         ("M-s L" . consult-locate)
-         ("M-s g" . consult-grep)
-         ("M-s G" . consult-git-grep)
-         ("M-s r" . consult-ripgrep)
-         ("M-s l" . consult-line)
-         ("M-s m" . consult-multi-occur)
-         ("M-s k" . consult-keep-lines)
-         ("M-s u" . consult-focus-lines)
-         ;; Isearch integration
-         ("M-s e" . consult-isearch)
-         :map isearch-mode-map
-         ("M-e" . consult-isearch)                 ;; orig. isearch-edit-string
-         ("M-s e" . consult-isearch)               ;; orig. isearch-edit-string
-         ("M-s l" . consult-line))                 ;; required by consult-line to detect isearch
+(defun hym/copy-buffer-file-name ()
+  (interactive)
+  (let ((file-name (buffer-file-name)))
+    (if file-name
+        (progn
+          (message file-name)
+          (kill-new file-name))
+      (error "Buffer not visiting a file"))))
 
-  ;; Enable automatic preview at point in the *Completions* buffer.
-  ;; This is relevant when you use the default completion UI,
-  ;; and not necessary for Selectrum, Vertico etc.
-  ;; :hook (completion-list-mode . consult-preview-at-point-mode)
-
-  ;; The :init configuration is always executed (Not lazy)
-  :init
-
-  ;; Optionally configure the register formatting. This improves the register
-  ;; preview for `consult-register', `consult-register-load',
-  ;; `consult-register-store' and the Emacs built-ins.
-  (setq register-preview-delay 0
-        register-preview-function #'consult-register-format)
-
-  ;; Optionally tweak the register preview window.
-  ;; This adds thin lines, sorting and hides the mode line of the window.
-  (advice-add #'register-preview :override #'consult-register-window)
-
-  ;; Use Consult to select xref locations with preview
-  (setq xref-show-xrefs-function #'consult-xref
-        xref-show-definitions-function #'consult-xref)
-
-  ;; Configure other variables and modes in the :config section,
-  ;; after lazily loading the package.
-  :config
-
-  ;; Optionally configure preview. The default value
-  ;; is 'any, such that any key triggers the preview.
-  ;; (setq consult-preview-key 'any)
-  ;; (setq consult-preview-key (kbd "M-."))
-  ;; (setq consult-preview-key (list (kbd "<S-down>") (kbd "<S-up>")))
-  ;; For some commands and buffer sources it is useful to configure the
-  ;; :preview-key on a per-command basis using the `consult-customize' macro.
-  (consult-customize
-   consult-ripgrep consult-git-grep consult-grep consult-bookmark consult-recent-file
-   consult--source-file consult--source-project-file consult--source-bookmark
-   :preview-key (kbd "M-."))
-
-  ;; Optionally configure the narrowing key.
-  ;; Both < and C-+ work reasonably well.
-  (setq consult-narrow-key "<") ;; (kbd "C-+")
-
-  ;; Optionally make narrowing help available in the minibuffer.
-  ;; You may want to use `embark-prefix-help-command' or which-key instead.
-  ;; (define-key consult-narrow-map (vconcat consult-narrow-key "?") #'consult-narrow-help)
-  (setq consult-project-root-function
-        (lambda ()
-          (when-let (project (project-current))
-            (project-root project))))
-  )
-
-(use-package affe
-  :after orderless
-  :straight (el-patch :type git :host github :repo "minad/affe")
-  :config
-  ;; Configure Orderless
-  (setq affe-regexp-function #'orderless-pattern-compiler
-        affe-highlight-function #'orderless-highlight-matches
-        affe-find-command "fd -H -t f"
-        affe-count 40)
-
-  ;; Manual preview key for `affe-grep'
-  (consult-customize affe-grep :preview-key (kbd "M-.")))
-
-(use-package general
-  :config
-  (general-create-definer my-leader-def
-    :prefix "SPC")
-  (general-create-definer my-local-leader-dev
-    :prefix "SPC m")
-  (my-leader-def
-    :keymaps 'normal
-    ":" 'execute-extended-command
-    "fs" 'evil-write
-    "pf" 'project-find-file
-    "pp" 'project-switch-project
-    "pg" 'project-find-regexp
-    "pc" 'project-compile
-    "gg" 'magit-status))
+(hym/leader-def
+  ":" 'execute-extended-command
+  "," 'consult-buffer
+  "fs" 'evil-write
+  "fy" 'hym/copy-buffer-file-name
+  "pp" 'project-switch-project
+  "pf" 'affe-find
+  "SPC" 'affe-find
+  "p/" 'consult-ripgrep
+  "pc" 'project-compile
+  "p&" 'project-async-shell-command
+  "p!" 'project-shell-command
+  "cf" 'hym/format-buffer
+  "*" 'hym/grep-for-symbol-at-point)
 
 (load-config "lang.el")
+
+(use-package helpful
+  :config
+  (global-set-key (kbd "C-h f") #'helpful-callable)
+  (global-set-key (kbd "C-h v") #'helpful-variable)
+  (global-set-key (kbd "C-h k") #'helpful-key)
+  (global-set-key (kbd "C-c C-d") #'helpful-at-point)
+  (hym/leader-def
+    "hf" 'helpful-callable
+    "hv" 'helpful-variable
+    "hk" 'helpful-key))
+
+(use-package delight
+  :config
+  (delight '((evil-collection-unimpaired-mode nil "evil-collection-unimpaired")
+             (cargo-minor-mode nil "cargo")
+             (eldoc-mode nil "eldoc")
+             (yas-minor-mode nil "yasnippet")
+             (auto-revert-mode nil "autorevert"))))
+
+(winner-mode 1)
+(hym/leader-def
+  "wu" 'winner-undo
+  "wr" 'winner-redo)
+
+(use-package yasnippet
+  :config
+  (yas-global-mode 1))
+
+(define-key minibuffer-mode-map (kbd "C-S-v") 'yank)
 
 ;; TODO:
 ;; - cargo key bindings
 ;; - make Y yank to end of line?
+;; - smerge hydra?
