@@ -16,3 +16,5 @@
     renameLimit = 10000
 [init]
     defaultBranch = main
+[core]
+	pager = /usr/share/git/diff-highlight/diff-highlight| less

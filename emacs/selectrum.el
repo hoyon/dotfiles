@@ -1,3 +1,5 @@
+;; -*- lexical-binding: t -*-
+
 (use-package selectrum
   :config
   (selectrum-mode +1))
@@ -91,8 +93,8 @@
   ;; :preview-key on a per-command basis using the `consult-customize' macro.
   (consult-customize
    consult-ripgrep consult-git-grep consult-grep consult-bookmark consult-recent-file
-   consult--source-file consult--source-project-file consult--source-bookmark
-   :preview-key (kbd "M-."))
+   consult--source-file consult--source-project-file consult--source-bookmark affe-grep
+   :preview-key 'any)
 
   ;; Optionally configure the narrowing key.
   ;; Both < and C-+ work reasonably well.
@@ -119,7 +121,7 @@
   :bind
   (("C-h B" . embark-bindings)
    :map minibuffer-local-map
-   ("C-c" . embark-act)
+   ("C-." . embark-act)
    :map embark-general-map
    ("C-e" . embark-export))
 

@@ -1,3 +1,5 @@
+;; -*- lexical-binding: t -*-
+
 (setq-default indent-tabs-mode nil) ;; only use spaces when indenting
 
 (defun hym/highlight-todos ()
@@ -52,3 +54,14 @@
   :hook (rust-mode . cargo-minor-mode))
 
 (use-package yaml-mode)
+
+(use-package terraform-mode)
+
+(use-package cmake-mode)
+
+;; Show colours in compilation buffer
+(require 'ansi-color)
+(defun colorize-compilation-buffer ()
+  (let ((inhibit-read-only t))
+    (ansi-color-apply-on-region (point-min) (point-max))))
+(add-hook 'compilation-filter-hook 'colorize-compilation-buffer)

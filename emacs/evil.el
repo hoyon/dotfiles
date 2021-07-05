@@ -1,10 +1,13 @@
+;; -*- lexical-binding: t -*-
+
 (use-package undo-fu)
 
 (use-package evil
   :init
   (setq evil-want-integration t
         evil-want-keybinding nil
-        evil-undo-system 'undo-fu)
+        evil-undo-system 'undo-fu
+        evil-want-C-u-scroll t)
   :config
   (evil-mode 1)
   (evil-define-key 'normal 'global
@@ -19,6 +22,7 @@
 (use-package evil-collection
   :after evil
   :config
+  (setq evil-collection-mode-list '(magit dired help helpful))
   (evil-collection-init))
 
 (use-package evil-matchit

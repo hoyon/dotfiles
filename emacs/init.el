@@ -1,3 +1,5 @@
+;; -*- lexical-binding: t -*-
+
 (setq gc-cons-threshold most-positive-fixnum
       gc-cons-percentage 0.6)
 
@@ -27,16 +29,51 @@
 (setq frame-title-format "%b - %F"
       column-number-mode t
       scroll-conservatively 10)
+
 (menu-bar-mode -1)
 (toggle-scroll-bar -1)
 (tool-bar-mode -1)
 (blink-cursor-mode -1)
+
+(setq hym/font-size "10")
+(defun hym/toggle-font-size ()
+  "Toggle between small and normal font sizes"
+  (interactive)
+  (setq hym/font-size
+        (if (equal hym/font-size "10") "11" "10"))
+
+  (when (member "Source Code Pro" (font-family-list))
+    (set-frame-font (format "%s-%s" "Source Code Pro" hym/font-size) t t)))
+
+
+(use-package telephone-line
+  :config
+  (setq telephone-line-lhs
+      '((evil   . (telephone-line-evil-tag-segment))
+        (accent . (telephone-line-vc-segment
+                   telephone-line-erc-modified-channels-segment
+                   telephone-line-process-segment))
+        (nil    . (telephone-line-minor-mode-segment
+                   telephone-line-buffer-segment))))
+
+  (setq telephone-line-rhs
+      '((nil    . (telephone-line-misc-info-segment))
+        (accent . (telephone-line-simple-major-mode-segment))
+        (evil   . (telephone-line-airline-position-segment))))
+
+  (setq telephone-line-primary-left-separator 'telephone-line-cubed-left
+        telephone-line-secondary-left-separator 'telephone-line-cubed-hollow-left
+        telephone-line-primary-right-separator 'telephone-line-cubed-right
+        telephone-line-secondary-right-separator 'telephone-line-cubed-hollow-right)
+  (telephone-line-mode t))
 
 (setq backup-directory-alist `(("" . ,(format "%sbackup" user-emacs-directory)))
       create-lockfiles nil)
 
 (setq custom-file (expand-file-name "custom.el" user-emacs-directory))
 (load custom-file)
+
+(advice-add 'c-update-modeline :around #'ignore)
 
 (load "server")
 (unless (server-running-p) (server-start))
@@ -111,17 +148,20 @@
 (hym/leader-def
   ":" 'execute-extended-command
   "," 'consult-buffer
+  "SPC" 'affe-find
   "fs" 'evil-write
   "fy" 'hym/copy-buffer-file-name
   "pp" 'project-switch-project
   "pf" 'affe-find
-  "SPC" 'affe-find
   "p/" 'consult-ripgrep
   "pc" 'project-compile
   "p&" 'project-async-shell-command
   "p!" 'project-shell-command
+  "pe" 'project-eshell
   "cf" 'hym/format-buffer
-  "*" 'hym/grep-for-symbol-at-point)
+  "*" 'hym/grep-for-symbol-at-point
+  "tl" 'global-display-line-numbers-mode
+  "tf" 'hym/toggle-font-size)
 
 (load-config "lang.el")
 
@@ -142,7 +182,8 @@
              (cargo-minor-mode nil "cargo")
              (eldoc-mode nil "eldoc")
              (yas-minor-mode nil "yasnippet")
-             (auto-revert-mode nil "autorevert"))))
+             (auto-revert-mode nil "autorevert")
+             (abbrev-mode nil "abbrev"))))
 
 (winner-mode 1)
 (hym/leader-def
@@ -154,6 +195,8 @@
   (yas-global-mode 1))
 
 (define-key minibuffer-mode-map (kbd "C-S-v") 'yank)
+
+(use-package dired+)
 
 ;; TODO:
 ;; - cargo key bindings
