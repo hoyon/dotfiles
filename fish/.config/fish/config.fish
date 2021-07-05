@@ -86,11 +86,7 @@ end
 
 # fzf.fish bindings
 set --universal fzf_fish_custom_keybindings
-bind \ct '__fzf_search_current_dir'
-bind \cr '__fzf_search_history'
-bind \cv $fzf_search_vars_cmd
-bind \e\cl __fzf_search_git_log
-bind \e\cs __fzf_search_git_status
+bind \ct '_fzf_search_directory'
 
 # tide prompt
 set -g tide_prompt_char_success_color magenta
