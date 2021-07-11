@@ -138,12 +138,20 @@
 
 (defun hym/copy-buffer-file-name ()
   (interactive)
-  (let ((file-name (buffer-file-name)))
-    (if file-name
-        (progn
-          (message file-name)
-          (kill-new file-name))
-      (error "Buffer not visiting a file"))))
+  (if-let ((file-name (buffer-file-name)))
+      (progn
+        (message file-name)
+        (kill-new file-name))
+    (error "Buffer not visiting a file")))
+
+(defun hym/delete-current-file ()
+  (interactive)
+  (if-let ((file-name (buffer-file-name))
+           (p (yes-or-no-p (concat "Delete " file-name "? "))))
+      (progn
+        (delete-file file-name)
+        (kill-buffer))
+    (error "Buffer not visiting a file")))
 
 (hym/leader-def
   ":" 'execute-extended-command
@@ -151,6 +159,7 @@
   "SPC" 'affe-find
   "fs" 'evil-write
   "fy" 'hym/copy-buffer-file-name
+  "fd" 'hym/delete-current-file
   "pp" 'project-switch-project
   "pf" 'affe-find
   "p/" 'consult-ripgrep
