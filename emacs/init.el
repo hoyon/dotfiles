@@ -134,6 +134,7 @@
   (funcall
    (pcase major-mode
      ('elixir-mode 'elixir-format)
+     ('rust-mode 'rust-format-buffer)
      (_ (lambda () (message "I don't know how to format the current buffer"))))))
 
 (defun hym/copy-buffer-file-name ()
