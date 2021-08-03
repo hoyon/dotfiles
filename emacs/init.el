@@ -26,9 +26,12 @@
 
 (straight-use-package 'use-package)
 
-(setq frame-title-format "%b - %F"
-      column-number-mode t
+(setq column-number-mode t
       scroll-conservatively 10)
+
+(setq frame-title-format
+      (list (format "%%F - %%j")
+            '(buffer-file-name "%f" (dired-directory dired-directory "%b"))))
 
 (menu-bar-mode -1)
 (toggle-scroll-bar -1)
@@ -98,6 +101,7 @@
   "tt" (lambda () message "hi"))
 
 (load-config "selectrum.el")
+(load-config "shell.el")
 
 (use-package magit
   :config

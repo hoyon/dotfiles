@@ -8,6 +8,7 @@
 (toggle-scroll-bar -1)
 (tool-bar-mode -1)
 (blink-cursor-mode -1)
+(show-paren-mode t)
 
 (setq hym/font-size "10")
 (defun hym/toggle-font-size ()
