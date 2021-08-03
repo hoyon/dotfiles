@@ -77,6 +77,12 @@ else if test "$hostname" = hoyon-work
     fish_add_path /home/hoyon/.local/bin
     fish_add_path /home/hoyon/.yarn/bin
 
+else if test "$hostname" = hoyon-thinkpad
+    fish_add_path /home/hoyon/.local/bin
+    fish_add_path /home/hoyon/.yarn/bin
+
+    source ~/.asdf/asdf.fish
+
 else if test "$hostname" = hoyon-arch
     fish_add_path /home/hoyon/.local/bin
     fish_add_path /home/hoyon/.gem/ruby/2.7.0/bin
