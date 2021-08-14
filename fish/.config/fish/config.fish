@@ -89,6 +89,6 @@ set --universal fzf_fish_custom_keybindings
 bind \ct '_fzf_search_directory'
 
 # tide prompt
-set -g tide_prompt_char_success_color magenta
-set -g tide_pwd_color_dirs blue
-set -g tide_pwd_color_anchors brblue
+set -g tide_character_color magenta
+set -g tide_pwd_color_dirs cyan
+set -g tide_pwd_color_anchors brcyan
