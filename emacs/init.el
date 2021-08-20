@@ -208,7 +208,8 @@
   :config
   (yas-global-mode 1))
 
-(define-key minibuffer-mode-map (kbd "C-S-v") 'yank)
+(if (boundp 'minibuffer-mode-map)
+    (define-key minibuffer-mode-map (kbd "C-S-v") 'yank))
 
 (use-package dired+)
 
