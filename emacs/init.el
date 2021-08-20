@@ -133,14 +133,6 @@
   (interactive)
   (consult-ripgrep nil (symbol-name (symbol-at-point))))
 
-(defun hym/format-buffer ()
-  (interactive)
-  (funcall
-   (pcase major-mode
-     ('elixir-mode 'elixir-format)
-     ('rust-mode 'rust-format-buffer)
-     (_ (lambda () (message "I don't know how to format the current buffer"))))))
-
 (defun hym/copy-buffer-file-name ()
   (interactive)
   (if-let ((file-name (buffer-file-name)))
@@ -165,6 +157,7 @@
   "fs" 'evil-write
   "fy" 'hym/copy-buffer-file-name
   "fd" 'hym/delete-current-file
+  "br" 'revert-buffer
   "pp" 'project-switch-project
   "pf" 'affe-find
   "p/" 'consult-ripgrep
@@ -172,7 +165,6 @@
   "p&" 'project-async-shell-command
   "p!" 'project-shell-command
   "pe" 'project-eshell
-  "cf" 'hym/format-buffer
   "*" 'hym/grep-for-symbol-at-point
   "tl" 'global-display-line-numbers-mode
   "tf" 'hym/toggle-font-size)
@@ -217,3 +209,7 @@
 ;; - cargo key bindings
 ;; - make Y yank to end of line?
 ;; - smerge hydra?
+;; - add smartparens
+;; - emacs stable support
+;; - find-file in dired
+;; - yes or no p https://www.emacswiki.org/emacs/Yes-No

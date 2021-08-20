@@ -7,6 +7,18 @@
   (font-lock-add-keywords nil '(("\\<\\(FIXME\\|TODO\\|BUG\\):" 1 font-lock-warning-face t))))
 (add-hook 'prog-mode-hook 'hym/highlight-todos)
 
+(defun hym/format-buffer ()
+  (interactive)
+  (funcall
+   (pcase major-mode
+     ('elixir-mode 'elixir-format)
+     ('rust-mode 'rust-format-buffer)
+     ('zig-mode 'zig-format-buffer)
+     (_ (lambda () (message "I don't know how to format the current buffer"))))))
+
+(hym/leader-def
+  "cf" 'hym/format-buffer)
+
 (defun hym/elixir-mode-hook ()
   (hym/local-leader-def
     "ta" 'exunit-verify-all
@@ -59,9 +71,17 @@
 
 (use-package cmake-mode)
 
+(use-package zig-mode
+  :mode "\\.zig\\'")
+
 ;; Show colours in compilation buffer
 (require 'ansi-color)
 (defun colorize-compilation-buffer ()
   (let ((inhibit-read-only t))
     (ansi-color-apply-on-region (point-min) (point-max))))
 (add-hook 'compilation-filter-hook 'colorize-compilation-buffer)
+
+(use-package smartparens
+  :config
+  (require 'smartparens-config)
+  :hook ((c++-mode java-mode zig-mode) . smartparens-mode))
