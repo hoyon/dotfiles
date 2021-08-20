@@ -103,6 +103,8 @@
 (load-config "selectrum.el")
 (load-config "shell.el")
 
+(use-package project)
+
 (use-package magit
   :config
   (with-eval-after-load 'project
