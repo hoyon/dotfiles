@@ -7,3 +7,4 @@ url
 projects
 *.sqlite
 elpa
+auto-save-list
