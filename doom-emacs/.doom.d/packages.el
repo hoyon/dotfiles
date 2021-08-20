@@ -11,4 +11,4 @@
 (package! meson-mode)
 (package! mix :recipe (:host github :repo "ayrat555/mix.el"))
 
-(disable-packages! irony rtags)
+(disable-packages! irony rtags alchemist alchemist-company)
