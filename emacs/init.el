@@ -102,41 +102,12 @@
 (hym/local-leader-def
   "tt" (lambda () message "hi"))
 
+(use-package project)
 (load-config "selectrum.el")
 (load-config "shell.el")
-
-(use-package project)
-
-(use-package magit
-  :config
-  (with-eval-after-load 'project
-    (define-key project-prefix-map "m" #'magit-project-status)
-    (add-to-list 'project-switch-commands '(magit-project-status "Magit") t))
-  (hym/leader-def
-    "gg" 'magit-status))
-
-(use-package forge
-  :after magit)
-
-(setq smerge-command-prefix "C-c v")
-
-(use-package github-review)
-
-(use-package git-timemachine
-  :config
-  (hym/leader-def
-    "gt" 'git-timemachine)
-  (evil-define-minor-mode-key 'normal 'git-timemachine-mode
-    "p" 'git-timemachine-show-previous-revision
-    "n" 'git-timemachine-show-next-revision
-    "q" 'git-timemachine-quit
-    "g" 'git-timemachine-show-nth-revision
-    "t" 'git-timemachine-show-revision-fuzzy
-    "b" 'git-timemachine-blame
-    "c" 'git-timemachine-show-commit))
+(load-config "git.el")
 
 (use-package moe-theme)
-
 (use-package doom-themes
   :config
   (load-theme 'doom-one-light t))
