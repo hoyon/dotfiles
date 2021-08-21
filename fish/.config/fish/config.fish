@@ -108,3 +108,8 @@ set -g tide_character_color magenta
 set -g tide_pwd_color_dirs cyan
 set -g tide_pwd_color_anchors brcyan
 set -g tide_cmd_duration_color yellow
+
+# switch to /bin/sh for dumb terminals (eg emacs tramp mode)
+if test "$TERM" = "dumb"
+    exec /bin/sh
+end
