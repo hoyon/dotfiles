@@ -124,7 +124,15 @@
 (use-package git-timemachine
   :config
   (hym/leader-def
-    "gt" 'git-timemachine))
+    "gt" 'git-timemachine)
+  (evil-define-minor-mode-key 'normal 'git-timemachine-mode
+    "p" 'git-timemachine-show-previous-revision
+    "n" 'git-timemachine-show-next-revision
+    "q" 'git-timemachine-quit
+    "g" 'git-timemachine-show-nth-revision
+    "t" 'git-timemachine-show-revision-fuzzy
+    "b" 'git-timemachine-blame
+    "c" 'git-timemachine-show-commit))
 
 (use-package moe-theme)
 
@@ -210,9 +218,5 @@
 
 ;; TODO:
 ;; - cargo key bindings
-;; - make Y yank to end of line?
 ;; - smerge hydra?
-;; - add smartparens
-;; - emacs stable support
-;; - find-file in dired
 ;; - yes or no p https://www.emacswiki.org/emacs/Yes-No

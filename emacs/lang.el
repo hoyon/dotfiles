@@ -66,13 +66,10 @@
   :hook (rust-mode . cargo-minor-mode))
 
 (use-package yaml-mode)
-
 (use-package terraform-mode)
-
 (use-package cmake-mode)
-
-(use-package zig-mode
-  :mode "\\.zig\\'")
+(use-package zig-mode)
+(use-package fish-mode)
 
 ;; Show colours in compilation buffer
 (require 'ansi-color)

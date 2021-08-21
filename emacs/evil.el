@@ -7,7 +7,8 @@
   (setq evil-want-integration t
         evil-want-keybinding nil
         evil-undo-system 'undo-fu
-        evil-want-C-u-scroll t)
+        evil-want-C-u-scroll t
+        evil-want-Y-yank-to-eol t)
   :config
   (evil-mode 1)
   (evil-define-key 'normal 'global
@@ -17,7 +18,10 @@
     "\C-r" 'undo-fu-only-redo)
   ;; :custom
   ;; (evil-search-module 'isearch)
-  )
+
+  ;; make evil-search-word look for symbol rather than word boundaries
+  (defalias #'forward-evil-word #'forward-evil-symbol)
+  (setq-default evil-symbol-word-search t))
 
 (use-package evil-collection
   :after evil
