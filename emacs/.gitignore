@@ -8,3 +8,4 @@ projects
 *.sqlite
 elpa
 auto-save-list
+tramp

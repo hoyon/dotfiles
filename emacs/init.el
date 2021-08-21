@@ -34,9 +34,10 @@
             '(buffer-file-name "%f" (dired-directory dired-directory "%b"))))
 
 (menu-bar-mode -1)
-(toggle-scroll-bar -1)
 (tool-bar-mode -1)
 (blink-cursor-mode -1)
+(if (fboundp 'toggle-scroll-bar)
+  (toggle-scroll-bar -1))
 
 (setq hym/font-size "10")
 (defun hym/toggle-font-size ()
