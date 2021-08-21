@@ -44,6 +44,7 @@ abbr -ag gb "git branch"
 abbr -ag gbs "git checkout (git branch | cut -c 3- | fzf)"
 abbr -ag gdf "git diff (git merge-base --fork-point (git-default-branch)) | vim +'set buftype=nofile' -"
 abbr -ag gdfs "git diff (git merge-base --fork-point (git-default-branch)) --stat"
+abbr -ag gfm "git fetch origin (git-default-branch):(git-default-branch)"
 
 abbr -ag vimless "vim +'set buftype=nofile' -"
 
@@ -92,7 +93,7 @@ end
 
 # fzf.fish bindings
 set --universal fzf_fish_custom_keybindings
-bind \ct '_fzf_search_directory'
+bind \ct _fzf_search_directory
 
 # fish colours
 set -g fish_color_command brgreen
