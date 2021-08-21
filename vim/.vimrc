@@ -139,6 +139,11 @@ set cursorline
 if has('persistent_undo')
     set undodir=~/.vim/undodir/
     set undofile
+
+    " neovim undo files are incompatible with regular vim
+    if has('nvim')
+        set undodir=~/.vim/undodir/neovim
+    endif
 endif
 
 "Switch to last buffer
