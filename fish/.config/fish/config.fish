@@ -94,7 +94,16 @@ end
 set --universal fzf_fish_custom_keybindings
 bind \ct '_fzf_search_directory'
 
+# fish colours
+set -g fish_color_command brgreen
+set -g fish_color_comment yellow
+set -g fish_color_error brred
+set -g fish_color_param brblue
+set -g fish_color_operator brcyan
+set -g fish_color_redirection bryellow
+
 # tide prompt
 set -g tide_character_color magenta
 set -g tide_pwd_color_dirs cyan
 set -g tide_pwd_color_anchors brcyan
+set -g tide_cmd_duration_color yellow
