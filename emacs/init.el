@@ -91,7 +91,8 @@
   :config
   (general-create-definer hym/leader-def
     :prefix "SPC"
-    :keymaps 'normal)
+    :states 'normal
+    :keymaps 'override)
   (general-create-definer hym/local-leader-def
     :prefix ","
     :states 'normal
