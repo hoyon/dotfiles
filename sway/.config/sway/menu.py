@@ -26,6 +26,7 @@ commands = {
     "Quick add task - Todoist": run_script("todoist-quick-add.sh"),
     "Switch to window": run_script("switch-window.sh"),
     "Dismiss notifications": run_shell(["makoctl", "dismiss", "--all"]),
+    "Connect magic trackpad": run_script("trackpad_connect.sh"),
 }
 
 keys = list(commands.keys())
