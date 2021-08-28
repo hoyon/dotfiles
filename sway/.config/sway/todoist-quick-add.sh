@@ -5,5 +5,5 @@ TASK=$(wofi --dmenu --exec-search --cache-file /dev/null --lines 1 --location to
 TRIMMED=$(echo "$TASK" | xargs)
 
 if [ -n "$TRIMMED" ]; then
-    todoist quick "$TRIMMED"
+    todoist-cli quick "$TRIMMED"
 fi
