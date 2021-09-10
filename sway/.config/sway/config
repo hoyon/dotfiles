@@ -14,7 +14,8 @@ bindsym $mod+Return exec ~/.config/sway/openterm.sh
 # kill focused window
 bindsym $mod+Shift+q kill
 
-bindsym $mod+d exec ~/.config/sway/dmenu.sh
+# bindsym $mod+d exec ~/.config/sway/dmenu.sh
+bindsym $mod+d exec ~/.config/sway/menu.py
 
 # change focus
 bindsym $mod+h focus left
@@ -146,9 +147,6 @@ seat seat0 hide_cursor 5000
 # for_window [app_id="terminal_scratchpad"] move scratchpad, resize set 1000 610
 # bindsym $mod+grave exec swaymsg [app_id="terminal_scratchpad"] scratchpad show
 # exec ~/.config/sway/dropdown_term.sh
-
-# Command menu
-bindsym $mod+p exec ~/.config/sway/menu.py
 
 # Window switcher
 bindsym $mod+o exec ~/.config/sway/switch-window.sh

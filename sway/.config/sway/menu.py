@@ -2,7 +2,25 @@
 
 import subprocess
 import sys
+import socket
 
+# Prevent multiple instances of this script running simultaneously
+# https://stackoverflow.com/a/7758075
+def get_lock(process_name):
+    # Without holding a reference to our socket somewhere it gets garbage
+    # collected when the function exits
+    get_lock._lock_socket = socket.socket(socket.AF_UNIX, socket.SOCK_DGRAM)
+
+    try:
+        # The null byte (\0) means the socket is created 
+        # in the abstract namespace instead of being created 
+        # on the file system itself.
+        # Works only in Linux
+        get_lock._lock_socket.bind('\0' + process_name)
+    except socket.error:
+        sys.exit()
+
+get_lock('wofi_menu_script')
 
 def sway_cmd(cmd):
     return lambda: subprocess.run(["swaymsg", cmd], check=True)
@@ -34,12 +52,12 @@ keys = list(commands.keys())
 options = "\n".join(keys)
 
 selection = subprocess.run(["wofi",
-                            "--dmenu",
+                            "--show=drun,dmenu",
                             "--insensitive",
-                            "--cache-file", "/dev/null",
                             "--prompt", "Enter a command...",
                             "--location", "top",
-                            "--lines", "10"],
+                            "--lines", "10",
+                            "--no-actions"],
                            capture_output=True,
                            input=options.encode(),
                            check=True)
