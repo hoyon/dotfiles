@@ -34,6 +34,8 @@
 
 (use-package exunit)
 
+(use-package erlang)
+
 (use-package elm-mode)
 
 (setq js-indent-level 2)
@@ -45,11 +47,12 @@
         web-mode-code-indent-offset 2))
 
 (use-package web-mode
-  :mode ("\\.eex" "\\.mvx" "\\.tsx" "\\.ts")
+  :mode ("\\.eex" "\\.mvx" "\\.heex" "\\.tsx" "\\.ts" "\\.svelte")
   :hook (web-mode . hym/web-mode-hook)
   :config
   (setq web-mode-engines-alist
-        '(("elixir" . "\\.mvx"))))
+        '(("elixir" . "\\.mvx")
+          ("elixir" . "\\.heex"))))
 
 (use-package markdown-mode
   :commands (markdown-mode gfm-mode)
@@ -81,4 +84,4 @@
 (use-package smartparens
   :config
   (require 'smartparens-config)
-  :hook ((c++-mode java-mode zig-mode) . smartparens-mode))
+  :hook ((c++-mode java-mode zig-mode emacs-lisp-mode) . smartparens-mode))

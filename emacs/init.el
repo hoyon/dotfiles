@@ -110,7 +110,8 @@
 (use-package moe-theme)
 (use-package doom-themes
   :config
-  (load-theme 'doom-one-light t))
+  (load-theme 'doom-one-light t)
+  (doom-themes-org-config))
 
 (defun hym/grep-for-symbol-at-point ()
   (interactive)
