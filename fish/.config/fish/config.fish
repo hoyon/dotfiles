@@ -22,6 +22,8 @@ end
 
 set -x ERL_AFLAGS "-kernel shell_history enabled"
 
+set -x THEFUCK_PRIORITY "git_hook_bypass=1100"
+
 if type -q fd
     set -x FZF_DEFAULT_COMMAND 'fd --type f'
 end
@@ -49,6 +51,8 @@ abbr -ag gfm "git fetch origin (git-default-branch):(git-default-branch)"
 abbr -ag vimless "vim +'set buftype=nofile' -"
 
 abbr -ag rg "rg -S"
+
+abbr -ag kssh "kitty kitten ssh"
 
 if test -z "$SSH_ENV"
     set -x SSH_ENV $HOME/.ssh/environment
@@ -103,13 +107,12 @@ set -g fish_color_param brblue
 set -g fish_color_operator brcyan
 set -g fish_color_redirection bryellow
 
-# tide prompt
-set -g tide_character_color magenta
-set -g tide_pwd_color_dirs cyan
-set -g tide_pwd_color_anchors brcyan
-set -g tide_cmd_duration_color yellow
+if type -q starship
+    starship init fish | source
+end
 
 # switch to /bin/sh for dumb terminals (eg emacs tramp mode)
 if test "$TERM" = "dumb"
     exec /bin/sh
 end
+

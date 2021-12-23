@@ -1,0 +1,26 @@
+[character]
+success_symbol = "[❯](bright-purple)"
+error_symbol = "[❯](bold red)"
+
+[git_branch]
+format = "[$branch](purple) "
+
+[package]
+disabled = true
+
+[elixir]
+disabled = true
+
+[nodejs]
+disabled = true
+
+[zig]
+disabled = true
+
+[directory]
+truncation_symbol = "…/"
+truncation_length = 0
+truncate_to_repo = false
+
+[cmd_duration]
+min_time = 5_000
