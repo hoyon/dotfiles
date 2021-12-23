@@ -2,11 +2,13 @@
 
 {
     "modules-left": [
-        "sway/workspaces",
-        "sway/mode"
+        // "sway/workspaces",
+        "sway/mode",
+        "sway/window"
     ],
     "modules-center": [
-        "sway/window"
+        // "sway/window"
+        "sway/workspaces"
     ],
     "modules-right": [
         "custom/ibus",
@@ -21,12 +23,18 @@
     },
 
     "pulseaudio": {
-        "scroll-step": 1.0,
-        "tooltip": false
+        "scroll-step": 5.0,
+        "tooltip": false,
+        "format": "{icon} {volume}%",
+        "format-icons": {
+          "default": ""
+        }
     },
 
     "sway/window": {
-        "tooltip": false
+        "tooltip": false,
+        // "all-outputs": true,
+        "max-length": 100
     },
 
     "custom/media": {
@@ -36,8 +44,10 @@
         "format-icons": {
             "spotify": "",
             "Spot": "",
-            "plasma-browser-integration": "",
-            "default": ""
+            "firefox": "",
+            "chrome": "",
+            "chromium": "",
+            "default": ""
         },
         "escape": true,
         "exec": "python $HOME/.config/waybar/mediaplayer.py 2> /dev/null",

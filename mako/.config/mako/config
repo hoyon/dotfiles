@@ -1,2 +1,12 @@
 default-timeout=4000
 output=DP-1
+font=noto sans 10
+
+background-color=#97AFAF
+text-color=#040F0F
+border-size=0
+border-radius=10
+
+[urgency=critical]
+background-color=#F94144
+default-timeout=0

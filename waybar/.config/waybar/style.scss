@@ -1,3 +1,13 @@
+$red: #F94144;
+$green: #A7C893;
+$grey: #809D9D;
+$yellow: #E1EE59;
+$focus: #97AFAF;
+
+$dark-text: #040F0F;
+
+$border-radius: 10px;
+
 * {
   /* `otf-font-awesome` is required to be installed for icons */
   font-family: Noto sans, Roboto, Helvetica, Arial, sans-serif;
@@ -6,7 +16,7 @@
 
 window#waybar {
   background-color: transparent;
-  color: #040F0F;
+  color: $dark-text;
   /* transition-property: background-color;
      transition-duration: .1s; */
 }
@@ -16,14 +26,15 @@ window#waybar.hidden {
 }
 
 window > .horizontal {
-  background-color: #809D9D;
+  background-color: $grey;
   opacity: 0.9;
   /* margin: 2px 100px 0; */
   /* margin-top: 2px; */
   /* border-radius: $border-radius; */
-}
-window > .horizontal .horizontal {
-  border-radius: 10px;
+
+  .horizontal {
+    border-radius: $border-radius;
+  }
 }
 
 /*
@@ -34,6 +45,7 @@ window > .horizontal .horizontal {
    background-color: #FFFFFF;
    }
  */
+
 /*
    window#waybar.termite {
    background-color: #3F3F3F;
@@ -44,22 +56,24 @@ window > .horizontal .horizontal {
    border: none;
    }
  */
+
 #workspaces button {
   padding-left: 4px;
   padding-right: 4px;
   padding-top: 0px;
   padding-bottom: 0;
   background-color: transparent;
-  border-radius: 10px;
-  color: #040F0F;
+  border-radius: $border-radius;
+  color: $dark-text;
   border: none;
+
   margin-left: 2px;
   margin-right: 2px;
 }
 
 /* https://github.com/Alexays/Waybar/wiki/FAQ#the-workspace-buttons-have-a-strange-hover-effect */
 #workspaces button:hover {
-  background: #97AFAF;
+  background: $focus;
   box-shadow: inherit;
   text-shadow: inherit;
   border: none;
@@ -67,47 +81,48 @@ window > .horizontal .horizontal {
 }
 
 #workspaces button.focused {
-  background-color: #97AFAF;
+  background-color: $focus;
 }
 
 #workspaces button.urgent {
-  background-color: #F94144;
+  background-color: $red;
 }
 
 #mode {
   /* background-color: $focus; */
-  border-radius: 10px;
+  border-radius: $border-radius;
   font-weight: bold;
 }
 
 .modules-right {
-  background-color: #809D9D;
+  background-color: $grey;
   opacity: 0.9;
-  border-top-left-radius: 10px;
-  border-bottom-left-radius: 10px;
+  border-top-left-radius: $border-radius;
+  border-bottom-left-radius: $border-radius;
   margin-top: 2px;
   margin-bottom: 0px;
   padding-left: 10px;
 }
 
 .modules-left {
-  background-color: #809D9D;
+  background-color: $grey;
   opacity: 0.9;
-  border-top-right-radius: 10px;
-  border-bottom-right-radius: 10px;
+  border-top-right-radius: $border-radius;
+  border-bottom-right-radius: $border-radius;
+
   margin-top: 2px;
   margin-bottom: 0px;
   padding-right: 10px;
 }
 
 .modules-center {
-  background-color: #809D9D;
+  background-color: $grey;
   opacity: 0.9;
-  border-radius: 10px;
+  border-radius: $border-radius;
   margin-top: 2px;
   margin-bottom: 0px;
   padding: 0 10px;
-  color: #040F0F;
+  color: $dark-text;
 }
 
 #window {
@@ -137,7 +152,7 @@ window > .horizontal .horizontal {
 }
 
 #clock {
-  background-color: #809D9D;
+  background-color: $grey;
 }
 
 label:focus {
@@ -153,11 +168,11 @@ label:focus {
    background-color: #90b1b1;
    color: #2a5c45;
    } */
+
 #custom-media {
   /* background-color: $green; */
   /* min-width: 100px; */
 }
-
 /* 
    #custom-media.custom-spotify {
    background-color: $green;
@@ -176,9 +191,18 @@ label:focus {
   margin: 0 4px;
   padding-left: 8px;
   padding-right: 8px;
-  background-color: #F94144;
-  border-radius: 10px;
+  background-color: $red;
+  border-radius: $border-radius;
 }
+
+
+
+
+
+
+
+
+
 
 #mpd {
   background-color: #66cc99;
@@ -186,7 +210,7 @@ label:focus {
 }
 
 #mpd.disconnected {
-  background-color: #F94144;
+  background-color: $red;
 }
 
 #mpd.stopped {
@@ -202,7 +226,7 @@ label:focus {
 }
 
 #temperature.critical {
-  background-color: #F94144;
+  background-color: $red;
 }
 
 #idle_inhibitor {
@@ -227,7 +251,7 @@ label:focus {
 }
 
 #network.disconnected {
-  background-color: #F94144;
+  background-color: $red;
 }
 
 #battery {
@@ -246,8 +270,9 @@ label:focus {
     color: #000000;
   }
 }
+
 #battery.critical:not(.charging) {
-  background-color: #F94144;
+  background-color: $red;
   color: #ffffff;
   animation-name: blink;
   animation-duration: 0.5s;

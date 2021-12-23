@@ -10,9 +10,9 @@ if [ -z "$ENGINE" ]; then
 fi
 
 if [ "$ENGINE" = $JP ]; then
-    notify-send -t 1000 English
+    # notify-send -t 1000 English
     ibus engine $GB
 else
-    notify-send -t 1000 Japanese
+    # notify-send -t 1000 Japanese
     ibus engine $JP
 fi
