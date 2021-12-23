@@ -1,0 +1,4 @@
+# key: dbg
+# name: dbg
+# --
+std.debug.print("[dbg]:[{s}:{d}][${1:expression}]: {${2:any}}\n", .{ @src().file, @src().line, $1 });

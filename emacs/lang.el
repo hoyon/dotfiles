@@ -14,6 +14,8 @@
      ('elixir-mode 'elixir-format)
      ('rust-mode 'rust-format-buffer)
      ('zig-mode 'zig-format-buffer)
+     ('terraform-mode 'terraform-format-buffer)
+     ('json-mode 'json-pretty-print-buffer)
      (_ (lambda () (message "I don't know how to format the current buffer"))))))
 
 (hym/leader-def
@@ -73,6 +75,7 @@
 (use-package cmake-mode)
 (use-package zig-mode)
 (use-package fish-mode)
+(use-package json-mode)
 
 ;; Show colours in compilation buffer
 (require 'ansi-color)

@@ -6,7 +6,8 @@
     (define-key project-prefix-map "m" #'magit-project-status)
     (add-to-list 'project-switch-commands '(magit-project-status "Magit") t))
   (hym/leader-def
-    "gg" 'magit-status))
+    "gg" 'magit-status
+    "gb" 'magit-blame))
 
 (use-package forge
   :after magit)

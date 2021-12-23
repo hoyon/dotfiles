@@ -1,0 +1,4 @@
+# key: log
+# name: log
+# --
+std.log.info("$1", .{$2});

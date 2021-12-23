@@ -2,7 +2,10 @@
 
 (use-package selectrum
   :config
-  (selectrum-mode +1))
+  (selectrum-mode +1)
+  ;; Grouping causes some lines to be cut off
+  ;; https://github.com/raxod502/selectrum/issues/491
+  (setq selectrum-group-format nil))
 
 (use-package marginalia
   :bind (:map minibuffer-local-map
@@ -41,7 +44,6 @@
          ("M-g m" . consult-mark)
          ("M-g k" . consult-global-mark)
          ("M-g i" . consult-imenu)
-         ("M-g I" . consult-project-imenu)
          ;; M-s bindings (search-map)
          ("M-s f" . consult-find)
          ("M-s g" . consult-grep)

@@ -49,6 +49,7 @@
   (when (member "Source Code Pro" (font-family-list))
     (set-frame-font (format "%s-%s" "Source Code Pro" hym/font-size) t t)))
 
+(setq shell-file-name "/bin/bash")
 
 (use-package telephone-line
   :config
@@ -134,6 +135,30 @@
         (kill-buffer))
     (error "Buffer not visiting a file")))
 
+(defun hym/rename-current-buffer-file ()
+  "Renames current buffer and file it is visiting."
+  (interactive)
+  (let* ((name (buffer-name))
+         (filename (buffer-file-name))
+         (basename (file-name-nondirectory filename)))
+    (if (not (and filename (file-exists-p filename)))
+        (error "Buffer '%s' is not visiting a file!" name)
+      (let ((new-name (read-file-name "New name: " (file-name-directory filename) basename nil basename)))
+        (if (get-buffer new-name)
+            (error "A buffer named '%s' already exists!" new-name)
+          (rename-file filename new-name 1)
+          (rename-buffer new-name)
+          (set-visited-file-name new-name)
+          (set-buffer-modified-p nil)
+          (message "File '%s' successfully renamed to '%s'"
+                   name (file-name-nondirectory new-name)))))))
+
+(defun hym/search-in-directory ()
+  "Prompts for directory and does a search there"
+  (interactive)
+  (let ((dir (read-directory-name "Dir to search: ")))
+    (consult-ripgrep dir)))
+
 (hym/leader-def
   ":" 'execute-extended-command
   "," 'consult-buffer
@@ -141,6 +166,7 @@
   "fs" 'evil-write
   "fy" 'hym/copy-buffer-file-name
   "fd" 'hym/delete-current-file
+  "fr" 'hym/rename-current-buffer-file
   "br" 'revert-buffer
   "pp" 'project-switch-project
   "pf" 'affe-find
@@ -149,9 +175,13 @@
   "p&" 'project-async-shell-command
   "p!" 'project-shell-command
   "pe" 'project-eshell
-  "*" 'hym/grep-for-symbol-at-point
+  "*"  'hym/grep-for-symbol-at-point
   "tl" 'global-display-line-numbers-mode
-  "tf" 'hym/toggle-font-size)
+  "tf" 'hym/toggle-font-size
+  "sd" 'hym/search-in-directory
+  "sl" 'consult-line
+  "si" 'consult-imenu
+  "sI" 'consult-imenu-multi)
 
 (load-config "lang.el")
 
