@@ -26,7 +26,7 @@
 (use-package evil-collection
   :after evil
   :config
-  (setq evil-collection-mode-list '(magit dired help helpful info))
+  (setq evil-collection-mode-list '(magit dired help helpful info calc))
   (evil-collection-init))
 
 (use-package evil-matchit
