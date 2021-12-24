@@ -24,3 +24,4 @@ truncate_to_repo = false
 
 [cmd_duration]
 min_time = 5_000
+format = "[$duration]($style)"
