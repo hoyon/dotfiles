@@ -64,35 +64,27 @@ end
 
 # set fish opts if ls --color=auto is supported
 if command ls --color=auto / >/dev/null 2>/dev/null
-    set -g __fish_ls_color_opt --color=auto --hyperlink=auto
+    if command ls --hyperlink=auto / >/dev/null 2>/dev/null
+        set -g __fish_ls_color_opt --color=auto --hyperlink=auto
+    else
+        set -g __fish_ls_color_opt --color=auto
+    end
 end
 
 # device specific config
-if test "$hostname" = hoyon-desktop
-    fish_add_path /home/hoyon/.cargo/bin
-    fish_add_path /home/hoyon/bin
-    fish_add_path /home/hoyon/.local/bin
-    fish_add_path /home/hoyon/.yarn/bin
-    fish_add_path /home/hoyon/.nimble/bin
-    fish_add_path /home/hoyon/.pi/pi/bin
-    fish_add_path /home/hoyon/san/go/bin
-
-    set -x GOPATH /home/hoyon/san/go
-else if test "$hostname" = hoyon-work
-    fish_add_path /home/hoyon/.local/bin
-    fish_add_path /home/hoyon/.yarn/bin
-
-else if test "$hostname" = hoyon-thinkpad
-    fish_add_path /home/hoyon/.local/bin
-    fish_add_path /home/hoyon/.yarn/bin
-
-    source ~/.asdf/asdf.fish
-
-else if test "$hostname" = hoyon-arch
+if test "$hostname" = hoyon-arch
     fish_add_path /home/hoyon/.local/bin
     fish_add_path /home/hoyon/.gem/ruby/2.7.0/bin
 
     source /opt/asdf-vm/asdf.fish
+
+else if test "$hostname" = hoyon-work
+    fish_add_path /home/hoyon/.local/bin
+    fish_add_path /home/hoyon/.yarn/bin
+
+else if test "$hostname" = Ho-Yons-MacBook-Pro.local
+    eval (/opt/homebrew/bin/brew shellenv)
+    source ~/.asdf/asdf.fish
 end
 
 # fzf.fish bindings
