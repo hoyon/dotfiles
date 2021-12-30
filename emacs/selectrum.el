@@ -116,8 +116,10 @@
   :config
   (setq affe-regexp-function #'orderless-pattern-compiler
         affe-highlight-function #'orderless-highlight-matches
-        affe-find-command "fd -H -t f -a --exclude .git --exclude node_modules"
-        affe-count 50))
+        affe-count 50)
+  ;; Use fd if available
+  (if (executable-find "fd")
+      (setq affe-find-command "fd --hidden --type f --exclude .git --exclude node_modules")))
 
 (use-package embark
   :bind

@@ -39,8 +39,7 @@
 (menu-bar-mode -1)
 (tool-bar-mode -1)
 (blink-cursor-mode -1)
-(if (fboundp 'toggle-scroll-bar)
-  (toggle-scroll-bar -1))
+(scroll-bar-mode -1)
 
 (setq hym/font-size "10")
 (defun hym/toggle-font-size ()
