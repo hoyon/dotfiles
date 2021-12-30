@@ -17,6 +17,9 @@ disabled = true
 [zig]
 disabled = true
 
+[python]
+disabled = true
+
 [directory]
 truncation_symbol = "…/"
 truncation_length = 0
