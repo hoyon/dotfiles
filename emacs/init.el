@@ -33,6 +33,9 @@
       (list (format "%%F - %%j")
             '(buffer-file-name "%f" (dired-directory dired-directory "%b"))))
 
+;; Don't require double spaces to separate spaces. Affects M-q
+(setq sentence-end-double-space nil)
+
 (menu-bar-mode -1)
 (tool-bar-mode -1)
 (blink-cursor-mode -1)
@@ -72,8 +75,13 @@
         telephone-line-secondary-right-separator 'telephone-line-cubed-hollow-right)
   (telephone-line-mode t))
 
-(setq backup-directory-alist `(("" . ,(format "%sbackup" user-emacs-directory)))
-      create-lockfiles nil)
+;; Move autosave and backup files to reduce clutter and disable lock files
+(make-directory (format "%sautosave/" user-emacs-directory) t)
+
+(setq
+ auto-save-file-name-transforms `((".*" ,(format "%sautosave/" user-emacs-directory) t))
+ backup-directory-alist `(("" . ,(format "%sbackup" user-emacs-directory)))
+ create-lockfiles nil)
 
 (setq custom-file (expand-file-name "custom.el" user-emacs-directory))
 (load custom-file)

@@ -1,6 +1,9 @@
 ;; -*- lexical-binding: t -*-
 
-(setq-default indent-tabs-mode nil) ;; only use spaces when indenting
+(setq-default
+ indent-tabs-mode nil ;; only use spaces when indenting
+ show-trailing-whitespace t)
+
 
 (defun hym/highlight-todos ()
   "Highlight TODO and friends in code"
