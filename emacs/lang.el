@@ -73,10 +73,13 @@
   :after rust-mode
   :hook (rust-mode . cargo-minor-mode))
 
+(use-package zig-mode
+  :config
+  (setq zig-format-on-save nil))
+
 (use-package yaml-mode)
 (use-package terraform-mode)
 (use-package cmake-mode)
-(use-package zig-mode)
 (use-package fish-mode)
 (use-package json-mode)
 

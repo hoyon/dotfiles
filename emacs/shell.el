@@ -22,3 +22,8 @@
  "C-p" 'eshell-previous-input
  "C-n" 'eshell-next-input
  "C-d" 'eshell-life-is-too-much)
+
+(defun hym/eshell-mode-hook ()
+  (setq show-trailing-whitespace nil))
+
+(add-hook 'eshell-mode-hook 'hym/eshell-mode-hook)
