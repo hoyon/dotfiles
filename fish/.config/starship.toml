@@ -20,6 +20,18 @@ disabled = true
 [python]
 disabled = true
 
+[cmake]
+disabled = true
+
+[terraform]
+disabled = true
+
+[elm]
+disabled = true
+
+[rust]
+disabled = true
+
 [directory]
 truncation_symbol = "…/"
 truncation_length = 0

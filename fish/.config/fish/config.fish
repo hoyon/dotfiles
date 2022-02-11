@@ -49,10 +49,10 @@ abbr -ag gdfs "git diff (git merge-base --fork-point (git-default-branch)) --sta
 abbr -ag gfm "git fetch origin (git-default-branch):(git-default-branch)"
 
 abbr -ag vimless "vim +'set buftype=nofile' -"
-
 abbr -ag rg "rg -S"
-
+abbr -ag tf "terraform"
 abbr -ag kssh "kitty kitten ssh"
+
 
 if test -z "$SSH_ENV"
     set -x SSH_ENV $HOME/.ssh/environment
@@ -73,14 +73,13 @@ end
 
 # device specific config
 if test "$hostname" = hoyon-arch
-    fish_add_path /home/hoyon/.local/bin
-    fish_add_path /home/hoyon/.gem/ruby/2.7.0/bin
+    fish_add_path -g /home/hoyon/.local/bin
 
     source /opt/asdf-vm/asdf.fish
 
 else if test "$hostname" = hoyon-work
-    fish_add_path /home/hoyon/.local/bin
-    fish_add_path /home/hoyon/.yarn/bin
+    fish_add_path -g /home/hoyon/.local/bin
+    fish_add_path -g /home/hoyon/.yarn/bin
 
 else if test "$hostname" = Ho-Yons-MacBook-Pro.local
     eval (/opt/homebrew/bin/brew shellenv)

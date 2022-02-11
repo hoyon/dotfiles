@@ -1,4 +1,5 @@
 # Defined in - @ line 1
-function make --description 'alias make make -j4'
-	command make -j4 $argv;
+function make
+    set -l j_arg "-j"(nproc)
+    command make $j_arg $argv;
 end
