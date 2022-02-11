@@ -1,9 +1,14 @@
 ;; -*- lexical-binding: t -*-
 
 (setq-default
- indent-tabs-mode nil ;; only use spaces when indenting
- show-trailing-whitespace t)
+ ;; don't use tabs for indenting
+ indent-tabs-mode nil)
 
+(defun hym/hide-trailing-whitespace ()
+  (setq show-trailing-whitespace t))
+
+(add-hook 'prog-mode-hook 'hym/hide-trailing-whitespace)
+(add-hook 'markdown-mode-hook 'hym/hide-trailing-whitespace)
 
 (defun hym/highlight-todos ()
   "Highlight TODO and friends in code"
@@ -43,7 +48,9 @@
 
 (use-package elm-mode)
 
-(setq js-indent-level 2)
+(setq
+ js-indent-level 2
+ css-indent-offset 2)
 
 (defun hym/web-mode-hook ()
   "Hooks for web mode"
@@ -77,11 +84,15 @@
   :config
   (setq zig-format-on-save nil))
 
+(use-package clojure-mode)
+(use-package cider)
+
 (use-package yaml-mode)
 (use-package terraform-mode)
 (use-package cmake-mode)
 (use-package fish-mode)
 (use-package json-mode)
+(use-package graphviz-dot-mode)
 
 ;; Show colours in compilation buffer
 (require 'ansi-color)
