@@ -199,7 +199,26 @@
   (hym/leader-def
     "hf" 'helpful-callable
     "hv" 'helpful-variable
-    "hk" 'helpful-key))
+    "hk" 'helpful-key)
+
+  (when (version< "28" emacs-version)
+    ;; helpful is broken in Emacs 29 without these hacks
+    (message "loading loading loading")
+
+    ;; https://github.com/Wilfred/helpful/issues/282
+    (defvar read-symbol-positions-list nil)
+
+    ;; Inspired by https://github.com/hlissner/doom-emacs/issues/6097
+    (defun helpful-fix-autoloaded-inner (fn sym _)
+      (funcall fn sym))
+
+    (defun helpful-fix-autoloaded (fn &rest args)
+      (advice-add 'help-fns--autoloaded-p :around #'helpful-fix-autoloaded-inner)
+      (apply fn args)
+      (advice-remove 'help-fns--autoloaded-p #'helpful-fix-autoloaded-inner)
+      )
+
+    (advice-add 'helpful--autoloaded-p :around #'helpful-fix-autoloaded)))
 
 (use-package delight
   :config
