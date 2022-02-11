@@ -118,6 +118,7 @@ for_window [title="Firefox . Sharing Indicator"] kill
 
 for_window [app_id="firefox" title="Picture-in-Picture"] floating enable
 for_window [title=".*is sharing your screen.$"] floating enable
+for_window [app_id="Erlang"] floating enable
 
 # Gaps
 for_window [class="^.*"] border pixel 0
