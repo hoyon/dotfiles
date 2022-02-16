@@ -78,9 +78,15 @@
   ;; This adds thin lines, sorting and hides the mode line of the window.
   (advice-add #'register-preview :override #'consult-register-window)
 
+  ;; Optionally replace `completing-read-multiple' with an enhanced version.
+  (advice-add #'completing-read-multiple :override #'consult-completing-read-multiple)
+
   ;; Use Consult to select xref locations with preview
   (setq xref-show-xrefs-function #'consult-xref
         xref-show-definitions-function #'consult-xref)
+
+  (setq consult-ripgrep-args "rg --null --line-buffered --color=never --max-columns=1000 --path-separator /   --smart-case --no-heading --line-number . --hidden --ignore-file .git --glob \"!**/.git/**\""
+        consult-find-args "find .")
 
   ;; Configure other variables and modes in the :config section,
   ;; after lazily loading the package.
@@ -105,10 +111,6 @@
   ;; Optionally make narrowing help available in the minibuffer.
   ;; You may want to use `embark-prefix-help-command' or which-key instead.
   ;; (define-key consult-narrow-map (vconcat consult-narrow-key "?") #'consult-narrow-help)
-  (setq consult-project-root-function
-        (lambda ()
-          (when-let (project (project-current))
-            (project-root project))))
   )
 
 (use-package affe

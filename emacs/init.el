@@ -167,6 +167,7 @@
 (hym/leader-def
   ":" 'execute-extended-command
   "," 'consult-buffer
+  "<" 'consult-project-buffer
   "SPC" 'affe-find
   "fs" 'evil-write
   "fy" 'hym/copy-buffer-file-name
