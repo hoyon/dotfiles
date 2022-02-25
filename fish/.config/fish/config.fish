@@ -51,7 +51,7 @@ abbr -ag gfm "git fetch origin (git-default-branch):(git-default-branch)"
 abbr -ag vimless "vim +'set buftype=nofile' -"
 abbr -ag rg "rg -S"
 abbr -ag tf "terraform"
-abbr -ag kssh "kitty kitten ssh"
+abbr -ag kssh "kitty +kitten ssh"
 
 
 if test -z "$SSH_ENV"
