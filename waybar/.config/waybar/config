@@ -40,12 +40,13 @@
       "firefox": "",
       "chrome": "",
       "chromium": "",
-      "default": ""
+      "default": "♪"
     },
     "escape": true,
-    "exec": "python $HOME/.config/waybar/mediaplayer.py 2> /dev/null",
-    "on-click": "$HOME/.config/waybar/pause-media.sh",
-    "on-scroll-down": "$HOME/.config/waybar/next-player.sh"
+    "exec": "$HOME/.config/waybar/mediaplayer.sh",
+    "on-click": "playerctl --player playerctld play-pause",
+    "on-scroll-down": "playerctld shift",
+    "on-scroll-up": "playerctld unshift"
   },
   "custom/ibus": {
     "format": "{}",
