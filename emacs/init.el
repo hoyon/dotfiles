@@ -55,6 +55,23 @@
 
 (use-package telephone-line
   :config
+  (defun hym/column-of-pos (pos)
+    (save-excursion
+      (goto-char pos)
+      (current-column)))
+
+  ;; Inspired by https://github.com/seagle0128/doom-modeline/blob/master/doom-modeline-segments.el#L1116
+  (telephone-line-defsegment* hym/telephone-line-region-segment ()
+    "Segment which shows size of current selection."
+    (when (and (or mark-active (and (bound-and-true-p evil-local-mode) (eq evil-state 'visual))))
+     (cl-destructuring-bind (beg . end)
+        (if (and (bound-and-true-p evil-local-mode) (eq evil-state 'visual))
+            (cons evil-visual-beginning evil-visual-end)
+          (cons (region-beginning) (region-end)))
+      (format "%sL %sC"
+              (count-lines beg end)
+              (abs (- (hym/column-of-pos end) (hym/column-of-pos beg)))))))
+
   (setq telephone-line-lhs
       '((evil   . (telephone-line-evil-tag-segment))
         (accent . (telephone-line-process-segment
@@ -63,6 +80,7 @@
 
   (setq telephone-line-rhs
       '((nil    . (telephone-line-misc-info-segment))
+        (nil   . (hym/telephone-line-region-segment))
         (accent . (telephone-line-simple-major-mode-segment))
         (evil   . (telephone-line-airline-position-segment))))
 
