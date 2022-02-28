@@ -9,6 +9,7 @@
     "sway/workspaces"
   ],
   "modules-right": [
+    "custom/mullvad",
     "custom/ibus",
     "custom/media",
     "pulseaudio",
@@ -29,6 +30,15 @@
   "sway/window": {
     "tooltip": false,
     "max-length": 100
+  },
+  "custom/mullvad": {
+    "format": "{icon} {}",
+    "return-type": "json",
+    "format-icons": {
+      "default": ""
+    },
+    "exec": "$HOME/.config/waybar/mullvad.sh",
+    "on-click-right": "mullvad disconnect"
   },
   "custom/media": {
     "format": "{icon} {}",
