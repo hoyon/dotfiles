@@ -41,6 +41,8 @@
 (blink-cursor-mode -1)
 (scroll-bar-mode -1)
 
+(save-place-mode 1)
+
 (setq hym/font-size "10")
 (defun hym/toggle-font-size ()
   "Toggle between small and normal font sizes"
@@ -199,6 +201,7 @@
   "p&" 'project-async-shell-command
   "p!" 'project-shell-command
   "pe" 'project-eshell
+  "pv" 'vterm
   "*"  'hym/grep-for-symbol-at-point
   "tl" 'global-display-line-numbers-mode
   "tf" 'hym/toggle-font-size
