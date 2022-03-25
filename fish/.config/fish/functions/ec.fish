@@ -20,7 +20,7 @@ function ec --description="Open in emacs"
     if test "$status" -eq 0
         if type -fq sway
             swaymsg "[title=\"Emacs\"] focus" > /dev/null || swaymsg "[class=\"Emacs\"] focus" > /dev/null
-        else
+        else if type -fq wmctrl
             wmctrl -x -a emacs
         end
     end
