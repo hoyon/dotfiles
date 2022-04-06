@@ -215,6 +215,7 @@
   "sI" 'consult-imenu-multi)
 
 (load-config "lang.el")
+(load-config "org.el")
 
 (use-package helpful
   :config
