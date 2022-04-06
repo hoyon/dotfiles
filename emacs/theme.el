@@ -6,9 +6,23 @@
 
 (menu-bar-mode -1)
 (toggle-scroll-bar -1)
+(scroll-bar-mode -1)
 (tool-bar-mode -1)
 (blink-cursor-mode -1)
 (show-paren-mode t)
+
+(use-package moe-theme)
+(use-package doom-themes)
+
+(use-package modus-themes
+  :init
+  (setq modus-themes-italic-constructs nil
+        modus-themes-bold-constructs nil
+        modus-themes-region '(bg-only no-extend))
+  (modus-themes-load-themes)
+
+  :config
+  (modus-themes-load-operandi))
 
 (setq hym/font-size "10")
 (defun hym/toggle-font-size ()
@@ -20,18 +34,38 @@
   (when (member "Source Code Pro" (font-family-list))
     (set-frame-font (format "%s-%s" "Source Code Pro" hym/font-size) t t)))
 
+(hym/leader-def
+  "tf" 'hym/toggle-font-size
+  "tt" 'modus-themes-toggle)
+
 (use-package telephone-line
   :config
+  (defun hym/column-of-pos (pos)
+    (save-excursion
+      (goto-char pos)
+      (current-column)))
+
+  ;; Inspired by https://github.com/seagle0128/doom-modeline/blob/master/doom-modeline-segments.el#L1116
+  (telephone-line-defsegment* hym/telephone-line-region-segment ()
+    "Segment which shows size of current selection."
+    (when (and (or mark-active (and (bound-and-true-p evil-local-mode) (eq evil-state 'visual))))
+     (cl-destructuring-bind (beg . end)
+        (if (and (bound-and-true-p evil-local-mode) (eq evil-state 'visual))
+            (cons evil-visual-beginning evil-visual-end)
+          (cons (region-beginning) (region-end)))
+      (format "%sL %sC"
+              (count-lines beg end)
+              (abs (- (hym/column-of-pos end) (hym/column-of-pos beg)))))))
+
   (setq telephone-line-lhs
       '((evil   . (telephone-line-evil-tag-segment))
-        (accent . (telephone-line-vc-segment
-                   telephone-line-erc-modified-channels-segment
-                   telephone-line-process-segment))
-        (nil    . (telephone-line-minor-mode-segment
-                   telephone-line-buffer-segment))))
+        (accent . (telephone-line-process-segment
+                   telephone-line-minor-mode-segment))
+        (nil    . (telephone-line-buffer-segment))))
 
   (setq telephone-line-rhs
       '((nil    . (telephone-line-misc-info-segment))
+        (nil   . (hym/telephone-line-region-segment))
         (accent . (telephone-line-simple-major-mode-segment))
         (evil   . (telephone-line-airline-position-segment))))
 
@@ -40,6 +74,3 @@
         telephone-line-primary-right-separator 'telephone-line-cubed-right
         telephone-line-secondary-right-separator 'telephone-line-cubed-hollow-right)
   (telephone-line-mode t))
-
-(hym/leader-def
-  "tf" 'hym/toggle-font-size)

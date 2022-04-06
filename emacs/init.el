@@ -35,66 +35,18 @@
       (list (format "%%F - %%j")
             '(buffer-file-name "%f" (dired-directory dired-directory "%b"))))
 
+(defun load-config (filename)
+  "Load config file"
+  (load (expand-file-name filename user-emacs-directory)))
+
 (setq
  sentence-end-double-space nil ;; Don't require double spaces to separate spaces. Affects M-q
  use-short-answers 't ;; yes-or-no-p -> y-or-n-p
  next-error-message-highlight 'keep)
 
-(menu-bar-mode -1)
-(tool-bar-mode -1)
-(blink-cursor-mode -1)
-(scroll-bar-mode -1)
-
 (save-place-mode 1)
 
-(setq hym/font-size "10")
-(defun hym/toggle-font-size ()
-  "Toggle between small and normal font sizes"
-  (interactive)
-  (setq hym/font-size
-        (if (equal hym/font-size "10") "11" "10"))
-
-  (when (member "Source Code Pro" (font-family-list))
-    (set-frame-font (format "%s-%s" "Source Code Pro" hym/font-size) t t)))
-
 (setq shell-file-name "/bin/bash")
-
-(use-package telephone-line
-  :config
-  (defun hym/column-of-pos (pos)
-    (save-excursion
-      (goto-char pos)
-      (current-column)))
-
-  ;; Inspired by https://github.com/seagle0128/doom-modeline/blob/master/doom-modeline-segments.el#L1116
-  (telephone-line-defsegment* hym/telephone-line-region-segment ()
-    "Segment which shows size of current selection."
-    (when (and (or mark-active (and (bound-and-true-p evil-local-mode) (eq evil-state 'visual))))
-     (cl-destructuring-bind (beg . end)
-        (if (and (bound-and-true-p evil-local-mode) (eq evil-state 'visual))
-            (cons evil-visual-beginning evil-visual-end)
-          (cons (region-beginning) (region-end)))
-      (format "%sL %sC"
-              (count-lines beg end)
-              (abs (- (hym/column-of-pos end) (hym/column-of-pos beg)))))))
-
-  (setq telephone-line-lhs
-      '((evil   . (telephone-line-evil-tag-segment))
-        (accent . (telephone-line-process-segment
-                   telephone-line-minor-mode-segment))
-        (nil    . (telephone-line-buffer-segment))))
-
-  (setq telephone-line-rhs
-      '((nil    . (telephone-line-misc-info-segment))
-        (nil   . (hym/telephone-line-region-segment))
-        (accent . (telephone-line-simple-major-mode-segment))
-        (evil   . (telephone-line-airline-position-segment))))
-
-  (setq telephone-line-primary-left-separator 'telephone-line-cubed-left
-        telephone-line-secondary-left-separator 'telephone-line-cubed-hollow-left
-        telephone-line-primary-right-separator 'telephone-line-cubed-right
-        telephone-line-secondary-right-separator 'telephone-line-cubed-hollow-right)
-  (telephone-line-mode t))
 
 ;; Move autosave and backup files to reduce clutter and disable lock files
 (make-directory (format "%sautosave/" user-emacs-directory) t)
@@ -112,10 +64,6 @@
 (load "server")
 (unless (server-running-p) (server-start))
 
-(defun load-config (filename)
-  "Load config file"
-  (load (expand-file-name filename user-emacs-directory)))
-
 (load-config "evil.el")
 
 (use-package general
@@ -129,19 +77,10 @@
     :states 'normal
     :keymaps 'local))
 
-(hym/local-leader-def
-  "tt" (lambda () message "hi"))
-
-(use-package project)
+(load-config "theme.el")
 (load-config "selectrum.el")
 (load-config "shell.el")
 (load-config "git.el")
-
-(use-package moe-theme)
-(use-package doom-themes
-  :config
-  (load-theme 'doom-one-light t)
-  (doom-themes-org-config))
 
 (defun hym/grep-for-symbol-at-point ()
   (interactive)
