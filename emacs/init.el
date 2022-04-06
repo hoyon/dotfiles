@@ -42,6 +42,7 @@
 (setq
  sentence-end-double-space nil ;; Don't require double spaces to separate spaces. Affects M-q
  use-short-answers 't ;; yes-or-no-p -> y-or-n-p
+ ring-bell-function 'ignore ;; disable audible bell
  next-error-message-highlight 'keep)
 
 (save-place-mode 1)
