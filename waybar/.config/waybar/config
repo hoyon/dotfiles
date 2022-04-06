@@ -29,7 +29,8 @@
   },
   "sway/window": {
     "tooltip": false,
-    "max-length": 100
+    "max-length": 100,
+    "icon": false
   },
   "custom/mullvad": {
     "format": "{icon} {}",
