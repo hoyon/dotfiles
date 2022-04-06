@@ -53,8 +53,8 @@ set showcmd
 set shell=sh
 
 set termguicolors
-set background=dark
-colorscheme gruvbox
+set background=light
+colorscheme PaperColor
 
 set noswapfile
 set nobackup
