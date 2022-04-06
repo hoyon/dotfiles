@@ -8,10 +8,12 @@
             (setq gc-cons-threshold 16777216
                   gc-cons-percentage 0.1)))
 
-(setq comp-async-report-warning-errors nil)
+(setq comp-async-report-warning-errors nil
+      load-prefer-newer t)
 
 (defvar bootstrap-version)
-(setq straight-use-package-by-default 't)
+(setq straight-use-package-by-default 't
+      straight-check-for-modifications nil)
 (let ((bootstrap-file
        (expand-file-name "straight/repos/straight.el/bootstrap.el" user-emacs-directory))
       (bootstrap-version 5))
@@ -33,8 +35,10 @@
       (list (format "%%F - %%j")
             '(buffer-file-name "%f" (dired-directory dired-directory "%b"))))
 
-;; Don't require double spaces to separate spaces. Affects M-q
-(setq sentence-end-double-space nil)
+(setq
+ sentence-end-double-space nil ;; Don't require double spaces to separate spaces. Affects M-q
+ use-short-answers 't ;; yes-or-no-p -> y-or-n-p
+ next-error-message-highlight 'keep)
 
 (menu-bar-mode -1)
 (tool-bar-mode -1)
