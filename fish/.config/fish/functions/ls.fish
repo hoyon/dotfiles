@@ -1,5 +1,9 @@
 function __fish_set_lscolors --description 'Set $LS_COLORS if possible'
-    if ! set -qx LS_COLORS && set -l cmd (command -s {g,}dircolors)[1]
+
+    if ! set -qx LS_COLORS && type -q vivid
+        set -gx LS_COLORS (vivid generate one-light)
+
+    else if ! set -qx LS_COLORS && set -l cmd (command -s {g,}dircolors)[1]
         set -l colorfile
         for file in ~/.dir_colors ~/.dircolors /etc/DIR_COLORS
             if test -f $file

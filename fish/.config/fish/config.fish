@@ -65,11 +65,13 @@ end
 # set fish opts if ls --color=auto is supported
 if command ls --color=auto / >/dev/null 2>/dev/null
     if command ls --hyperlink=auto / >/dev/null 2>/dev/null
-        set -g __fish_ls_color_opt --color=auto --hyperlink=auto
+        set -g __fish_ls_color_opt --color=auto --hyperlink=auto --group-directories-first
     else
         set -g __fish_ls_color_opt --color=auto
     end
 end
+
+set -x BAT_THEME ansi
 
 # device specific config
 if test "$hostname" = hoyon-arch
