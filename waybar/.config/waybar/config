@@ -1,67 +1,104 @@
 // -*- mode: json -*-
 
-{
-  "modules-left": [
-    "sway/mode",
-    "sway/window"
-  ],
-  "modules-center": [
-    "sway/workspaces"
-  ],
-  "modules-right": [
-    "custom/mullvad",
-    "custom/ibus",
-    "custom/media",
-    "pulseaudio",
-    "clock"
-  ],
-  "clock": {
-    "format": "{:%a %d %B %H:%M}",
-    "tooltip": false
+[
+  // left monitor
+  {
+    "output": "HDMI-A-1",
+    "modules-left": [
+      "sway/mode",
+      "sway/window"
+    ],
+    "modules-center": [
+      "sway/workspaces"
+    ],
+    "modules-right": [
+      "pulseaudio",
+      "clock"
+    ],
+    "clock": {
+      "format": "{:%a %d %B %H:%M}",
+      "tooltip": false
+    },
+    "pulseaudio": {
+      "scroll-step": 5.0,
+      "tooltip": false,
+      "format": "{icon} {volume}%",
+      "format-icons": {
+        "default": ""
+      }
+    },
+    "sway/window": {
+      "tooltip": false,
+      "max-length": 100,
+      "icon": false
+    },
   },
-  "pulseaudio": {
-    "scroll-step": 5.0,
-    "tooltip": false,
-    "format": "{icon} {volume}%",
-    "format-icons": {
-      "default": ""
+
+  // right monitor
+  {
+    "output": "DP-1",
+    "modules-left": [
+      "sway/mode",
+      "sway/window"
+    ],
+    "modules-center": [
+      "sway/workspaces"
+    ],
+    "modules-right": [
+      "custom/mullvad",
+      "custom/ibus",
+      "custom/media",
+      "pulseaudio",
+      "clock"
+    ],
+    "clock": {
+      "format": "{:%a %d %B %H:%M}",
+      "tooltip": false
+    },
+    "pulseaudio": {
+      "scroll-step": 5.0,
+      "tooltip": false,
+      "format": "{icon} {volume}%",
+      "format-icons": {
+        "default": ""
+      }
+    },
+    "sway/window": {
+      "tooltip": false,
+      "max-length": 100,
+      "icon": false
+    },
+    "custom/mullvad": {
+      "format": "{icon} {}",
+      "return-type": "json",
+      "format-icons": {
+        "default": ""
+      },
+      "exec": "$HOME/.config/waybar/mullvad.sh",
+      "on-click-right": "mullvad disconnect"
+    },
+    "custom/media": {
+      "format": "{icon} {}",
+      "return-type": "json",
+      "max-length": 40,
+      "format-icons": {
+        "spotify": "",
+        "Spot": "",
+        "firefox": "",
+        "chrome": "",
+        "chromium": "",
+        "default": "♪"
+      },
+      "escape": true,
+      "exec": "$HOME/.config/waybar/mediaplayer.sh",
+      "on-click": "playerctl --player playerctld play-pause",
+      "on-scroll-down": "playerctld shift",
+      "on-scroll-up": "playerctld unshift"
+    },
+    "custom/ibus": {
+      "format": "{}",
+      "return-type": "json",
+      "exec": "$HOME/.config/waybar/ibus/ibus-engine anthy"
     }
-  },
-  "sway/window": {
-    "tooltip": false,
-    "max-length": 100,
-    "icon": false
-  },
-  "custom/mullvad": {
-    "format": "{icon} {}",
-    "return-type": "json",
-    "format-icons": {
-      "default": ""
-    },
-    "exec": "$HOME/.config/waybar/mullvad.sh",
-    "on-click-right": "mullvad disconnect"
-  },
-  "custom/media": {
-    "format": "{icon} {}",
-    "return-type": "json",
-    "max-length": 40,
-    "format-icons": {
-      "spotify": "",
-      "Spot": "",
-      "firefox": "",
-      "chrome": "",
-      "chromium": "",
-      "default": "♪"
-    },
-    "escape": true,
-    "exec": "$HOME/.config/waybar/mediaplayer.sh",
-    "on-click": "playerctl --player playerctld play-pause",
-    "on-scroll-down": "playerctld shift",
-    "on-scroll-up": "playerctld unshift"
-  },
-  "custom/ibus": {
-    "format": "{}",
-    "return-type": "json",
-    "exec": "$HOME/.config/waybar/ibus/ibus-engine anthy"
   }
-}
+]
