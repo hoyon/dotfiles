@@ -190,8 +190,3 @@
     (define-key minibuffer-mode-map (kbd "C-S-v") 'yank))
 
 (use-package dired+)
-
-;; TODO:
-;; - cargo key bindings
-;; - smerge hydra?
-;; - yes or no p https://www.emacswiki.org/emacs/Yes-No

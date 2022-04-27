@@ -1,7 +1,6 @@
 ;; -*- lexical-binding: t -*-
 
-(setq frame-title-format "%b - %F"
-      column-number-mode t
+(setq column-number-mode t
       scroll-conservatively 10)
 
 (menu-bar-mode -1)
@@ -18,21 +17,28 @@
   :init
   (setq modus-themes-italic-constructs nil
         modus-themes-bold-constructs nil
-        modus-themes-region '(bg-only no-extend))
+        modus-themes-region '(bg-only no-extend)
+        modus-themes-syntax '(yellow-comments green-strings alt-syntax))
   (modus-themes-load-themes)
 
   :config
   (modus-themes-load-operandi))
 
-(setq hym/font-size "10")
+(setq
+ hym/font-family "Berkeley Mono"
+ ;; hym/font-family "Source Code Pro"
+ hym/font-size "10")
+
+(set-frame-font (format "%s-%s" hym/font-family hym/font-size) t t)
+
 (defun hym/toggle-font-size ()
   "Toggle between small and normal font sizes"
   (interactive)
   (setq hym/font-size
         (if (equal hym/font-size "10") "11" "10"))
 
-  (when (member "Source Code Pro" (font-family-list))
-    (set-frame-font (format "%s-%s" "Source Code Pro" hym/font-size) t t)))
+  (when (member hym/font-family (font-family-list))
+    (set-frame-font (format "%s-%s" hym/font-family hym/font-size) t t)))
 
 (hym/leader-def
   "tf" 'hym/toggle-font-size

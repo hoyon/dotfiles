@@ -32,6 +32,7 @@
 (use-package evil-matchit
   :after evil
   :config
+  (setq evilmi-always-simple-jump t)
   (global-evil-matchit-mode 1))
 
 (use-package evil-nerd-commenter
@@ -46,3 +47,10 @@
 (use-package evil-surround
   :config
   (global-evil-surround-mode 1))
+
+(defun hym/messages-evil-bindings ()
+  "Bind keys when visiting *Messages* buffer with evil mode"
+  (evil-define-key 'normal 'messages-buffer-mode-map
+    "q" 'quit-window))
+
+(add-hook 'messages-buffer-mode 'hym/messages-evil-bindings)

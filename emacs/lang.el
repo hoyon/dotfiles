@@ -59,7 +59,7 @@
         web-mode-code-indent-offset 2))
 
 (use-package web-mode
-  :mode ("\\.eex" "\\.mvx" "\\.heex" "\\.tsx" "\\.ts" "\\.svelte")
+  :mode ("\\.eex" "\\.mvx" "\\.heex" "\\.tsx" "\\.ts" "\\.svelte" "\\.vue")
   :hook (web-mode . hym/web-mode-hook)
   :config
   (setq web-mode-engines-alist
