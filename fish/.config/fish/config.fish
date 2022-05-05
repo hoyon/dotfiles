@@ -85,6 +85,7 @@ else if test "$hostname" = hoyon-work
 
 else if test "$hostname" = Ho-Yons-MacBook-Pro.local
     eval (/opt/homebrew/bin/brew shellenv)
+    fish_add_path -g ~/.cargo/bin
     source ~/.asdf/asdf.fish
 end
 
