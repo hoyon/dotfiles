@@ -126,10 +126,13 @@ set wildmenu
 set wildmode=list:longest,full
 
 "Make background transparent
-hi Normal ctermbg=none
-hi NonText ctermbg=none
+highlight! Normal ctermbg=none
+highlight! Normal guibg=none
 
-"Highlight current line number
+highlight! NonText ctermbg=none
+highlight! NonText guibg=none
+
+"Highlight current line numbe
 hi clear CursorLine
 hi CursorLineNR cterm=bold
 set cursorline
@@ -151,7 +154,7 @@ nmap gb <C-^>
 
 "vim airline
 let g:airline_powerline_fonts = 1
-let g:airline_theme = 'base16_gruvbox_dark_hard'
+let g:airline_theme = 'sol'
 let g:airline#extensions#whitespace#enabled = 0
 
 " fzf
