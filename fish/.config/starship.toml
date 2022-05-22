@@ -32,6 +32,9 @@ disabled = true
 [rust]
 disabled = true
 
+[c]
+disabled = true
+
 [directory]
 truncation_symbol = "…/"
 truncation_length = 0
