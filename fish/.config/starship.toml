@@ -35,6 +35,9 @@ disabled = true
 [c]
 disabled = true
 
+[vagrant]
+disabled = true
+
 [directory]
 truncation_symbol = "…/"
 truncation_length = 0
