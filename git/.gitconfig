@@ -14,7 +14,19 @@
     rebase = false
 [diff]
     renameLimit = 10000
+    colorMoved = default
 [init]
     defaultBranch = main
 [core]
-	pager = /usr/share/git/diff-highlight/diff-highlight| less
+    pager = delta
+    fsmonitor = true
+
+[delta]
+    light = true
+    file-style = yellow
+    hunk-header-style = line-number syntax
+
+[interactive]
+    diffFilter = delta --color-only
+[add.interactive]
+    useBuiltin = false
