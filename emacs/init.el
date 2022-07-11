@@ -190,3 +190,8 @@
     (define-key minibuffer-mode-map (kbd "C-S-v") 'yank))
 
 (use-package dired+)
+(use-package info+)
+(use-package docker)
+
+;; Make tramp work with guix
+(add-to-list 'tramp-remote-path 'tramp-own-remote-path)

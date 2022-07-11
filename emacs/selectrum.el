@@ -1,5 +1,7 @@
 ;; -*- lexical-binding: t -*-
 
+(use-package compat)
+
 (use-package selectrum
   :config
   (selectrum-mode +1)

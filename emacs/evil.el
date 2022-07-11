@@ -21,19 +21,23 @@
 
   ;; make evil-search-word look for symbol rather than word boundaries
   (defalias #'forward-evil-word #'forward-evil-symbol)
-  (setq-default evil-symbol-word-search t))
+  (setq-default evil-symbol-word-search t)
 
-(use-package evil-collection
-  :after evil
-  :config
-  (setq evil-collection-mode-list '(magit dired help helpful info calc cider))
-  (evil-collection-init))
+  ;; use hippie-expand instead of dabbrev
+  (global-set-key [remap dabbrev-expand] 'hippie-expand)
+  (setq evil-complete-next-func 'hippie-expand))
 
 (use-package evil-matchit
   :after evil
   :config
   (setq evilmi-always-simple-jump t)
   (global-evil-matchit-mode 1))
+
+(use-package evil-collection
+  :after evil
+  :config
+  (setq evil-collection-mode-list '(magit dired help helpful info calc cider))
+  (evil-collection-init))
 
 (use-package evil-nerd-commenter
   :after evil

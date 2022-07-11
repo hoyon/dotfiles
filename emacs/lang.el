@@ -24,6 +24,7 @@
      ('zig-mode 'zig-format-buffer)
      ('terraform-mode 'terraform-format-buffer)
      ('json-mode 'json-pretty-print-buffer)
+     ('web-mode 'elixir-format) ;; TODO: enable only for html.eex and html.heex instead of for all web-mode buffers
      (_ (lambda () (message "I don't know how to format the current buffer"))))))
 
 (hym/leader-def

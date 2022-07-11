@@ -29,6 +29,7 @@
  ;; hym/font-family "Source Code Pro"
  hym/font-size "10")
 
+(add-to-list 'default-frame-alist `(font . ,(format "%s-%s" hym/font-family hym/font-size)))
 (set-frame-font (format "%s-%s" hym/font-family hym/font-size) t t)
 
 (defun hym/toggle-font-size ()
