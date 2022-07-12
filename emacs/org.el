@@ -1,5 +1,7 @@
 (use-package org)
 
+(setq-default fill-column 90)
+
 (setq org-directory "~/org"
       org-agenda-files (list "inbox.org" "agenda.org" "notes.org" "projects.org" "work.org"))
 
