@@ -1,7 +1,7 @@
 (use-package org)
 
 (setq org-directory "~/org"
-      org-agenda-files (list "inbox.org" "agenda.org" "notes.org" "projects.org"))
+      org-agenda-files (list "inbox.org" "agenda.org" "notes.org" "projects.org" "work.org"))
 
 (setq org-capture-templates
       `(("i" "Inbox" entry (file "inbox.org")
@@ -15,7 +15,8 @@
                   "/Entered on/ %U\n" "\n" "%?"))))
 
 (setq org-refile-targets
-      '(("projects.org" :regexp . "\\(?:\\(?:Note\\|Task\\)s\\)"))
+      '(("projects.org" :regexp . "\\(?:\\(?:Note\\|Task\\)s\\)")
+        ("work.org" :regexp . "\\(?:\\(?:Note\\|Task\\)s\\)"))
       org-refile-use-outline-path 'file
       org-outline-path-complete-in-steps nil)
 
