@@ -1,3 +1,5 @@
+;; -*- lexical-binding: t -*-
+
 ;; https://emacs.stackexchange.com/a/45352
 
 (setq calendar-holidays

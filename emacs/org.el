@@ -1,3 +1,5 @@
+;; -*- lexical-binding: t -*-
+
 (use-package org)
 
 (setq-default fill-column 90)
@@ -53,7 +55,8 @@
 
 (defun hym/org-capture-inbox ()
   (interactive)
-  (call-interactively 'org-store-link)
+  (ignore-errors
+    (call-interactively 'org-store-link))
   (org-capture nil "i"))
 
 (hym/leader-def
@@ -67,6 +70,8 @@
   :config
   (add-hook 'org-mode-hook #'org-modern-mode)
   (add-hook 'org-agenda-finalize-hook #'org-modern-agenda))
+
+(add-hook 'org-mode-hook #'auto-revert-mode)
 
 ;; (use-package ox-hugo
 ;;   :after ox)

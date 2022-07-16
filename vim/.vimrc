@@ -37,6 +37,7 @@ Plug 'tpope/vim-commentary'
 Plug 'junegunn/fzf'
 Plug 'junegunn/fzf.vim'
 
+let g:polyglot_disabled = ['org']
 Plug 'sheerun/vim-polyglot'
 
 call plug#end()

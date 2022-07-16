@@ -8,6 +8,8 @@
             (setq gc-cons-threshold 16777216
                   gc-cons-percentage 0.1)))
 
+(add-hook 'focus-out-hook 'garbage-collect)
+
 (setq comp-async-report-warning-errors nil
       load-prefer-newer t)
 
