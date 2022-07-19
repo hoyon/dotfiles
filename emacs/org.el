@@ -1,4 +1,5 @@
 ;; -*- lexical-binding: t -*-
+;; Inspired by this guide: https://www.labri.fr/perso/nrougier/GTD/index.html
 
 (use-package org)
 
@@ -71,10 +72,12 @@
   (add-hook 'org-mode-hook #'org-modern-mode)
   (add-hook 'org-agenda-finalize-hook #'org-modern-agenda))
 
+(use-package evil-org
+  :after org
+  :config
+  (require 'evil-org-agenda)
+  (evil-org-agenda-set-keys)
+  (add-hook 'org-mode-hook #'evil-org-mode))
+
 (add-hook 'org-mode-hook #'auto-revert-mode)
-
-;; (use-package ox-hugo
-;;   :after ox)
-
-
-
+(add-hook 'org-mode-hook #'auto-fill-mode)
