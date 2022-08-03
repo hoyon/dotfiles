@@ -123,7 +123,7 @@
         affe-count 50)
   ;; Use fd if available
   (if (executable-find "fd")
-      (setq affe-find-command "fd --hidden --type f --exclude .git --exclude node_modules")))
+      (setq affe-find-command "fd --hidden --type f --exclude .git --exclude node_modules --exclude .stversions")))
 
 (use-package embark
   :bind

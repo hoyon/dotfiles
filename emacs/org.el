@@ -6,7 +6,12 @@
 (setq-default fill-column 90)
 
 (setq org-directory "~/org"
-      org-agenda-files (list "inbox.org" "agenda.org" "notes.org" "projects.org" "work.org"))
+      org-agenda-files (mapcar 'file-truename
+                               (list "~/org/inbox.org"
+                                     "~/org/agenda.org"
+                                     "~/org/notes.org"
+                                     "~/org/projects.org"
+                                     "~/org/work.org")))
 
 (setq org-capture-templates
       `(("i" "Inbox" entry (file "inbox.org")
@@ -60,12 +65,31 @@
     (call-interactively 'org-store-link))
   (org-capture nil "i"))
 
+(defun hym/find-org ()
+  (interactive)
+  (affe-find "~/org"))
+
 (hym/leader-def
   "oc" 'org-capture
   "oa" 'org-agenda
-  "oi" 'hym/org-capture-inbox)
+  "oi" 'hym/org-capture-inbox
+  "of" 'hym/find-org)
 
 (load-config "org-uk-holidays.el")
+
+(defun hym/save-org-buffers ()
+  "Save `org-agenda-files' buffers without user confirmation.
+See also `org-save-all-org-buffers'"
+  (interactive)
+  (message "Saving org-agenda-files buffers...")
+  (save-some-buffers t (lambda ()
+             (when (member (buffer-file-name) org-agenda-files)
+               t)))
+  (message "Saving org-agenda-files buffers... done"))
+
+(advice-add 'org-refile :after
+        (lambda (&rest _)
+          (hym/save-org-buffers)))
 
 (use-package org-modern
   :config

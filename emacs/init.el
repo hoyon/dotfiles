@@ -197,3 +197,5 @@
 
 ;; Make tramp work with guix
 (add-to-list 'tramp-remote-path 'tramp-own-remote-path)
+;; Disable some tramp messages
+(setq-default tramp-verbose 2)
