@@ -177,7 +177,10 @@
              (eldoc-mode nil "eldoc")
              (yas-minor-mode nil "yasnippet")
              (auto-revert-mode nil "autorevert")
-             (abbrev-mode nil "abbrev"))))
+             (auto-fill-function nil t)
+             (abbrev-mode nil "abbrev")
+             (evil-org-mode nil "evil-org")
+             (org-indent-mode nil "org"))))
 
 (winner-mode 1)
 (hym/leader-def
