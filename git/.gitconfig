@@ -8,6 +8,7 @@
     graph = hist --graph --all
 [push]
     default = simple
+    autoSetupRemote = true
 [github]
     user = hoyon
 [pull]
