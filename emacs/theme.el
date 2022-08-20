@@ -12,6 +12,10 @@
 
 (use-package moe-theme)
 (use-package doom-themes)
+(use-package ef-themes
+  ;; :config
+  ;; (load-theme 'ef-summer)
+  )
 
 (use-package modus-themes
   :init
@@ -22,6 +26,8 @@
   (modus-themes-load-themes)
 
   :config
+  (load-config "modus-summertime")
+  (modus-themes-summertime)
   (modus-themes-load-operandi))
 
 (setq

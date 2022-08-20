@@ -95,6 +95,7 @@
 (use-package json-mode)
 (use-package graphviz-dot-mode)
 (use-package dockerfile-mode)
+(use-package csv-mode)
 
 ;; Show colours in compilation buffer
 (require 'ansi-color)

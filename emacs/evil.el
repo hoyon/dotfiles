@@ -36,7 +36,7 @@
 (use-package evil-collection
   :after evil
   :config
-  (setq evil-collection-mode-list '(magit dired help helpful info calc cider org))
+  (setq evil-collection-mode-list '(magit dired help helpful info calc cider org man woman))
   (evil-collection-init))
 
 (use-package evil-nerd-commenter
