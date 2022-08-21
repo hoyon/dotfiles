@@ -2,12 +2,23 @@
 
 (use-package compat)
 
-(use-package selectrum
+(use-package vertico
+  :straight (vertico :files (:defaults "extensions/*")
+                     :includes (vertico-indexed
+                                vertico-flat
+                                vertico-grid
+                                vertico-mouse
+                                vertico-quick
+                                vertico-buffer
+                                vertico-repeat
+                                vertico-reverse
+                                vertico-directory
+                                vertico-multiform
+                                vertico-unobtrusive
+                                ))
   :config
-  (selectrum-mode +1)
-  ;; Grouping causes some lines to be cut off
-  ;; https://github.com/raxod502/selectrum/issues/491
-  (setq selectrum-group-format nil))
+  (vertico-mode)
+  (vertico-mouse-mode))
 
 (use-package marginalia
   :bind (:map minibuffer-local-map
@@ -62,11 +73,6 @@
          ("M-s e" . consult-isearch)               ;; orig. isearch-edit-string
          ("M-s l" . consult-line))                 ;; required by consult-line to detect isearch
 
-  ;; Enable automatic preview at point in the *Completions* buffer.
-  ;; This is relevant when you use the default completion UI,
-  ;; and not necessary for Selectrum, Vertico etc.
-  ;; :hook (completion-list-mode . consult-preview-at-point-mode)
-
   ;; The :init configuration is always executed (Not lazy)
   :init
 
@@ -118,6 +124,32 @@
   ;; You may want to use `embark-prefix-help-command' or which-key instead.
   ;; (define-key consult-narrow-map (vconcat consult-narrow-key "?") #'consult-narrow-help)
   )
+
+(use-package consult-project-extra)
+
+(defvar consult--fd-command nil)
+(defun consult--fd-builder (input)
+  (unless consult--fd-command
+    (setq consult--fd-command
+          (if (eq 0 (call-process-shell-command "fdfind"))
+              "fdfind"
+            "fd")))
+  (pcase-let* ((`(,arg . ,opts) (consult--command-split input))
+               (`(,re . ,hl) (funcall consult--regexp-compiler
+                                      arg 'extended t)))
+    (when re
+      (list :command (append
+                      (list consult--fd-command
+                            "--color=never" "--full-path" "--hidden"
+                            (consult--join-regexps re 'extended))
+                      opts)
+            :highlight hl))))
+
+(defun consult-fd (&optional dir initial)
+  (interactive "P")
+  (let* ((prompt-dir (consult--directory-prompt "fd" dir))
+         (default-directory (cdr prompt-dir)))
+    (find-file (consult--find (car prompt-dir) #'consult--fd-builder initial))))
 
 (use-package embark
   :bind

@@ -81,7 +81,7 @@
     :keymaps 'local))
 
 (load-config "theme.el")
-(load-config "selectrum.el")
+(load-config "vertico.el")
 (load-config "shell.el")
 (load-config "git.el")
 
@@ -133,8 +133,8 @@
 (hym/leader-def
   ":" 'execute-extended-command
   "," 'consult-buffer
-  "<" 'consult-project-buffer
-  "SPC" 'project-find-file
+  "<" 'consult-project-extra-find
+  "SPC" 'consult-fd
   "fs" 'evil-write
   "fy" 'hym/copy-buffer-file-name
   "fd" 'hym/delete-current-file
