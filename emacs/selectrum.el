@@ -102,8 +102,12 @@
   ;; For some commands and buffer sources it is useful to configure the
   ;; :preview-key on a per-command basis using the `consult-customize' macro.
   (consult-customize
-   consult-ripgrep consult-git-grep consult-grep consult-bookmark consult-recent-file
-   consult--source-file consult--source-project-file consult--source-bookmark affe-grep
+   consult-theme
+   :preview-key '(:debounce 0.2 any)
+   consult-ripgrep consult-git-grep consult-grep
+   consult-bookmark consult-recent-file consult-xref
+   consult--source-bookmark consult--source-recent-file
+   consult--source-project-recent-file
    :preview-key 'any)
 
   ;; Optionally configure the narrowing key.
@@ -114,16 +118,6 @@
   ;; You may want to use `embark-prefix-help-command' or which-key instead.
   ;; (define-key consult-narrow-map (vconcat consult-narrow-key "?") #'consult-narrow-help)
   )
-
-(use-package affe
-  :after orderless
-  :config
-  (setq affe-regexp-function #'orderless-pattern-compiler
-        affe-highlight-function #'orderless-highlight-matches
-        affe-count 50)
-  ;; Use fd if available
-  (if (executable-find "fd")
-      (setq affe-find-command "fd --hidden --type f --exclude .git --exclude node_modules --exclude .stversions")))
 
 (use-package embark
   :bind

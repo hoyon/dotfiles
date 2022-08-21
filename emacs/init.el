@@ -134,14 +134,14 @@
   ":" 'execute-extended-command
   "," 'consult-buffer
   "<" 'consult-project-buffer
-  "SPC" 'affe-find
+  "SPC" 'project-find-file
   "fs" 'evil-write
   "fy" 'hym/copy-buffer-file-name
   "fd" 'hym/delete-current-file
   "fr" 'hym/rename-current-buffer-file
   "br" 'revert-buffer
   "pp" 'project-switch-project
-  "pf" 'affe-find
+  "pf" 'project-find-file
   "p/" 'consult-ripgrep
   "pc" 'project-compile
   "p&" 'project-async-shell-command

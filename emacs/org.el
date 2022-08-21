@@ -67,7 +67,7 @@
 
 (defun hym/find-org ()
   (interactive)
-  (affe-find "~/org"))
+  (consult-find "~/org"))
 
 (hym/leader-def
   "oc" 'org-capture
