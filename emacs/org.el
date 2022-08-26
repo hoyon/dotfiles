@@ -67,7 +67,7 @@
 
 (defun hym/find-org ()
   (interactive)
-  (consult-find "~/org"))
+  (ido-find-file-in-dir "~/org"))
 
 (hym/leader-def
   "oc" 'org-capture
