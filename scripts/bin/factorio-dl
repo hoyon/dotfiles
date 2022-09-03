@@ -1,0 +1,64 @@
+#!/bin/sh
+
+# Inspired by https://git.sr.ht/~moviuro/factorio-dl
+
+__die() {
+  echo "$1" >&2; exit "${2:-1}"
+}
+
+shift "$((OPTIND-1))"
+
+for _dep in curl jq; do
+  if ! command -v "$_dep" >/dev/null 2>&1; then
+    __die "$_dep needed but not found!" 2
+  fi
+done
+
+FACTORIO_PD="$HOME/.factorio/player-data.json"
+FACTORIO_BUILD="alpha"
+FACTORIO_TARGET="linux64"
+
+# Grab the username and token from the player-data.json file
+FACTORIO_TOKEN="$(jq -r '.["service-token"] | select (.!=null)' < \
+"$FACTORIO_PD")"
+if [ -z "$FACTORIO_LOGIN" ]; then
+FACTORIO_LOGIN="$(jq -r '.["service-username"] | select (.!=null)' < \
+    "$FACTORIO_PD")"
+fi
+
+latest_json_path="https://factorio.com/api/latest-releases"
+version="$(curl -s "${latest_json_path}" | jq -rc '.stable.alpha')"
+
+# Whatever happened above, $version should now hold a semantic version.
+# If grep(1) fails below, we abort.
+if ! printf '%s' "$version" | grep -qE '[0-9]+\.[0-9]+\.[0-9]+'; then
+  __die "version looks very weird: $version" 3
+fi
+
+mkdir -p ~/Games
+games_dir=$(readlink -f ~/Games)
+
+output_file="${games_dir}/factorio_${FACTORIO_BUILD}_x64_${version}.tar.xz"
+
+FACTORIO_URL="https://www.factorio.com/get-download/${version}/${FACTORIO_BUILD}/${FACTORIO_TARGET}"
+
+curl -G --retry 10 --retry-delay 3 \
+     --fail --location \
+     --continue-at - \
+     --data-urlencode "username=${FACTORIO_LOGIN}" \
+     --data-urlencode "token=${FACTORIO_TOKEN}" \
+     --output "${output_file}.part" \
+     "${FACTORIO_URL}" \
+|| rm -f "${output_file}.part"
+
+if [ ! -f "${output_file}.part" ]; then
+  __die "Download failed" 9
+fi
+
+if [ -f "${output_file}.part" ]; then
+  mv "${output_file}.part" "${output_file}"
+fi
+
+tar xf "$output_file" -C "${games_dir}"
+
+rm "$output_file"
