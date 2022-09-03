@@ -77,8 +77,6 @@ set -x BAT_THEME ansi
 if test "$hostname" = hoyon-arch
     fish_add_path -g /home/hoyon/.local/bin
 
-    source /opt/asdf-vm/asdf.fish
-
 else if test "$hostname" = hoyon-work
     fish_add_path -g /home/hoyon/.local/bin
     fish_add_path -g /home/hoyon/.yarn/bin
@@ -86,7 +84,12 @@ else if test "$hostname" = hoyon-work
 else if test "$hostname" = Ho-Yons-MacBook-Pro.local
     eval (/opt/homebrew/bin/brew shellenv)
     fish_add_path -g ~/.cargo/bin
+end
+
+if test -e ~/.asdf/asdf.fish
     source ~/.asdf/asdf.fish
+else if test -e /opt/asdf-vm/asdf.fish
+    source /opt/asdf-vm/asdf.fish
 end
 
 # fzf.fish bindings
