@@ -74,11 +74,7 @@ end
 set -x BAT_THEME ansi
 
 # device specific config
-if test "$hostname" = hoyon-arch
-    fish_add_path -g /home/hoyon/.local/bin
-
-else if test "$hostname" = hoyon-work
-    fish_add_path -g /home/hoyon/.local/bin
+if test "$hostname" = hoyon-work
     fish_add_path -g /home/hoyon/.yarn/bin
 
 else if test "$hostname" = Ho-Yons-MacBook-Pro.local
@@ -90,6 +86,10 @@ if test -e ~/.asdf/asdf.fish
     source ~/.asdf/asdf.fish
 else if test -e /opt/asdf-vm/asdf.fish
     source /opt/asdf-vm/asdf.fish
+end
+
+if test -d ~/.local/bin
+    fish_add_path -g /home/hoyon/.local/bin
 end
 
 # fzf.fish bindings
