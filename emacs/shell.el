@@ -42,6 +42,8 @@
     (1 (find-file (car args)))
     (_ (error "too many args"))))
 
+(add-hook 'eshell-mode-hook (lambda () (setenv "TERM" "xterm-256color")))
+
 ;; vterm config
 (use-package vterm
   :config
