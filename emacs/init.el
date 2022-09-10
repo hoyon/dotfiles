@@ -84,6 +84,7 @@
 (load-config "vertico.el")
 (load-config "shell.el")
 (load-config "git.el")
+(load-config "window.el")
 
 (defun hym/grep-for-symbol-at-point ()
   (interactive)
@@ -154,7 +155,9 @@
   "sd" 'hym/search-in-directory
   "sl" 'consult-line
   "si" 'consult-imenu
-  "sI" 'consult-imenu-multi)
+  "sI" 'consult-imenu-multi
+  "hi" 'info
+  "hm" 'man)
 
 (load-config "lang.el")
 (load-config "org.el")
@@ -181,11 +184,6 @@
              (abbrev-mode nil "abbrev")
              (evil-org-mode nil "evil-org")
              (org-indent-mode nil "org"))))
-
-(winner-mode 1)
-(hym/leader-def
-  "wu" 'winner-undo
-  "wr" 'winner-redo)
 
 (use-package yasnippet
   :config
