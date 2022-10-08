@@ -15,6 +15,8 @@
 (setq smerge-command-prefix "C-c v")
 
 (use-package git-timemachine
+  :straight
+  (:host github :repo "emacsmirror/git-timemachine")
   :config
   (hym/leader-def
     "gt" 'git-timemachine)

@@ -46,6 +46,8 @@
 
 ;; vterm config
 (use-package vterm
+  :init
+  (setq vterm-always-compile-module t)
   :config
   (setq vterm-shell "/bin/fish")
 

@@ -11,6 +11,8 @@
 (add-hook 'focus-out-hook 'garbage-collect)
 
 (setq comp-async-report-warning-errors nil
+      native-comp-deferred-compilation t
+      native-compile-prune-cache t
       load-prefer-newer t)
 
 (defvar bootstrap-version)
@@ -194,7 +196,7 @@
 
 (use-package dired+)
 (use-package info+)
-(use-package docker)
+(use-package scratch)
 
 ;; Make tramp work with guix
 (add-to-list 'tramp-remote-path 'tramp-own-remote-path)
