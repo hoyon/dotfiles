@@ -137,11 +137,10 @@ input type:touchpad {
     scroll_factor 0.5
 }
 
-
 # ibus
-bindsym $meh+space exec ~/.config/sway/ibus-toggle.sh
-bindsym Henkan_Mode exec ~/.config/sway/ibus-toggle.sh
-exec ibus-daemon -drx
+# bindsym $meh+space exec ~/.config/sway/ibus-toggle.sh
+# bindsym Henkan_Mode exec ~/.config/sway/ibus-toggle.sh
+# exec ibus-daemon -drx
 
 seat seat0 hide_cursor 5000
 
@@ -167,11 +166,10 @@ exec mako
 
 exec sworkstyle
 
-exec systemctl --user import-environment
-exec systemctl --user restart libinput-gestures.service
-exec dbus-daemon --session --address=unix:path=$XDG_RUNTIME_DIR/bus
-
 # xwayland disable
+
+# required to fix waybar and firefox slow startup
+exec systemctl --user import-environment WAYLAND_DISPLAY XDG_CURRENT_DESKTOP
 
 # Include machine specific config
 include "~/.config/sway/`hostname`.config"
