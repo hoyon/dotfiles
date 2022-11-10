@@ -1,13 +1,9 @@
 function _fzf_search_directory --description "Search the current directory. Replace the current token with the selected file paths."
-    set fd_opts --color=always $fzf_fd_opts
-    if test (fd --version | string replace --regex --all '[^\d]' '') -ge 830
-        # fd >= 8.3.0 prepends ./ to all paths when output is being piped
-        # we don't need this so we hide it by passing --strip-cwd-prefix
-        # Remove this logic March '22 iff fd docs document --strip-cwd-prefix
-        set --prepend fd_opts --strip-cwd-prefix
-    end
+    # --string-cwd-prefix prevents fd >= 8.3.0 from prepending ./ to relative paths
+    set fd_opts --color=always --strip-cwd-prefix $fzf_fd_opts
 
-    set fzf_arguments --multi --ansi $fzf_dir_opts
+    # $fzf_dir_opts is the deprecated version of $fzf_directory_opts
+    set fzf_arguments --multi --ansi $fzf_dir_opts $fzf_directory_opts
     set token (commandline --current-token)
     # expand any variables or leading tilde (~) in the token
     set expanded_token (eval echo -- $token)
@@ -36,7 +32,8 @@ function _fzf_search_directory --description "Search the current directory. Repl
         # Then, the user only needs to hit Enter once more to cd into that directory.
         if test (count $file_paths_selected) = 1
             set commandline_tokens (commandline --tokenize)
-            if test "$commandline_tokens" = "$token" -a -d "$file_paths_selected"
+            if test "$commandline_tokens" = "$token" -a -d "$file_paths_selected" \
+                    -a (fd --version | string replace --regex --all '[^\d]' '') -lt 840
                 set file_paths_selected $file_paths_selected/
             end
         end
