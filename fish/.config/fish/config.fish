@@ -90,7 +90,11 @@ else if test -e /opt/asdf-vm/asdf.fish
 end
 
 if test -d ~/.local/bin
-    fish_add_path -g /home/hoyon/.local/bin
+    fish_add_path -g ~/.local/bin
+end
+
+if test -d ~/.nimble/bin
+    fish_add_path -g ~/.nimble/bin
 end
 
 # fzf.fish bindings
