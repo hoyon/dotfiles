@@ -16,7 +16,7 @@ function ec --description="Open in emacs"
         set line_flag "+$line"
     end
 
-    command emacsclient -n $line_flag $file >/dev/null
+    command emacsclient --no-wait $line_flag $file >/dev/null
     if test "$status" -eq 0
         if type -fq sway
             swaymsg "[title=\"Emacs\"] focus" > /dev/null || swaymsg "[class=\"Emacs\"] focus" > /dev/null
