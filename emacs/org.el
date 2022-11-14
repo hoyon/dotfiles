@@ -6,12 +6,7 @@
 (setq-default fill-column 90)
 
 (setq org-directory "~/org"
-      org-agenda-files (mapcar 'file-truename
-                               (list "~/org/inbox.org"
-                                     "~/org/agenda.org"
-                                     "~/org/notes.org"
-                                     "~/org/projects.org"
-                                     "~/org/work.org")))
+      org-agenda-files '("~/org"))
 
 (setq org-capture-templates
       `(("i" "Inbox" entry (file "inbox.org")
@@ -31,7 +26,7 @@
       org-outline-path-complete-in-steps nil)
 
 (setq org-todo-keywords
-      '((sequence "TODO(t)" "NEXT(n)" "HOLD(h)" "|" "DONE(d)")))
+      '((sequence "TODO(t)" "NEXT(n)" "|" "DONE(d)")))
 
 (setq org-log-done 'time)
 
@@ -69,11 +64,17 @@
   (interactive)
   (ido-find-file-in-dir "~/org"))
 
+(defun hym/open-org-config ()
+  (interactive)
+  (find-file (concat user-emacs-directory "org.el")))
+
 (hym/leader-def
+  "o." 'hym/open-org-config
   "oc" 'org-capture
   "oa" 'org-agenda
   "oi" 'hym/org-capture-inbox
-  "of" 'hym/find-org)
+  "of" 'hym/find-org
+  "oA" 'org-archive-subtree)
 
 (load-config "org-uk-holidays.el")
 
