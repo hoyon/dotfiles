@@ -4,7 +4,7 @@ FOCUSED=$(swaymsg -t get_tree | jq '.. | (.nodes? // empty)[] | select(.focused=
 
 if [[ $FOCUSED =~ "kitty" ]]; then
     PID=$(echo "$FOCUSED" | jq .pid)
-    CHILD_PID=$(pgrep -P "$PID")
+    CHILD_PID=$(pgrep -P "$PID" -l | grep -v kitty | awk '{ print $1 }')
     CWD=$(readlink "/proc/$CHILD_PID/cwd")
     exec kitty -d "$CWD"
 else
