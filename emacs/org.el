@@ -12,6 +12,9 @@
       `(("i" "Inbox" entry (file "inbox.org")
          ,(concat "* TODO %?\n"
                   "/Entered on/ %U"))
+        ("w" "Work Inbox" entry (file "work-inbox.org")
+         ,(concat "* TODO %?\n"
+                  "/Entered on/ %U"))
         ("m" "Meeting" entry (file+headline "agenda.org" "Meetings")
          ,(concat "* %? :meeting: \n"
                   "%U"))
