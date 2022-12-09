@@ -28,7 +28,3 @@
     "t" 'git-timemachine-show-revision-fuzzy
     "b" 'git-timemachine-blame
     "c" 'git-timemachine-show-commit))
-
-(if (executable-find "delta")
-    (use-package magit-delta
-      :hook (magit-mode . magit-delta-mode)))
