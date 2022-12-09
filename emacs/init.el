@@ -133,6 +133,11 @@
   (let ((dir (read-directory-name "Dir to search: ")))
     (consult-ripgrep dir)))
 
+(defun hym/chmod-current-file ()
+  "Change mode of currently visited file"
+  (interactive)
+  (chmod (buffer-file-name) (read-file-modes "File modes (octal or symbolic): " (buffer-file-name))))
+
 (hym/leader-def
   ":" 'execute-extended-command
   "," 'consult-buffer
@@ -142,6 +147,7 @@
   "fy" 'hym/copy-buffer-file-name
   "fd" 'hym/delete-current-file
   "fr" 'hym/rename-current-buffer-file
+  "fm" 'hym/chmod-current-file
   "br" 'revert-buffer
   "pp" 'project-switch-project
   "pf" 'project-find-file
