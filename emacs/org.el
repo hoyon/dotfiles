@@ -6,7 +6,12 @@
 (setq-default fill-column 90)
 
 (setq org-directory "~/org"
-      org-agenda-files '("~/org"))
+      org-agenda-files '("~/org")
+
+      ;; Startup options
+      org-startup-folded 'showeverything
+      org-startup-indented 'indent
+      org-hide-leading-stars 'showstars)
 
 (setq org-capture-templates
       `(("i" "Inbox" entry (file "inbox.org")
