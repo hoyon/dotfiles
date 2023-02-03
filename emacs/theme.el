@@ -3,7 +3,12 @@
 (setq column-number-mode t
       scroll-conservatively 10)
 
-(menu-bar-mode -1)
+;; disabling the menu bar on MacOS breaks mission control and has no effect anyway
+;; https://github.com/railwaycat/homebrew-emacsmacport/issues/124
+(if (not (eq system-type 'darwin))
+    (menu-bar-mode -1)
+)
+
 (toggle-scroll-bar -1)
 (scroll-bar-mode -1)
 (tool-bar-mode -1)
