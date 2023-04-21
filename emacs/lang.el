@@ -85,6 +85,10 @@
   :config
   (setq zig-format-on-save nil))
 
+(use-package rego-mode
+  :config
+  (setq rego-format-at-save nil))
+
 (use-package clojure-mode)
 (use-package cider)
 
