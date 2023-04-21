@@ -24,8 +24,10 @@
   (setq modus-themes-italic-constructs nil
         modus-themes-bold-constructs nil))
 
-(load-theme 'ef-summer t)
-;; (load-theme 'ef-day t)
+;; ef-spring on MacOS, ef-day everywhere else
+(if (not (eq system-type 'darwin))
+    (load-theme 'ef-day t)
+  (load-theme 'ef-spring t))
 
 (setq
  hym/font-family "Berkeley Mono"
