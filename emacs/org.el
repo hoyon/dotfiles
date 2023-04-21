@@ -34,7 +34,7 @@
       org-outline-path-complete-in-steps nil)
 
 (setq org-todo-keywords
-      '((sequence "TODO(t)" "NEXT(n)" "|" "DONE(d)")))
+      '((sequence "TODO(t)" "|" "DONE(d)")))
 
 (setq org-log-done 'time)
 
