@@ -22,17 +22,9 @@
 (use-package modus-themes
   :init
   (setq modus-themes-italic-constructs nil
-        modus-themes-bold-constructs nil
-        modus-themes-region '(bg-only no-extend)
-        modus-themes-syntax '(yellow-comments green-strings alt-syntax))
-  (modus-themes-load-themes)
+        modus-themes-bold-constructs nil))
 
-  :config
-  (load-config "modus-summertime")
-  (modus-themes-summertime))
-
-;; (load-theme 'ef-frost)
-(modus-themes-load-operandi)
+(load-theme 'ef-summer)
 
 (setq
  hym/font-family "Berkeley Mono"
