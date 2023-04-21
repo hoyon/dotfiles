@@ -24,7 +24,8 @@
   (setq modus-themes-italic-constructs nil
         modus-themes-bold-constructs nil))
 
-(load-theme 'ef-summer)
+(load-theme 'ef-summer t)
+;; (load-theme 'ef-day t)
 
 (setq
  hym/font-family "Berkeley Mono"

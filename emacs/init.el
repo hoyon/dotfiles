@@ -69,6 +69,8 @@
 (load "server")
 (unless (server-running-p) (server-start))
 
+(use-package compat)
+
 (load-config "evil.el")
 
 (use-package general
@@ -87,6 +89,8 @@
 (load-config "shell.el")
 (load-config "git.el")
 (load-config "window.el")
+(load-config "project.el")
+(load-config "docs.el")
 
 (defun hym/grep-for-symbol-at-point ()
   (interactive)
@@ -142,7 +146,7 @@
   ":" 'execute-extended-command
   "," 'consult-buffer
   "<" 'consult-project-extra-find
-  "SPC" 'project-find-file
+  "SPC" 'consult-project-extra-find
   "fs" 'evil-write
   "fy" 'hym/copy-buffer-file-name
   "fd" 'hym/delete-current-file
@@ -152,7 +156,8 @@
   "pp" 'project-switch-project
   "pf" 'project-find-file
   "p/" 'consult-ripgrep
-  "pc" 'project-compile
+  "pc" 'hym/project-compile
+  "pr" 'hym/project-run
   "p&" 'project-async-shell-command
   "p!" 'project-shell-command
   "pe" 'project-eshell
@@ -200,7 +205,13 @@
 (if (boundp 'minibuffer-mode-map)
     (define-key minibuffer-mode-map (kbd "C-S-v") 'yank))
 
-(use-package dired+)
+
+(setq
+ dired-listing-switches "-alh" ;; Show human sizes in dired mode
+ dired-dwim-target t ;; Guess target directory when copying and renaming files)
+
+(use-package dired-du)
+
 (use-package info+)
 (use-package scratch)
 

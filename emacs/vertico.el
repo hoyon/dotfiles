@@ -1,7 +1,5 @@
 ;; -*- lexical-binding: t -*-
 
-(use-package compat)
-
 (use-package vertico
   :straight (vertico :files (:defaults "extensions/*")
                      :includes (vertico-indexed
@@ -93,7 +91,7 @@
   (setq xref-show-xrefs-function #'consult-xref
         xref-show-definitions-function #'consult-xref)
 
-  (setq consult-ripgrep-args "rg --null --line-buffered --color=never --max-columns=1000 --path-separator /   --smart-case --no-heading --line-number . --hidden --ignore-file .git --glob \"!**/.git/**\""
+  (setq consult-ripgrep-args "rg --null --line-buffered --color=never --max-columns=1000 --path-separator /   --smart-case --no-heading --line-number --hidden --glob \"!**/.git/**\""
         consult-find-args "find .")
 
   ;; Configure other variables and modes in the :config section,

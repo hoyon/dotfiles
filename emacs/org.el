@@ -11,7 +11,8 @@
       ;; Startup options
       org-startup-folded 'showeverything
       org-startup-indented 'indent
-      org-hide-leading-stars 'showstars)
+      org-hide-leading-stars 'showstars
+      org-cycle-separator-lines 1)
 
 (setq org-capture-templates
       `(("i" "Inbox" entry (file "inbox.org")

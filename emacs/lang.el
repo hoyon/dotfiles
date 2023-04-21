@@ -60,7 +60,7 @@
         web-mode-code-indent-offset 2))
 
 (use-package web-mode
-  :mode ("\\.eex" "\\.mvx" "\\.heex" "\\.tsx" "\\.ts" "\\.svelte" "\\.vue" "\\.astro")
+  :mode ("\\.eex" "\\.mvx" "\\.heex" "\\.tsx" "\\.ts" "\\.svelte" "\\.vue" "\\.astro" "\\.njk")
   :hook (web-mode . hym/web-mode-hook)
   :config
   (setq web-mode-engines-alist
@@ -102,6 +102,8 @@
 (use-package csv-mode)
 (use-package nim-mode)
 (use-package smalltalk-mode)
+(use-package qml-mode)
+(use-package glsl-mode)
 
 ;; Show colours in compilation buffer
 (require 'ansi-color)
