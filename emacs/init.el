@@ -208,7 +208,8 @@
 
 (setq
  dired-listing-switches "-alh" ;; Show human sizes in dired mode
- dired-dwim-target t ;; Guess target directory when copying and renaming files)
+ dired-dwim-target t ;; Guess target directory when copying and renaming files
+ )
 
 (use-package dired-du)
 
