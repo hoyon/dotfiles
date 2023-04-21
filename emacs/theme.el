@@ -37,7 +37,10 @@
 (setq
  hym/font-family "Berkeley Mono"
  ;; hym/font-family "Source Code Pro"
- hym/font-size "10")
+ hym/font-size "12"
+ hym/font-size-small "12"
+ hym/font-size-large "14"
+ )
 
 (add-to-list 'default-frame-alist `(font . ,(format "%s-%s" hym/font-family hym/font-size)))
 (set-frame-font (format "%s-%s" hym/font-family hym/font-size) t t)
@@ -46,7 +49,7 @@
   "Toggle between small and normal font sizes"
   (interactive)
   (setq hym/font-size
-        (if (equal hym/font-size "10") "11" "10"))
+        (if (equal hym/font-size hym/font-size-small) hym/font-size-large hym/font-size-small))
 
   (when (member hym/font-family (font-family-list))
     (set-frame-font (format "%s-%s" hym/font-family hym/font-size) t t)))
