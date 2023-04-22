@@ -92,6 +92,10 @@
 (load-config "project.el")
 (load-config "docs.el")
 
+(use-package writeroom-mode
+  :config
+  (setq writeroom-width 100))
+
 (defun hym/grep-for-symbol-at-point ()
   (interactive)
   (consult-ripgrep nil (symbol-name (symbol-at-point))))
@@ -121,7 +125,8 @@
          (basename (file-name-nondirectory filename)))
     (if (not (and filename (file-exists-p filename)))
         (error "Buffer '%s' is not visiting a file!" name)
-      (let ((new-name (read-file-name "New name: " (file-name-directory filename) basename nil basename)))
+      (let ((new-name (read-file-name "New name: "
+                                      (file-name-directory filename) basename nil basename)))
         (if (get-buffer new-name)
             (error "A buffer named '%s' already exists!" new-name)
           (rename-file filename new-name 1)
@@ -165,6 +170,7 @@
   "*"  'hym/grep-for-symbol-at-point
   "tl" 'global-display-line-numbers-mode
   "tf" 'hym/toggle-font-size
+  "tw" 'writeroom-mode
   "sd" 'hym/search-in-directory
   "sl" 'consult-line
   "si" 'consult-imenu
