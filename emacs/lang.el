@@ -15,6 +15,13 @@
   (font-lock-add-keywords nil '(("\\<\\(FIXME\\|TODO\\|BUG\\):" 1 font-lock-warning-face t))))
 (add-hook 'prog-mode-hook 'hym/highlight-todos)
 
+(use-package reformatter)
+
+(reformatter-define hym/clang-format
+  :program "clang-format"
+  :args '()
+  :group 'cc-mode)
+
 (defun hym/format-buffer ()
   (interactive)
   (funcall
@@ -25,6 +32,7 @@
      ('terraform-mode 'terraform-format-buffer)
      ('json-mode 'json-pretty-print-buffer)
      ('web-mode 'elixir-format) ;; TODO: enable only for html.eex and html.heex instead of for all web-mode buffers
+     ('c++-mode 'hym/clang-format-buffer)
      (_ (lambda () (message "I don't know how to format the current buffer"))))))
 
 (hym/leader-def
