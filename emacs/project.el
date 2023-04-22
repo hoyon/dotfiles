@@ -1,7 +1,10 @@
 ;; -*- lexical-binding: t -*-
 
-(add-to-list 'safe-local-variable-values '(hym/project-compile-command . "./build"))
-(add-to-list 'safe-local-variable-values '(hym/project-run-command . "./build --run"))
+(defvar hym/project-compile-command "")
+(defvar hym/project-run-command "")
+
+(put 'hym/project-compile-command 'safe-local-variable #'stringp)
+(put 'hym/project-run-command 'safe-local-variable #'stringp)
 
 (defun hym/project-compile ()
   "Compile project in the project root."
@@ -11,7 +14,7 @@
         (compilation-buffer-name-function
          (or project-compilation-buffer-name-function
              compilation-buffer-name-function)))
-    (if (boundp 'hym/project-compile-command)
+    (if (not (string= "" hym/project-compile-command))
         (compile hym/project-compile-command)
       (call-interactively #'compile))))
 
@@ -19,7 +22,7 @@
   "Run project in the project root."
   (declare (interactive-only compile))
   (interactive)
-  (if (boundp 'hym/project-run-command)
+  (if (not (string= "" hym/project-run-command))
       (let ((default-directory (project-root (project-current t)))
             (compilation-buffer-name-function
              (or project-compilation-buffer-name-function
