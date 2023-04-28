@@ -33,10 +33,19 @@
      ('json-mode 'json-pretty-print-buffer)
      ('web-mode 'elixir-format) ;; TODO: enable only for html.eex and html.heex instead of for all web-mode buffers
      ('c++-mode 'hym/clang-format-buffer)
+     ('c-mode 'hym/clang-format-buffer)
      (_ (lambda () (message "I don't know how to format the current buffer"))))))
 
 (hym/leader-def
   "cf" 'hym/format-buffer)
+
+(defun hym/c-mode-hook ()
+  (interactive)
+  ;; Use C-c C-o to find syntatic symbol for current line
+  (c-set-offset 'arglist-intro '+))
+
+(add-hook 'c-mode-hook 'hym/c-mode-hook)
+(add-hook 'c++-mode-hook 'hym/c-mode-hook)
 
 (defun hym/elixir-mode-hook ()
   (hym/local-leader-def
@@ -112,6 +121,12 @@
 (use-package smalltalk-mode)
 (use-package qml-mode)
 (use-package glsl-mode)
+
+(use-package gdscript-mode
+    :straight (gdscript-mode
+               :type git
+               :host github
+               :repo "godotengine/emacs-gdscript-mode"))
 
 ;; Show colours in compilation buffer
 (require 'ansi-color)
