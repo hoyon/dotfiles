@@ -14,19 +14,21 @@
       org-hide-leading-stars 'showstars
       org-cycle-separator-lines 1)
 
+(defun hym/create-meeting-file ()
+  "Create a meeting file"
+  (interactive)
+  (let* ((meeting-name (read-string "Meeting name: "))
+         (date (format-time-string "%F" (current-time)))
+         (filename (expand-file-name (format "%s-%s.org" (string-replace " " "-" meeting-name) date) "~/org/meetings")))
+    (find-file-other-window filename)
+    (insert "#+FILETAGS: meeting")
+    (newline)
+    (newline)))
+
+
 (setq org-capture-templates
       `(("i" "Inbox" entry (file "inbox.org")
-         ,(concat "* TODO %?\n"
-                  "/Entered on/ %U"))
-        ("w" "Work Inbox" entry (file "work-inbox.org")
-         ,(concat "* TODO %?\n"
-                  "/Entered on/ %U"))
-        ("m" "Meeting" entry (file+headline "agenda.org" "Meetings")
-         ,(concat "* %? :meeting: \n"
-                  "%U"))
-        ("n" "Note" entry (file "notes.org")
-         ,(concat "* Note (%a)\n"
-                  "/Entered on/ %U\n" "\n" "%?"))))
+         ,(concat "* TODO %?\n"))))
 
 (setq org-refile-targets
       '(("projects.org" :regexp . "\\(?:\\(?:Note\\|Task\\)s\\)")
@@ -82,6 +84,7 @@
   "oc" 'org-capture
   "oa" 'org-agenda
   "oi" 'hym/org-capture-inbox
+  "om" 'hym/create-meeting-file
   "of" 'hym/find-org
   "oA" 'org-archive-subtree)
 
