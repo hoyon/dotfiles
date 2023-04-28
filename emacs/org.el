@@ -79,8 +79,13 @@
   (interactive)
   (find-file (concat user-emacs-directory "org.el")))
 
+(defun hym/open-inbox ()
+  (interactive)
+  (find-file "~/org/inbox.org"))
+
 (hym/leader-def
   "o." 'hym/open-org-config
+  "oo" 'hym/open-inbox
   "oc" 'org-capture
   "oa" 'org-agenda
   "oi" 'hym/org-capture-inbox
