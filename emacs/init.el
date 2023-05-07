@@ -91,6 +91,8 @@
 (load-config "window.el")
 (load-config "project.el")
 (load-config "docs.el")
+(load-config "lang.el")
+(load-config "org.el")
 
 (use-package writeroom-mode
   :config
@@ -168,9 +170,6 @@
   "sI" 'consult-imenu-multi
   "hi" 'info
   "hm" 'man)
-
-(load-config "lang.el")
-(load-config "org.el")
 
 (use-package helpful
   :config

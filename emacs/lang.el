@@ -4,11 +4,11 @@
  ;; don't use tabs for indenting
  indent-tabs-mode nil)
 
-(defun hym/hide-trailing-whitespace ()
+(defun hym/show-trailing-whitespace ()
   (setq show-trailing-whitespace t))
 
-(add-hook 'prog-mode-hook 'hym/hide-trailing-whitespace)
-(add-hook 'markdown-mode-hook 'hym/hide-trailing-whitespace)
+(add-hook 'prog-mode-hook 'hym/show-trailing-whitespace)
+(add-hook 'markdown-mode-hook 'hym/show-trailing-whitespace)
 
 (defun hym/highlight-todos ()
   "Highlight TODO and friends in code"
