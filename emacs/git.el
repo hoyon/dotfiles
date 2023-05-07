@@ -2,9 +2,6 @@
 
 (use-package magit
   :config
-  (with-eval-after-load 'project
-    (define-key project-prefix-map "m" #'magit-project-status)
-    (add-to-list 'project-switch-commands '(magit-project-status "Magit") t))
   (hym/leader-def
     "gg" 'magit-status
     "gb" 'magit-blame))

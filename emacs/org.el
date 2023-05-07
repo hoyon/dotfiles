@@ -7,6 +7,7 @@
 
 (setq org-directory "~/org"
       org-agenda-files '("~/org")
+      org-archive-location "~/org/archive/%s_archive::datetree/"
 
       ;; Startup options
       org-startup-folded 'showeverything

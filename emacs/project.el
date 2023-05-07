@@ -1,5 +1,12 @@
 ;; -*- lexical-binding: t -*-
 
+;; config
+
+; disable dispatch menu
+(setq project-switch-commands 'project-find-file)
+
+;; project compile shortcuts
+
 (defvar hym/project-compile-command "")
 (defvar hym/project-run-command "")
 
@@ -29,3 +36,16 @@
                  compilation-buffer-name-function)))
         (compile hym/project-run-command))
     (message "hym/project-run-command not set!")))
+
+;; bindings
+
+(hym/leader-def
+  "pp" 'project-switch-project
+  "pf" 'project-find-file
+  "p/" 'consult-ripgrep
+  "pc" 'hym/project-compile
+  "pr" 'hym/project-run
+  "p&" 'project-async-shell-command
+  "p!" 'project-shell-command
+  "pe" 'project-eshell
+  "pv" 'vterm)

@@ -6,8 +6,7 @@
 ;; disabling the menu bar on MacOS breaks mission control and has no effect anyway
 ;; https://github.com/railwaycat/homebrew-emacsmacport/issues/124
 (if (not (eq system-type 'darwin))
-    (menu-bar-mode -1)
-)
+    (menu-bar-mode -1))
 
 (toggle-scroll-bar -1)
 (scroll-bar-mode -1)
@@ -50,8 +49,7 @@
     (set-frame-font (format "%s-%s" hym/font-family hym/font-size) t t)))
 
 (hym/leader-def
-  "tf" 'hym/toggle-font-size
-  "tt" 'modus-themes-toggle)
+  "tf" 'hym/toggle-font-size)
 
 (use-package telephone-line
   :config

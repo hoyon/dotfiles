@@ -158,15 +158,6 @@
   "fr" 'hym/rename-current-buffer-file
   "fm" 'hym/chmod-current-file
   "br" 'revert-buffer
-  "pp" 'project-switch-project
-  "pf" 'project-find-file
-  "p/" 'consult-ripgrep
-  "pc" 'hym/project-compile
-  "pr" 'hym/project-run
-  "p&" 'project-async-shell-command
-  "p!" 'project-shell-command
-  "pe" 'project-eshell
-  "pv" 'vterm
   "*"  'hym/grep-for-symbol-at-point
   "tl" 'global-display-line-numbers-mode
   "tf" 'hym/toggle-font-size
