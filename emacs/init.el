@@ -93,6 +93,7 @@
 (load-config "docs.el")
 (load-config "lang.el")
 (load-config "org.el")
+(load-config "tabs.el")
 
 (use-package writeroom-mode
   :config
@@ -216,3 +217,6 @@
 (add-to-list 'tramp-remote-path 'tramp-own-remote-path)
 ;; Disable some tramp messages
 (setq-default tramp-verbose 2)
+
+;; Unset default full screen shortcut
+(global-unset-key (kbd "<f11>"))

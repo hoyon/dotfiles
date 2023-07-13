@@ -138,4 +138,4 @@
 (use-package smartparens
   :config
   (require 'smartparens-config)
-  :hook ((c++-mode java-mode zig-mode emacs-lisp-mode) . smartparens-mode))
+  :hook ((c++-mode java-mode zig-mode emacs-lisp-mode clojure-mode) . smartparens-mode))

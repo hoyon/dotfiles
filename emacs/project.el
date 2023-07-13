@@ -37,11 +37,18 @@
         (compile hym/project-run-command))
     (message "hym/project-run-command not set!")))
 
+(defun hym/project-find-file-all ()
+  "project-find-file including gitignore"
+  (declare (interactive-only compile))
+  (interactive)
+  (project-find-file 't))
+
 ;; bindings
 
 (hym/leader-def
   "pp" 'project-switch-project
   "pf" 'project-find-file
+  "pF" 'hym/project-find-file-all
   "p/" 'consult-ripgrep
   "pc" 'hym/project-compile
   "pr" 'hym/project-run

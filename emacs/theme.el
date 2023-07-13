@@ -25,7 +25,7 @@
 
 ;; ef-spring on MacOS, ef-day everywhere else
 (if (not (eq system-type 'darwin))
-    (load-theme 'ef-day t)
+    (load-theme 'ef-elea-light t)
   (load-theme 'ef-spring t))
 
 (setq
