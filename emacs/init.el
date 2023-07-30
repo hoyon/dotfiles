@@ -30,8 +30,6 @@
       (eval-print-last-sexp)))
   (load bootstrap-file nil 'nomessage))
 
-(straight-use-package 'use-package)
-
 (setq column-number-mode t
       scroll-conservatively 10)
 
@@ -120,25 +118,6 @@
         (kill-buffer))
     (error "Buffer not visiting a file")))
 
-(defun hym/rename-current-buffer-file ()
-  "Renames current buffer and file it is visiting."
-  (interactive)
-  (let* ((name (buffer-name))
-         (filename (buffer-file-name))
-         (basename (file-name-nondirectory filename)))
-    (if (not (and filename (file-exists-p filename)))
-        (error "Buffer '%s' is not visiting a file!" name)
-      (let ((new-name (read-file-name "New name: "
-                                      (file-name-directory filename) basename nil basename)))
-        (if (get-buffer new-name)
-            (error "A buffer named '%s' already exists!" new-name)
-          (rename-file filename new-name 1)
-          (rename-buffer new-name)
-          (set-visited-file-name new-name)
-          (set-buffer-modified-p nil)
-          (message "File '%s' successfully renamed to '%s'"
-                   name (file-name-nondirectory new-name)))))))
-
 (defun hym/search-in-directory ()
   "Prompts for directory and does a search there"
   (interactive)
@@ -158,7 +137,7 @@
   "fs" 'evil-write
   "fy" 'hym/copy-buffer-file-name
   "fd" 'hym/delete-current-file
-  "fr" 'hym/rename-current-buffer-file
+  "fr" 'rename-visited-file
   "fm" 'hym/chmod-current-file
   "br" 'revert-buffer
   "*"  'hym/grep-for-symbol-at-point

@@ -1,8 +1,6 @@
 ;; -*- lexical-binding: t -*-
 ;; Inspired by this guide: https://www.labri.fr/perso/nrougier/GTD/index.html
 
-(use-package org)
-
 (setq-default fill-column 90)
 
 (setq org-directory "~/org"

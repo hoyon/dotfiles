@@ -42,7 +42,9 @@
 (defun hym/c-mode-hook ()
   (interactive)
   ;; Use C-c C-o to find syntatic symbol for current line
-  (c-set-offset 'arglist-intro '+))
+  (c-set-offset 'arglist-intro '+)
+  (c-set-offset 'innamespace '0)
+  )
 
 (add-hook 'c-mode-hook 'hym/c-mode-hook)
 (add-hook 'c++-mode-hook 'hym/c-mode-hook)
@@ -109,24 +111,29 @@
 (use-package clojure-mode)
 (use-package cider)
 
-(use-package yaml-mode)
-(use-package terraform-mode)
 (use-package cmake-mode)
-(use-package fish-mode)
-(use-package json-mode)
-(use-package graphviz-dot-mode)
-(use-package dockerfile-mode)
 (use-package csv-mode)
-(use-package nim-mode)
-(use-package smalltalk-mode)
-(use-package qml-mode)
+(use-package dockerfile-mode)
+(use-package fish-mode)
 (use-package glsl-mode)
+(use-package graphviz-dot-mode)
+(use-package json-mode)
+(use-package nim-mode)
+(use-package qml-mode)
+(use-package smalltalk-mode)
+(use-package terraform-mode)
+(use-package yaml-mode)
 
 (use-package gdscript-mode
     :straight (gdscript-mode
                :type git
                :host github
                :repo "godotengine/emacs-gdscript-mode"))
+
+;; Make scripts executable automatically
+;; https://www.masteringemacs.org/article/script-files-executable-automatically
+(add-hook 'after-save-hook
+  'executable-make-buffer-file-executable-if-script-p)
 
 ;; Show colours in compilation buffer
 (require 'ansi-color)
@@ -139,3 +146,50 @@
   :config
   (require 'smartparens-config)
   :hook ((c++-mode java-mode zig-mode emacs-lisp-mode clojure-mode) . smartparens-mode))
+
+(if (and (fboundp 'treesit-available-p) (treesit-available-p))
+    (progn
+      (setq treesit-language-source-alist
+            '((bash "https://github.com/tree-sitter/tree-sitter-bash")
+              (cmake "https://github.com/uyha/tree-sitter-cmake")
+              (css "https://github.com/tree-sitter/tree-sitter-css")
+              (c "https://github.com/tree-sitter/tree-sitter-c")
+              (cpp "https://github.com/tree-sitter/tree-sitter-cpp")
+              (dockerfile "https://github.com/camdencheek/tree-sitter-dockerfile")
+              (elisp "https://github.com/Wilfred/tree-sitter-elisp")
+              (elixir "https://github.com/elixir-lang/tree-sitter-elixir")
+              (go "https://github.com/tree-sitter/tree-sitter-go")
+              (html "https://github.com/tree-sitter/tree-sitter-html")
+              (javascript "https://github.com/tree-sitter/tree-sitter-javascript" "master" "src")
+              (json "https://github.com/tree-sitter/tree-sitter-json")
+              (make "https://github.com/alemuller/tree-sitter-make")
+              (markdown "https://github.com/ikatyang/tree-sitter-markdown")
+              (python "https://github.com/tree-sitter/tree-sitter-python")
+              (rust "https://github.com/tree-sitter/tree-sitter-rust")
+              (toml "https://github.com/tree-sitter/tree-sitter-toml")
+              (tsx "https://github.com/tree-sitter/tree-sitter-typescript" "master" "tsx/src")
+              (typescript "https://github.com/tree-sitter/tree-sitter-typescript" "master" "typescript/src")
+              (yaml "https://github.com/ikatyang/tree-sitter-yaml")))
+
+      ;; Install all grammars if not yet available
+      (mapc
+       (lambda (lang)
+         (if (not (treesit-language-available-p lang))
+             (progn
+               (treesit-install-language-grammar lang))))
+       (mapcar #'car treesit-language-source-alist))
+
+      (setq major-mode-remap-alist
+            '((yaml-mode . yaml-ts-mode)
+              (bash-mode . bash-ts-mode)
+              (js-mode . js-ts-mode)
+              (typescript-mode . typescript-ts-mode)
+              (json-mode . json-ts-mode)
+              (css-mode . css-ts-mode)
+              (python-mode . python-ts-mode)
+              (cmake-mode . cmake-ts-mode)
+              (dockerfile-mode . dockerfile-ts-mode)
+              (c++-mode . c++-ts-mode)
+              (c-mode . c-ts-mode)
+              (rust-mode . rust-ts-mode)))
+))

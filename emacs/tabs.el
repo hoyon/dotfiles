@@ -12,15 +12,15 @@
            (tab-bar-rename-tab name))))
 
 (hym/leader-def
-  "aj" 'tab-previous
-  "ak" 'tab-next
-  "ac" 'tab-close
-  "ar" 'tab-rename
-  "aa" 'tab-switcher
-  "an" 'tab-new
-  "a1" (lambda () (interactive) (tab-select 1))
-  "a2" (lambda () (interactive) (tab-select 2))
-  "a3" (lambda () (interactive) (tab-select 3))
-  "a4" (lambda () (interactive) (tab-select 4))
-  "a5" (lambda () (interactive) (tab-select 5))
+  "tj" 'tab-previous
+  "tk" 'tab-next
+  "tc" 'tab-close
+  "tr" 'tab-rename
+  "ta" 'tab-switch
+  "tn" 'tab-new
+  "t1" (lambda () (interactive) (tab-select 1))
+  "t2" (lambda () (interactive) (tab-select 2))
+  "t3" (lambda () (interactive) (tab-select 3))
+  "t4" (lambda () (interactive) (tab-select 4))
+  "t5" (lambda () (interactive) (tab-select 5))
   )

@@ -14,6 +14,8 @@
 (blink-cursor-mode -1)
 (show-paren-mode t)
 
+(setq show-paren-context-when-offscreen 'child-frame)
+
 (use-package moe-theme)
 (use-package doom-themes)
 (use-package ef-themes)
@@ -32,24 +34,13 @@
  hym/font-family "Berkeley Mono"
  ;; hym/font-family "Source Code Pro"
  hym/font-size "12"
- hym/font-size-small "12"
- hym/font-size-large "14"
  )
 
 (add-to-list 'default-frame-alist `(font . ,(format "%s-%s" hym/font-family hym/font-size)))
 (set-frame-font (format "%s-%s" hym/font-family hym/font-size) t t)
 
-(defun hym/toggle-font-size ()
-  "Toggle between small and normal font sizes"
-  (interactive)
-  (setq hym/font-size
-        (if (equal hym/font-size hym/font-size-small) hym/font-size-large hym/font-size-small))
-
-  (when (member hym/font-family (font-family-list))
-    (set-frame-font (format "%s-%s" hym/font-family hym/font-size) t t)))
-
 (hym/leader-def
-  "tf" 'hym/toggle-font-size)
+  "af" 'global-text-scale-adjust)
 
 (use-package telephone-line
   :config
