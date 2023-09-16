@@ -21,15 +21,11 @@ else
 end
 
 set -x ERL_AFLAGS "-kernel shell_history enabled"
-
 set -x THEFUCK_PRIORITY "git_hook_bypass=1100"
+set -x CPM_SOURCE_CACHE "$HOME/.cache/CPM" # CMake Package Manager
 
 if type -q fd
     set -x FZF_DEFAULT_COMMAND 'fd --type f'
-end
-
-function git-default-branch
-    git symbolic-ref refs/remotes/origin/HEAD | sed 's@^refs/remotes/origin/@@'
 end
 
 abbr -ag gst "git status"
@@ -95,6 +91,10 @@ end
 
 if test -d ~/.nimble/bin
     fish_add_path -g ~/.nimble/bin
+end
+
+if test -d ~/kde/src/kdesrc-build
+    fish_add_path -g ~/kde/src/kdesrc-build
 end
 
 # fzf.fish bindings
