@@ -47,10 +47,6 @@
  ring-bell-function 'ignore ;; disable audible bell
  next-error-message-highlight 'keep)
 
-(save-place-mode 1)
-
-(setq shell-file-name "/bin/bash")
-
 ;; Move autosave and backup files to reduce clutter and disable lock files
 (make-directory (format "%sautosave/" user-emacs-directory) t)
 
@@ -90,12 +86,10 @@
 (load-config "project.el")
 (load-config "docs.el")
 (load-config "lang.el")
+(load-config "compile.el")
 (load-config "org.el")
 (load-config "tabs.el")
-
-(use-package writeroom-mode
-  :config
-  (setq writeroom-width 100))
+(load-config "modes.el")
 
 (defun hym/grep-for-symbol-at-point ()
   (interactive)
@@ -174,29 +168,14 @@
              (evil-org-mode nil "evil-org")
              (org-indent-mode nil "org"))))
 
-(use-package yasnippet
-  :config
-  (yas-global-mode 1))
-
 (if (boundp 'minibuffer-mode-map)
     (define-key minibuffer-mode-map (kbd "C-S-v") 'yank))
 
 
-(setq
- dired-listing-switches "-alh" ;; Show human sizes in dired mode
- dired-dwim-target t ;; Guess target directory when copying and renaming files
- )
-
-(use-package dired-du)
-
-(use-package info+)
-(use-package scratch)
-(use-package restclient)
-
-;; Make tramp work with guix
-(add-to-list 'tramp-remote-path 'tramp-own-remote-path)
-;; Disable some tramp messages
-(setq-default tramp-verbose 2)
-
 ;; Unset default full screen shortcut
 (global-unset-key (kbd "<f11>"))
+
+;; Make scripts executable automatically
+;; https://www.masteringemacs.org/article/script-files-executable-automatically
+(add-hook 'after-save-hook
+  'executable-make-buffer-file-executable-if-script-p)

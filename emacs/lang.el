@@ -135,16 +135,6 @@
                :host github
                :repo "godotengine/emacs-gdscript-mode"))
 
-;; Make scripts executable automatically
-;; https://www.masteringemacs.org/article/script-files-executable-automatically
-(add-hook 'after-save-hook
-  'executable-make-buffer-file-executable-if-script-p)
-
-;; Show colours in compilation buffer
-(setq compilation-environment '("TERM=xterm-256color"))
-(require 'ansi-color)
-(add-hook 'compilation-filter-hook 'ansi-color-compilation-filter)
-
 (use-package smartparens
   :config
   (require 'smartparens-config)
@@ -195,16 +185,4 @@
               (c++-mode . c++-ts-mode)
               (c-mode . c-ts-mode)
               (rust-mode . rust-ts-mode)))
-))
-
-;; Auto close compile buffer if no errors
-(setq compilation-finish-functions
-      (lambda (buf str)
-        (if (null (string-match ".*exited abnormally.*" str))
-            ;;no errors, make the compilation window go away in a few seconds
-            (progn
-              (run-at-time "0.6 sec" nil
-                           (lambda ()
-                             (select-window (get-buffer-window (get-buffer-create "*compilation*")))
-                             (quit-window)))
-              (message "No Compilation Errors!")))))
+      ))
