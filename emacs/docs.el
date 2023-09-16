@@ -1,8 +1,9 @@
 ;; -*- lexical-binding: t -*-
 
-(defun hym/sdl2-docs-find-file ()
+(defun hym/cpm-docs-find-file ()
+  "Find files in CMake package manager deps"
   (interactive)
-  (ido-find-file-in-dir "/usr/include/SDL2/"))
+  (consult-fd "~/.cache/CPM"))
 
 (hym/leader-def
-  "ds" 'hym/sdl2-docs-find-file)
+  "dc" 'hym/cpm-docs-find-file)

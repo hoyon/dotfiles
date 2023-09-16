@@ -16,7 +16,7 @@
   "tk" 'tab-next
   "tc" 'tab-close
   "tr" 'tab-rename
-  "ta" 'tab-switch
+  "tt" 'tab-switch
   "tn" 'tab-new
   "t1" (lambda () (interactive) (tab-select 1))
   "t2" (lambda () (interactive) (tab-select 2))

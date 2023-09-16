@@ -191,6 +191,7 @@
 
 (use-package info+)
 (use-package scratch)
+(use-package restclient)
 
 ;; Make tramp work with guix
 (add-to-list 'tramp-remote-path 'tramp-own-remote-path)

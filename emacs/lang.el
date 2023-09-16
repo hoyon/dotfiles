@@ -19,8 +19,11 @@
 
 (reformatter-define hym/clang-format
   :program "clang-format"
-  :args '()
-  :group 'cc-mode)
+  :args '())
+
+(reformatter-define hym/html-format
+  :program "prettier"
+  :args '("--parser" "html"))
 
 (defun hym/format-buffer ()
   (interactive)
@@ -32,8 +35,9 @@
      ('terraform-mode 'terraform-format-buffer)
      ('json-mode 'json-pretty-print-buffer)
      ('web-mode 'elixir-format) ;; TODO: enable only for html.eex and html.heex instead of for all web-mode buffers
-     ('c++-mode 'hym/clang-format-buffer)
+     ('c++-ts-mode 'hym/clang-format-buffer)
      ('c-mode 'hym/clang-format-buffer)
+     ('mhtml-mode 'hym/html-format-buffer)
      (_ (lambda () (message "I don't know how to format the current buffer"))))))
 
 (hym/leader-def
@@ -116,6 +120,7 @@
 (use-package dockerfile-mode)
 (use-package fish-mode)
 (use-package glsl-mode)
+(use-package wgsl-mode)
 (use-package graphviz-dot-mode)
 (use-package json-mode)
 (use-package nim-mode)
@@ -136,16 +141,14 @@
   'executable-make-buffer-file-executable-if-script-p)
 
 ;; Show colours in compilation buffer
+(setq compilation-environment '("TERM=xterm-256color"))
 (require 'ansi-color)
-(defun colorize-compilation-buffer ()
-  (let ((inhibit-read-only t))
-    (ansi-color-apply-on-region (point-min) (point-max))))
-(add-hook 'compilation-filter-hook 'colorize-compilation-buffer)
+(add-hook 'compilation-filter-hook 'ansi-color-compilation-filter)
 
 (use-package smartparens
   :config
   (require 'smartparens-config)
-  :hook ((c++-mode java-mode zig-mode emacs-lisp-mode clojure-mode) . smartparens-mode))
+  :hook ((c++-mode java-mode zig-mode emacs-lisp-mode clojure-mode rust-mode) . smartparens-mode))
 
 (if (and (fboundp 'treesit-available-p) (treesit-available-p))
     (progn
@@ -193,3 +196,15 @@
               (c-mode . c-ts-mode)
               (rust-mode . rust-ts-mode)))
 ))
+
+;; Auto close compile buffer if no errors
+(setq compilation-finish-functions
+      (lambda (buf str)
+        (if (null (string-match ".*exited abnormally.*" str))
+            ;;no errors, make the compilation window go away in a few seconds
+            (progn
+              (run-at-time "0.6 sec" nil
+                           (lambda ()
+                             (select-window (get-buffer-window (get-buffer-create "*compilation*")))
+                             (quit-window)))
+              (message "No Compilation Errors!")))))
