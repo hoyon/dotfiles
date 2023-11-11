@@ -5,15 +5,14 @@
 (require 'ansi-color)
 (add-hook 'compilation-filter-hook 'ansi-color-compilation-filter)
 
+(defun hym/close-compilation-buffer ()
+  "Finds and closes the compilation buffer"
+  (interactive)
+  (let ((compilation-buffer (get-buffer-window (get-buffer-create "*compilation*"))))
+    (if compilation-buffer
+        (progn
+          (select-window compilation-buffer)
+          (quit-window)))))
 
-;; Auto close compile buffer if no errors
-(setq compilation-finish-functions
-      (lambda (buf str)
-        (if (null (string-match ".*exited abnormally.*" str))
-            ;;no errors, make the compilation window go away in a few seconds
-            (progn
-              (run-at-time "0.6 sec" nil
-                           (lambda ()
-                             (select-window (get-buffer-window (get-buffer-create "*compilation*")))
-                             (quit-window)))
-              (message "No Compilation Errors!")))))
+(evil-define-key 'normal 'global
+  (kbd "<escape>") 'hym/close-compilation-buffer)
