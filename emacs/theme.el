@@ -25,11 +25,6 @@
   (setq modus-themes-italic-constructs nil
         modus-themes-bold-constructs nil))
 
-;; ef-spring on MacOS, ef-day everywhere else
-(if (not (eq system-type 'darwin))
-    (load-theme 'ef-elea-light t)
-  (load-theme 'ef-spring t))
-
 (setq
  hym/font-family "Berkeley Mono"
  ;; hym/font-family "Source Code Pro"
@@ -78,3 +73,38 @@
         telephone-line-primary-right-separator 'telephone-line-cubed-right
         telephone-line-secondary-right-separator 'telephone-line-cubed-hollow-right)
   (telephone-line-mode t))
+
+(use-package hl-todo
+  :config
+  (global-hl-todo-mode)
+
+  ;; Copied from https://protesilaos.com/emacs/ef-themes#h:19c549dc-d13f-45c4-a727-3618591d5c4f
+  (defun hym/ef-themes-hl-todo-faces ()
+    "Configure `hl-todo-keyword-faces' with Ef themes colors.
+The exact color values are taken from the active Ef theme."
+    (ef-themes-with-colors
+      (setq hl-todo-keyword-faces
+            `(("HOLD" . ,yellow)
+              ("TODO" . ,red)
+              ("NEXT" . ,blue)
+              ("THEM" . ,magenta)
+              ("PROG" . ,cyan-warmer)
+              ("OKAY" . ,green-warmer)
+              ("DONT" . ,yellow-warmer)
+              ("FAIL" . ,red-warmer)
+              ("BUG" . ,red-warmer)
+              ("DONE" . ,green)
+              ("NOTE" . ,blue-warmer)
+              ("KLUDGE" . ,cyan)
+              ("HACK" . ,cyan)
+              ("TEMP" . ,red)
+              ("FIXME" . ,red-warmer)
+              ("XXX+" . ,red-warmer)
+              ("REVIEW" . ,red)
+              ("DEPRECATED" . ,yellow)))))
+  (add-hook 'ef-themes-post-load-hook #'hym/ef-themes-hl-todo-faces))
+
+;; ef-spring on macOS, ef-kassio everywhere else
+(if (not (eq system-type 'darwin))
+    (load-theme 'ef-elea-light t)
+  (load-theme 'ef-kassio t))

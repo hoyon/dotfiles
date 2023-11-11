@@ -10,11 +10,6 @@
 (add-hook 'prog-mode-hook 'hym/show-trailing-whitespace)
 (add-hook 'markdown-mode-hook 'hym/show-trailing-whitespace)
 
-(defun hym/highlight-todos ()
-  "Highlight TODO and friends in code"
-  (font-lock-add-keywords nil '(("\\<\\(FIXME\\|TODO\\|BUG\\):" 1 font-lock-warning-face t))))
-(add-hook 'prog-mode-hook 'hym/highlight-todos)
-
 (use-package reformatter)
 
 (reformatter-define hym/clang-format
