@@ -1,6 +1,6 @@
 ;; -*- lexical-binding: t -*-
 
-(tab-bar-mode 1)
+;; (tab-bar-mode 1)
 
 (defun hym/tab-create (name)
   "Creates a tab with the given name if it doens't exist."
