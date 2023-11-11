@@ -36,7 +36,23 @@
 (use-package evil-collection
   :after evil
   :config
-  (setq evil-collection-mode-list '(magit dired help helpful info calc cider org man woman ibuffer tab-bar compile restclient))
+  (setq evil-collection-mode-list
+        '(calc
+          cider
+          compile
+          dired
+          grep
+          help
+          helpful
+          ibuffer
+          info
+          magit
+          man
+          org
+          restclient
+          tab-bar
+          wgrep
+          woman))
   (evil-collection-init))
 
 (use-package evil-nerd-commenter
