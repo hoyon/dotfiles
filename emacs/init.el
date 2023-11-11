@@ -136,7 +136,6 @@
   "br" 'revert-buffer
   "*"  'hym/grep-for-symbol-at-point
   "tl" 'global-display-line-numbers-mode
-  "tf" 'hym/toggle-font-size
   "tw" 'writeroom-mode
   "sd" 'hym/search-in-directory
   "sl" 'consult-line
