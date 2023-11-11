@@ -128,10 +128,12 @@ set wildmode=list:longest,full
 
 "Make background transparent
 highlight! Normal ctermbg=none
-highlight! Normal guibg=none
-
 highlight! NonText ctermbg=none
-highlight! NonText guibg=none
+
+if has('nvim')
+    highlight! Normal guibg=none
+    highlight! NonText guibg=none
+endif
 
 "Highlight current line numbe
 hi clear CursorLine
