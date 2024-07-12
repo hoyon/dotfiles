@@ -25,3 +25,13 @@
     "t" 'git-timemachine-show-revision-fuzzy
     "b" 'git-timemachine-blame
     "c" 'git-timemachine-show-commit))
+
+(use-package git-link
+  :config
+  (setq
+   git-link-open-in-browser 't
+   git-link-use-single-line-number nil)
+
+  (hym/leader-def
+    "go" 'git-link
+    "gr" 'git-link-homepage))
