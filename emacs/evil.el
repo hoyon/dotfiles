@@ -16,6 +16,11 @@
     "k" 'evil-previous-visual-line
     "u" 'undo-fu-only-undo
     "\C-r" 'undo-fu-only-redo)
+
+  ;; Use § key as escape key for when using ipad magic keyboard
+  (define-key evil-insert-state-map "§" 'evil-normal-state)
+  (define-key evil-visual-state-map "§" 'evil-normal-state)
+
   ;; :custom
   ;; (evil-search-module 'isearch)
 

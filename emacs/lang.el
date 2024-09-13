@@ -75,10 +75,11 @@
   "Hooks for web mode"
   (setq web-mode-markup-indent-offset 2
         web-mode-css-indent-offset 2
-        web-mode-code-indent-offset 2))
+        web-mode-code-indent-offset 2
+        web-mode-enable-auto-quoting nil))
 
 (use-package web-mode
-  :mode ("\\.eex" "\\.mvx" "\\.heex" "\\.tsx" "\\.ts" "\\.svelte" "\\.vue" "\\.astro" "\\.njk")
+  :mode ("\\.eex" "\\.mvx" "\\.heex" "\\.tsx" "\\.ts" "\\.svelte" "\\.vue" "\\.astro" "\\.njk" "\\.webc")
   :hook (web-mode . hym/web-mode-hook)
   :config
   (setq web-mode-engines-alist
@@ -130,10 +131,19 @@
                :host github
                :repo "godotengine/emacs-gdscript-mode"))
 
+(setq go-ts-mode-indent-offset 8)
+
+(defun hym/go-mode-hook ()
+  (interactive)
+  (setq tab-width 4
+        go-ts-mode-indent-offset 4))
+
+(add-hook 'go-ts-mode-hook 'hym/go-mode-hook)
+
 (use-package smartparens
   :config
   (require 'smartparens-config)
-  :hook ((c++-mode java-mode zig-mode emacs-lisp-mode clojure-mode rust-mode) . smartparens-mode))
+  :hook ((c++-mode java-mode zig-mode emacs-lisp-mode clojure-mode rust-mode go-ts-mode) . smartparens-mode))
 
 (if (and (fboundp 'treesit-available-p) (treesit-available-p))
     (progn

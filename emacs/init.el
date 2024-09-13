@@ -126,8 +126,8 @@
 (hym/leader-def
   ":" 'execute-extended-command
   "," 'consult-buffer
-  "<" 'consult-project-extra-find
-  "SPC" 'consult-project-extra-find
+  "<" 'consult-fd
+  "SPC" 'project-find-file
   "fs" 'evil-write
   "fy" 'hym/copy-buffer-file-name
   "fd" 'hym/delete-current-file
