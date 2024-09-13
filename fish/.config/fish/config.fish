@@ -23,6 +23,7 @@ end
 set -x ERL_AFLAGS "-kernel shell_history enabled"
 set -x THEFUCK_PRIORITY "git_hook_bypass=1100"
 set -x CPM_SOURCE_CACHE "$HOME/.cache/CPM" # CMake Package Manager
+set -x GODOT "$HOME/.config/godotenv/godot/bin"
 
 if type -q fd
     set -x FZF_DEFAULT_COMMAND 'fd --type f'
@@ -95,6 +96,10 @@ end
 
 if test -d ~/kde/src/kdesrc-build
     fish_add_path -g ~/kde/src/kdesrc-build
+end
+
+if test -d ~/.dotnet/tools
+    fish_add_path -g ~/.dotnet/tools
 end
 
 # fzf.fish bindings
