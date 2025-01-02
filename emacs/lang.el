@@ -20,6 +20,10 @@
   :program "prettier"
   :args '("--parser" "html"))
 
+(reformatter-define hym/go-format
+  :program "gofmt"
+  :args '())
+
 (defun hym/format-buffer ()
   (interactive)
   (funcall
@@ -34,6 +38,7 @@
      ('c++-ts-mode 'hym/clang-format-buffer)
      ('c-mode 'hym/clang-format-buffer)
      ('mhtml-mode 'hym/html-format-buffer)
+     ('go-ts-mode 'hym/go-format-buffer)
      (_ (lambda () (message "I don't know how to format the current buffer"))))))
 
 (hym/leader-def
@@ -158,6 +163,7 @@
               (elisp "https://github.com/Wilfred/tree-sitter-elisp")
               (elixir "https://github.com/elixir-lang/tree-sitter-elixir")
               (go "https://github.com/tree-sitter/tree-sitter-go")
+              (gomod "https://github.com/camdencheek/tree-sitter-go-mod")
               (html "https://github.com/tree-sitter/tree-sitter-html")
               (javascript "https://github.com/tree-sitter/tree-sitter-javascript" "master" "src")
               (json "https://github.com/tree-sitter/tree-sitter-json")
