@@ -123,3 +123,6 @@ if test "$TERM" = "dumb"
     exec /bin/sh
 end
 
+if test -e ~/.config/fish/secrets.fish
+    source ~/.config/fish/secrets.fish
+end
