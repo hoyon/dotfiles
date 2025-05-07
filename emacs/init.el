@@ -170,6 +170,10 @@
 (if (boundp 'minibuffer-mode-map)
     (define-key minibuffer-mode-map (kbd "C-S-v") 'yank))
 
+(global-auto-revert-mode)
+
+(setq global-auto-revert-non-file-buffers t
+      auto-revert-verbose nil)
 
 ;; Unset default full screen shortcut
 (global-unset-key (kbd "<f11>"))
