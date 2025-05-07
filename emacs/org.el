@@ -112,7 +112,8 @@ See also `org-save-all-org-buffers'"
 (use-package org-modern
   :config
   (add-hook 'org-mode-hook #'org-modern-mode)
-  (add-hook 'org-agenda-finalize-hook #'org-modern-agenda))
+  (add-hook 'org-agenda-finalize-hook #'org-modern-agenda)
+  (setq org-modern-star 'replace))
 
 (use-package evil-org
   :after org
