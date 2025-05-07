@@ -27,8 +27,8 @@
 
 
 (setq org-capture-templates
-      `(("i" "Inbox" entry (file "inbox.org")
-         ,(concat "* TODO %?\n"))))
+      `(("i" "Inbox" entry (file+headline "inbox.org" "Inbox")
+         ,(concat "** TODO %?\n"))))
 
 (setq org-refile-targets
       '(("projects.org" :regexp . "\\(?:\\(?:Note\\|Task\\)s\\)")
