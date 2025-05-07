@@ -6,6 +6,7 @@
 (setq org-directory "~/org"
       org-agenda-files '("~/org")
       org-archive-location "~/org/archive/%s_archive::datetree/"
+      org-export-backends '(ascii html icalendar latex odt md)
 
       ;; Startup options
       org-startup-folded 'showeverything
