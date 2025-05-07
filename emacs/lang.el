@@ -114,6 +114,9 @@
   :config
   (setq rego-format-at-save nil))
 
+(use-package nix-mode
+  :mode "\\.nix\\'")
+
 (use-package clojure-mode)
 (use-package cider)
 
@@ -130,6 +133,9 @@
 (use-package smalltalk-mode)
 (use-package terraform-mode)
 (use-package yaml-mode)
+
+(use-package bazel
+  :mode ("Tiltfile" . bazel-mode))
 
 (use-package gdscript-mode
     :straight (gdscript-mode
@@ -185,8 +191,7 @@
        (mapcar #'car treesit-language-source-alist))
 
       (setq major-mode-remap-alist
-            '((yaml-mode . yaml-ts-mode)
-              (bash-mode . bash-ts-mode)
+            '((bash-mode . bash-ts-mode)
               (js-mode . js-ts-mode)
               (typescript-mode . typescript-ts-mode)
               (json-mode . json-ts-mode)
@@ -196,5 +201,7 @@
               (dockerfile-mode . dockerfile-ts-mode)
               (c++-mode . c++-ts-mode)
               (c-mode . c-ts-mode)
-              (rust-mode . rust-ts-mode)))
+              (rust-mode . rust-ts-mode)
+              ;(yaml-mode . yaml-ts-mode)
+              ))
       ))
