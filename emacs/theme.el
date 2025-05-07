@@ -102,9 +102,10 @@ The exact color values are taken from the active Ef theme."
               ("XXX+" . ,red-warmer)
               ("REVIEW" . ,red)
               ("DEPRECATED" . ,yellow)))))
+
   (add-hook 'ef-themes-post-load-hook #'hym/ef-themes-hl-todo-faces))
 
-;; ef-spring on macOS, ef-kassio everywhere else
-(if (not (eq system-type 'darwin))
-    (load-theme 'ef-elea-light t)
+;; ef-summer on macOS, ef-kassio everywhere else
+(if (eq system-type 'darwin)
+    (load-theme 'ef-summer t)
   (load-theme 'ef-kassio t))
