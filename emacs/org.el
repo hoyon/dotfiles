@@ -122,3 +122,8 @@ See also `org-save-all-org-buffers'"
 
 (add-hook 'org-mode-hook #'auto-revert-mode)
 (add-hook 'org-mode-hook #'auto-fill-mode)
+
+(use-package verb
+  :config
+  (define-key org-mode-map (kbd "C-c C-r") verb-command-map)
+  (add-to-list 'verb-content-type-handlers '("application/hal\\+json" verb-handler-json)))
