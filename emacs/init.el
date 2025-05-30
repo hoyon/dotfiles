@@ -182,3 +182,8 @@
 ;; https://www.masteringemacs.org/article/script-files-executable-automatically
 (add-hook 'after-save-hook
   'executable-make-buffer-file-executable-if-script-p)
+
+(if (executable-find "hunspell")
+    (progn
+     (setq ispell-program-name "hunspell")
+     (setq ispell-dictionary "en_GB")))
