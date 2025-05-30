@@ -131,8 +131,10 @@
 (use-package nim-mode)
 (use-package qml-mode)
 (use-package smalltalk-mode)
-(use-package terraform-mode)
 (use-package yaml-mode)
+
+(use-package terraform-mode
+  :custom (terraform-command "tofu"))
 
 (use-package bazel
   :mode ("Tiltfile" . bazel-mode))
