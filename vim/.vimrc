@@ -37,6 +37,8 @@ Plug 'tpope/vim-commentary'
 Plug 'junegunn/fzf'
 Plug 'junegunn/fzf.vim'
 
+Plug 'joshdick/onedark.vim'
+
 let g:polyglot_disabled = ['org']
 Plug 'sheerun/vim-polyglot'
 
@@ -55,7 +57,7 @@ set shell=sh
 
 set termguicolors
 set background=light
-colorscheme PaperColor
+"colorscheme PaperColor
 
 set noswapfile
 set nobackup

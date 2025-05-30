@@ -120,6 +120,7 @@ See also `org-save-all-org-buffers'"
 
 (use-package evil-org
   :after org
+  :delight
   :config
   (require 'evil-org-agenda)
   (evil-org-agenda-set-keys)

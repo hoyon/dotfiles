@@ -157,6 +157,7 @@
 (add-hook 'go-ts-mode-hook 'hym/go-mode-hook)
 
 (use-package smartparens
+  :delight
   :config
   (require 'smartparens-config)
   :hook ((c++-mode java-mode zig-mode emacs-lisp-mode clojure-mode rust-mode go-ts-mode) . smartparens-mode))

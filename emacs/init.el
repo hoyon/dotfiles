@@ -155,17 +155,13 @@
     "hv" 'helpful-variable
     "hk" 'helpful-key))
 
-(use-package delight
-  :config
-  (delight '((evil-collection-unimpaired-mode nil "evil-collection-unimpaired")
-             (cargo-minor-mode nil "cargo")
-             (eldoc-mode nil "eldoc")
-             (yas-minor-mode nil "yasnippet")
-             (auto-revert-mode nil "autorevert")
-             (auto-fill-function nil t)
-             (abbrev-mode nil "abbrev")
-             (evil-org-mode nil "evil-org")
-             (org-indent-mode nil "org"))))
+(use-package delight)
+
+(use-package emacs
+  :delight
+  (eldoc-mode)
+  (auto-fill-mode)
+  (auto-revert-mode))
 
 (if (boundp 'minibuffer-mode-map)
     (define-key minibuffer-mode-map (kbd "C-S-v") 'yank))
