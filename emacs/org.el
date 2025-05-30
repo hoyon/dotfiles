@@ -4,7 +4,7 @@
 (setq-default fill-column 90)
 
 (setq org-directory "~/org"
-      org-agenda-files '("~/org")
+      org-agenda-files '("~/org" "~/org/weekly")
       org-archive-location "~/org/archive/%s_archive::datetree/"
       org-export-backends '(ascii html icalendar latex odt md)
 
@@ -37,7 +37,7 @@
       org-outline-path-complete-in-steps nil)
 
 (setq org-todo-keywords
-      '((sequence "TODO(t)" "|" "DONE(d)")))
+      '((sequence "TODO(t)" "|" "DONE(d)" "WONTDO(w)")))
 
 (setq org-log-done 'time)
 
@@ -56,9 +56,12 @@
                   ((org-agenda-entry-types '(:deadline))
                    (org-agenda-format-date "")
                    (org-deadline-warning-days 7)
-                   (org-agenda-skip-function
-                    '(org-agenda-skip-entry-if 'notregexp "\\* NEXT"))
+                   ;; (org-agenda-skip-function
+                   ;;  '(org-agenda-skip-entry-if 'notregexp "\\* NEXT"))
                    (org-agenda-overriding-header "\nDeadlines")))
+          (tags-todo "weekly"
+                     ((org-agenda-prefix-format "  %?-12t% s")
+                      (org-agenda-overriding-header "\nWeekly\n")))
           (tags-todo "inbox"
                      ((org-agenda-prefix-format "  %?-12t% s")
                       (org-agenda-overriding-header "\nInbox\n")))
