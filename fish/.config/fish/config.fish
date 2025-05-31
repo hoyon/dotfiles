@@ -108,6 +108,10 @@ if test -d ~/.dotnet/tools
     fish_add_path -g ~/.dotnet/tools
 end
 
+if test -d ~/go/bin
+    fish_add_path -g ~/go/bin
+end
+
 # fzf.fish bindings
 set --universal fzf_fish_custom_keybindings
 bind \ct _fzf_search_directory
