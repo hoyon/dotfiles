@@ -40,7 +40,7 @@
 
 (use-package evil-collection
   :after evil
-  :delight evil-collection-unimpaired-mode
+  :delight (evil-collection-unimpaired-mode)
   :config
   (setq evil-collection-mode-list
         '(calc

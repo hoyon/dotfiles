@@ -43,7 +43,7 @@
   (setq writeroom-width 100))
 
 (use-package yasnippet
-  :delight yas-minor-mode
+  :delight (yas-minor-mode)
   :config
   (yas-global-mode 1))
 
