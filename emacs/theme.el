@@ -105,7 +105,7 @@ The exact color values are taken from the active Ef theme."
 
   (add-hook 'ef-themes-post-load-hook #'hym/ef-themes-hl-todo-faces))
 
-;; ef-summer on macOS, ef-kassio everywhere else
+;; ef-summer on macOS, ef-melissa-light everywhere else
 (if (eq system-type 'darwin)
     (load-theme 'ef-summer t)
-  (load-theme 'ef-kassio t))
+  (load-theme 'ef-melissa-light t))
