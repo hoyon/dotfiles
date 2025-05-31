@@ -143,6 +143,8 @@
                :host github
                :repo "godotengine/emacs-gdscript-mode"))
 
+(use-package go-mode)
+
 (setq go-ts-mode-indent-offset 8)
 
 (defun hym/go-mode-hook ()
@@ -202,6 +204,8 @@
               (c++-mode . c++-ts-mode)
               (c-mode . c-ts-mode)
               (rust-mode . rust-ts-mode)
+              (go-mode . go-ts-mode)
+              (go-dot-mod-mode . go-mod-ts-mode)
               ;(yaml-mode . yaml-ts-mode)
               ))
       ))
