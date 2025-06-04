@@ -63,6 +63,11 @@
 (load "server")
 (unless (server-running-p) (server-start))
 
+(use-package exec-path-from-shell
+  :config
+  (when (memq window-system '(mac ns x))
+    (exec-path-from-shell-initialize)))
+
 (use-package compat)
 
 (load-config "evil.el")
