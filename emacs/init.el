@@ -69,6 +69,12 @@
     (exec-path-from-shell-initialize)))
 
 (use-package compat)
+(use-package delight)
+(use-package emacs
+  :delight
+  (eldoc-mode)
+  (auto-fill-mode)
+  (auto-revert-mode))
 
 (load-config "evil.el")
 
@@ -159,14 +165,6 @@
     "hf" 'helpful-callable
     "hv" 'helpful-variable
     "hk" 'helpful-key))
-
-(use-package delight)
-
-(use-package emacs
-  :delight
-  (eldoc-mode)
-  (auto-fill-mode)
-  (auto-revert-mode))
 
 (if (boundp 'minibuffer-mode-map)
     (define-key minibuffer-mode-map (kbd "C-S-v") 'yank))
