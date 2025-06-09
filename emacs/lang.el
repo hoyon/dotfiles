@@ -99,7 +99,9 @@
    ("\\.markdown\\'" . markdown-mode)
    ("README\\.md\\'" . gfm-mode))
   :init
-  (setq markdown-command "multimarkdown"))
+  (setq markdown-command "multimarkdown")
+  :custom
+  (markdown-gfm-use-electric-backquote nil))
 
 (use-package rust-mode)
 (use-package cargo
