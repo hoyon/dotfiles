@@ -58,7 +58,8 @@
           restclient
           tab-bar
           wgrep
-          woman))
+          woman
+          gptel))
   (evil-collection-init))
 
 (use-package evil-nerd-commenter
