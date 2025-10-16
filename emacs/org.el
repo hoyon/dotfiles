@@ -37,7 +37,7 @@
       org-outline-path-complete-in-steps nil)
 
 (setq org-todo-keywords
-      '((sequence "TODO(t)" "|" "DONE(d)" "WONTDO(w)")))
+      '((sequence "TODO(t)" "|" "DONE(d)" "WONTDO(w)" "MIGRATED(m)")))
 
 (setq org-log-done 'time)
 
@@ -128,6 +128,8 @@ See also `org-save-all-org-buffers'"
 
 (add-hook 'org-mode-hook #'auto-revert-mode)
 (add-hook 'org-mode-hook #'auto-fill-mode)
+
+(use-package unfill)
 
 (use-package verb
   :config
