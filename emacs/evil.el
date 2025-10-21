@@ -21,6 +21,9 @@
   (define-key evil-insert-state-map "§" 'evil-normal-state)
   (define-key evil-visual-state-map "§" 'evil-normal-state)
 
+  ;; allow '#' entry on Mac UK keyboard
+  (define-key evil-insert-state-map (kbd "M-3") '(lambda () (interactive) (insert "#")))
+
   ;; :custom
   ;; (evil-search-module 'isearch)
 
