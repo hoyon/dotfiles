@@ -107,5 +107,5 @@ The exact color values are taken from the active Ef theme."
 
 ;; ef-summer on macOS, ef-melissa-light everywhere else
 (if (eq system-type 'darwin)
-    (load-theme 'ef-summer t)
+    (load-theme 'ef-elea-light t)
   (load-theme 'ef-melissa-light t))
