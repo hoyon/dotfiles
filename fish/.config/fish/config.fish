@@ -85,6 +85,8 @@ if test -e ~/.asdf/asdf.fish
     source ~/.asdf/asdf.fish
 else if test -e /opt/asdf-vm/asdf.fish
     source /opt/asdf-vm/asdf.fish
+else if test -d /opt/homebrew/opt/asdf/libexec
+    source /opt/homebrew/opt/asdf/libexec/asdf.fish
 end
 
 if test -e /nix/var/nix/profiles/default/etc/profile.d/nix.fish
