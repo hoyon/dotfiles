@@ -1,0 +1,3 @@
+theme = Flexoki Light
+command = /opt/homebrew/bin/fish --login --interactive
+font-family = Berkeley Mono
