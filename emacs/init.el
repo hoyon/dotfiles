@@ -117,9 +117,8 @@
 
 (defun hym/delete-current-file ()
   (interactive)
-  (if-let ((file-name (buffer-file-name))
-           (p (yes-or-no-p (concat "Delete " file-name "? "))))
-      (progn
+  (if-let ((file-name (buffer-file-name)))
+      (when (yes-or-no-p (format "Delete %s? " file-name))
         (delete-file file-name)
         (kill-buffer))
     (error "Buffer not visiting a file")))
@@ -167,8 +166,7 @@
     "hv" 'helpful-variable
     "hk" 'helpful-key))
 
-(if (boundp 'minibuffer-mode-map)
-    (define-key minibuffer-mode-map (kbd "C-S-v") 'yank))
+(define-key minibuffer-mode-map (kbd "C-S-v") 'yank)
 
 (global-auto-revert-mode)
 
@@ -183,7 +181,6 @@
 (add-hook 'after-save-hook
   'executable-make-buffer-file-executable-if-script-p)
 
-(if (executable-find "hunspell")
-    (progn
-     (setq ispell-program-name "hunspell")
-     (setq ispell-dictionary "en_GB")))
+(when (executable-find "hunspell")
+  (setq ispell-program-name "hunspell"
+        ispell-dictionary "en_GB"))

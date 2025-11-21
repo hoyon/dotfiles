@@ -45,11 +45,10 @@
   "cf" 'hym/format-buffer)
 
 (defun hym/c-mode-hook ()
-  (interactive)
+  "C/C++ mode configuration."
   ;; Use C-c C-o to find syntatic symbol for current line
   (c-set-offset 'arglist-intro '+)
-  (c-set-offset 'innamespace '0)
-  )
+  (c-set-offset 'innamespace '0))
 
 (add-hook 'c-mode-hook 'hym/c-mode-hook)
 (add-hook 'c++-mode-hook 'hym/c-mode-hook)
@@ -153,7 +152,7 @@
 (setq go-ts-mode-indent-offset 8)
 
 (defun hym/go-mode-hook ()
-  (interactive)
+  "Go mode configuration."
   (setq tab-width 4
         go-ts-mode-indent-offset 4))
 
@@ -191,12 +190,9 @@
               (yaml "https://github.com/ikatyang/tree-sitter-yaml")))
 
       ;; Install all grammars if not yet available
-      (mapc
-       (lambda (lang)
-         (if (not (treesit-language-available-p lang))
-             (progn
-               (treesit-install-language-grammar lang))))
-       (mapcar #'car treesit-language-source-alist))
+      (pcase-dolist (`(,lang . ,_) treesit-language-source-alist)
+        (unless (treesit-language-available-p lang)
+          (treesit-install-language-grammar lang)))
 
       (setq major-mode-remap-alist
             '((bash-mode . bash-ts-mode)

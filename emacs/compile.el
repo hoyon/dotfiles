@@ -8,11 +8,9 @@
 (defun hym/close-compilation-buffer ()
   "Finds and closes the compilation buffer"
   (interactive)
-  (let ((compilation-buffer (get-buffer-window (get-buffer-create "*compilation*"))))
-    (if compilation-buffer
-        (progn
-          (select-window compilation-buffer)
-          (quit-window)))))
+  (when-let ((compilation-buffer (get-buffer-window "*compilation*")))
+    (select-window compilation-buffer)
+    (quit-window)))
 
 (evil-define-key 'normal 'global
   (kbd "<escape>") 'hym/close-compilation-buffer)
