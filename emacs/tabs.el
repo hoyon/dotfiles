@@ -2,6 +2,8 @@
 
 ;; (tab-bar-mode 1)
 
+(setq tab-bar-new-tab-to 'rightmost)
+
 (defun hym/tab-create (name)
   "Creates a tab with the given name if it doens't exist."
   (condition-case nil
