@@ -42,24 +42,32 @@
   (let ((d (decode-time time)))
     (encode-time (decoded-time-add d (make-decoded-time :day (1+ (- (decoded-time-weekday d))))))))
 
+(defun hym/org-has-heading (heading)
+  "returns non-nil if current buffer has an org header"
+  (memq t (org-map-entries
+           (lambda ()
+             (message (substring-no-properties (org-get-heading t t)))
+             (when (string= (substring-no-properties (org-get-heading t t)) heading)
+               t))
+           nil 'file)))
+
 (defun hym/open-weekly-note ()
   "Open the note for the current week at today's date"
   (interactive)
   (let* ((now (current-time))
          (monday (hym/get-monday now))
-         (file (expand-file-name (format-time-string "%F.org" monday) hym/weekly-dir))
-         (today (format-time-string (concat "%A %-d" (hym/ordinal-suffix now) " %B") now)))
-    (message (concat "opening " file "..."))
-    (find-file file)
+         (filename (expand-file-name (format-time-string "%F.org" monday) hym/weekly-dir))
+         (today (format-time-string (concat "%A %-d" (hym/ordinal-suffix now) " %B") now))
+         (buf (or (get-file-buffer filename)
+                  (find-file-noselect filename))))
+    (message (concat "opening " filename "..."))
+    (pop-to-buffer buf)
     (org-show-all)
-    (goto-char (point-min))
-    (if (and (re-search-forward (concat "^\\* " today) nil t)
-             (org-on-heading-p))
-        (forward-line)
+
+    (unless (hym/org-has-heading today)
       (goto-char (point-max))
       (unless (bolp) (insert "\n"))
-      (insert (concat "* " today "\n")))
-    (message (concat "Opened " file))))
+      (insert (conat "* " today "\n")))))
 
 (setq org-capture-templates
       `(("i" "Inbox" entry (file+headline "inbox.org" "Inbox")
