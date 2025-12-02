@@ -3,6 +3,8 @@
 
 (setq-default fill-column 90)
 
+(setq hym/weekly-dir "~/org/weekly")
+
 (setq org-directory "~/org"
       org-agenda-files '("~/org" "~/org/weekly")
       org-archive-location "~/org/archive/%s_archive::datetree/"
@@ -25,6 +27,39 @@
     (newline)
     (newline)))
 
+(defun hym/ordinal-suffix (time)
+  "returns st, nd or th for the day"
+  (let ((day (format-time-string "%d" time)))
+    (cond
+     ((member day '("11" "12" "13")) "th")
+     ((string-match-p "1$" day) "st")
+     ((string-match-p "2$" day) "nd")
+     ((string-match-p "3$" day) "rd")
+     (t "th"))))
+
+(defun hym/get-monday (time)
+  "returns the monday of that week"
+  (let ((d (decode-time time)))
+    (encode-time (decoded-time-add d (make-decoded-time :day (1+ (- (decoded-time-weekday d))))))))
+
+(defun hym/open-weekly-note ()
+  "Open the note for the current week at today's date"
+  (interactive)
+  (let* ((now (current-time))
+         (monday (hym/get-monday now))
+         (file (expand-file-name (format-time-string "%F.org" monday) hym/weekly-dir))
+         (today (format-time-string (concat "%A %-d" (hym/ordinal-suffix now) " %B") now)))
+    (message (concat "opening " file "..."))
+    (find-file file)
+    (org-show-all)
+    (goto-char (point-min))
+    (if (and (re-search-forward (concat "^\\* " today) nil t)
+             (org-on-heading-p))
+        (forward-line)
+      (goto-char (point-max))
+      (unless (bolp) (insert "\n"))
+      (insert (concat "* " today "\n")))
+    (message (concat "Opened " file))))
 
 (setq org-capture-templates
       `(("i" "Inbox" entry (file+headline "inbox.org" "Inbox")
@@ -94,7 +129,8 @@
   "oi" 'hym/org-capture-inbox
   "om" 'hym/create-meeting-file
   "of" 'hym/find-org
-  "oA" 'org-archive-subtree)
+  "oA" 'org-archive-subtree
+  "ow" 'hym/open-weekly-note)
 
 (load-config "org-uk-holidays.el")
 
