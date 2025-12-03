@@ -16,3 +16,4 @@ session.*
 bookmarks
 tree-sitter
 games/tetris-scores
+.cache
