@@ -26,20 +26,21 @@
 
 (defun hym/format-buffer ()
   (interactive)
-  (funcall
-   (pcase major-mode
-     ('elixir-mode 'elixir-format)
-     ('rust-mode 'rust-format-buffer)
-     ('zig-mode 'zig-format-buffer)
-     ('terraform-mode 'terraform-format-buffer)
-     ('json-mode 'json-pretty-print-buffer)
-     ('json-ts-mode 'json-pretty-print-buffer)
-     ('web-mode 'elixir-format) ;; TODO: enable only for html.eex and html.heex instead of for all web-mode buffers
-     ('c++-ts-mode 'hym/clang-format-buffer)
-     ('c-mode 'hym/clang-format-buffer)
-     ('mhtml-mode 'hym/html-format-buffer)
-     ('go-ts-mode 'hym/go-format-buffer)
-     (_ (lambda () (message "I don't know how to format the current buffer"))))))
+  (let* ((formatters
+          '((elixir . elixir-format)
+            (rust . rust-format-buffer)
+            (zig . zig-format-buffer)
+            (terraform . terraform-format-buffer)
+            (json . json-pretty-print-buffer)
+            (web . elixir-format) ;; TODO: enable only for html.eex and html.heex instead of for all web-mode buffers
+            (c++ . hym/clang-format-buffer)
+            (c . hym/clang-format-buffer)
+            (mhtml . hym/html-format-buffer)
+            (go . hym/go-format-buffer)))
+         (base-mode (intern (replace-regexp-in-string "-ts-mode$\\|-mode$" "" (symbol-name major-mode))))
+         (formatter (alist-get base-mode formatters)))
+    (funcall (or formatter
+                 (lambda () (message "I don't know how to format the current buffer"))))))
 
 (hym/leader-def
   "cf" 'hym/format-buffer)
@@ -84,12 +85,11 @@
         web-mode-enable-auto-quoting nil))
 
 (use-package web-mode
-  :mode ("\\.eex" "\\.mvx" "\\.heex" "\\.tsx" "\\.ts" "\\.svelte" "\\.vue" "\\.astro" "\\.njk" "\\.webc")
+  :mode ("\\.eex" "\\.heex" "\\.svelte" "\\.vue" "\\.astro" "\\.njk" "\\.webc")
   :hook (web-mode . hym/web-mode-hook)
   :config
   (setq web-mode-engines-alist
-        '(("elixir" . "\\.mvx")
-          ("elixir" . "\\.heex"))))
+        '(("elixir" . "\\.heex"))))
 
 (use-package markdown-mode
   :commands (markdown-mode gfm-mode)
@@ -119,20 +119,17 @@
   :mode "\\.nix\\'")
 
 (use-package clojure-mode)
-(use-package cider)
+;; (use-package cider)
 
 (use-package cmake-mode)
 (use-package csv-mode)
 (use-package dockerfile-mode)
 (use-package fish-mode)
-(use-package glsl-mode)
 (use-package wgsl-mode)
 (use-package graphviz-dot-mode)
-(use-package json-mode)
 (use-package nim-mode)
 (use-package qml-mode)
 (use-package smalltalk-mode)
-(use-package yaml-mode)
 (use-package just-mode)
 
 (use-package terraform-mode
@@ -164,6 +161,14 @@
   (require 'smartparens-config)
   :hook ((c++-mode java-mode zig-mode emacs-lisp-mode clojure-mode rust-mode go-ts-mode) . smartparens-mode))
 
+(mapc (lambda (entry) (add-to-list 'auto-mode-alist entry))
+        '(("\\.ts\\'" . typescript-ts-mode)
+          ("\\.tsx\\'" . tsx-ts-mode)
+          ("\\.json\\'" . json-ts-mode)
+          ("\\.yaml\\'" . yaml-ts-mode)
+          ("\\.yml\\'" . yaml-ts-mode)
+          ("\\.glsl\\'" . glsl-ts-mode)))
+
 (if (and (fboundp 'treesit-available-p) (treesit-available-p))
     (progn
       (setq treesit-language-source-alist
@@ -175,6 +180,7 @@
               (dockerfile "https://github.com/camdencheek/tree-sitter-dockerfile")
               (elisp "https://github.com/Wilfred/tree-sitter-elisp")
               (elixir "https://github.com/elixir-lang/tree-sitter-elixir")
+              (heex "https://github.com/phoenixframework/tree-sitter-heex")
               (go "https://github.com/tree-sitter/tree-sitter-go")
               (gomod "https://github.com/camdencheek/tree-sitter-go-mod")
               (html "https://github.com/tree-sitter/tree-sitter-html")
@@ -187,6 +193,7 @@
               (toml "https://github.com/tree-sitter/tree-sitter-toml")
               (tsx "https://github.com/tree-sitter/tree-sitter-typescript" "master" "tsx/src")
               (typescript "https://github.com/tree-sitter/tree-sitter-typescript" "master" "typescript/src")
+              (glsl "https://github.com/tree-sitter-grammars/tree-sitter-glsl")
               (yaml "https://github.com/ikatyang/tree-sitter-yaml")))
 
       ;; Install all grammars if not yet available
@@ -197,7 +204,6 @@
       (setq major-mode-remap-alist
             '((bash-mode . bash-ts-mode)
               (js-mode . js-ts-mode)
-              (typescript-mode . typescript-ts-mode)
               (json-mode . json-ts-mode)
               (css-mode . css-ts-mode)
               (python-mode . python-ts-mode)
@@ -208,6 +214,6 @@
               (rust-mode . rust-ts-mode)
               (go-mode . go-ts-mode)
               (go-dot-mod-mode . go-mod-ts-mode)
-              ;(yaml-mode . yaml-ts-mode)
+              (elixir-mode . elixir-ts-mode)
               ))
       ))
