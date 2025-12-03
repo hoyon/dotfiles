@@ -77,7 +77,8 @@
   :delight
   (eldoc-mode)
   (auto-fill-mode)
-  (auto-revert-mode))
+  (auto-revert-mode)
+  (hs-minor-mode))
 
 (load-config "evil.el")
 
@@ -100,6 +101,7 @@
 (load-config "project.el")
 (load-config "docs.el")
 (load-config "lang.el")
+(load-config "completion.el")
 (load-config "compile.el")
 (load-config "org.el")
 (load-config "tabs.el")

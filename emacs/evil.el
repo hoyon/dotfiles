@@ -62,7 +62,7 @@
           tab-bar
           wgrep
           woman
-          gptel))
+          corfu))
   (evil-collection-init))
 
 (use-package evil-nerd-commenter
