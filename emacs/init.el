@@ -101,7 +101,7 @@
 (load-config "org.el")
 (load-config "tabs.el")
 (load-config "modes.el")
-(load-config "mcp.el")
+(load-config "claude.el")
 
 (defun hym/grep-for-symbol-at-point ()
   (interactive)
