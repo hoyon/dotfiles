@@ -37,6 +37,9 @@
       (list (format "%%F - %%j")
             '(buffer-file-name "%f" (dired-directory dired-directory "%b"))))
 
+(add-to-list 'default-frame-alist '(height . 70))
+(add-to-list 'default-frame-alist '(width . 200))
+
 (defun load-config (filename)
   "Load config file"
   (load (expand-file-name filename user-emacs-directory)))
