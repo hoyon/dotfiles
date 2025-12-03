@@ -67,7 +67,7 @@
     (unless (hym/org-has-heading today)
       (goto-char (point-max))
       (unless (bolp) (insert "\n"))
-      (insert (conat "* " today "\n")))))
+      (insert (concat "* " today "\n")))))
 
 (setq org-capture-templates
       `(("i" "Inbox" entry (file+headline "inbox.org" "Inbox")
