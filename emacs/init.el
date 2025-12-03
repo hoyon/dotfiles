@@ -100,6 +100,7 @@
 (load-config "compile.el")
 (load-config "org.el")
 (load-config "tabs.el")
+(load-config "treemacs.el")
 (load-config "modes.el")
 (load-config "claude.el")
 
