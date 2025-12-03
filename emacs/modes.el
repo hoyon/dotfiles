@@ -11,6 +11,8 @@
 
 ;; Tramp
 
+(require 'tramp)
+
 ;; Make tramp work properly when using fish shell
 (setq shell-file-name "/bin/bash")
 
