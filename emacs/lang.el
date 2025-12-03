@@ -10,6 +10,8 @@
 (add-hook 'prog-mode-hook 'hym/show-trailing-whitespace)
 (add-hook 'markdown-mode-hook 'hym/show-trailing-whitespace)
 
+(add-hook 'prog-mode-hook #'hs-minor-mode)
+
 (use-package reformatter)
 
 (reformatter-define hym/clang-format
