@@ -39,8 +39,9 @@
 
 (defun hym/get-monday (time)
   "returns the monday of that week"
-  (let ((d (decode-time time)))
-    (encode-time (decoded-time-add d (make-decoded-time :day (1+ (- (decoded-time-weekday d))))))))
+  (let* ((d (decode-time time))
+         (days-back (thread-first d (decoded-time-weekday) (- 1) (mod 7) -)))
+    (encode-time (decoded-time-add d (make-decoded-time :day days-back)))))
 
 (defun hym/org-has-heading (heading)
   "returns non-nil if current buffer has an org header"
