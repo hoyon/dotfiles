@@ -190,3 +190,6 @@
 (when (executable-find "hunspell")
   (setq ispell-program-name "hunspell"
         ispell-dictionary "en_GB"))
+
+(setq ediff-window-setup-function 'ediff-setup-windows-plain
+      ediff-split-window-function 'split-window-horizontally)
