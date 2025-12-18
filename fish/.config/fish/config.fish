@@ -70,11 +70,6 @@ end
 
 set -x BAT_THEME ansi
 
-# device specific config
-if test "$hostname" = hoyon-work
-    fish_add_path -g /home/hoyon/.yarn/bin
-end
-
 if test -d /opt/homebrew
     eval (/opt/homebrew/bin/brew shellenv)
     fish_add_path -g ~/.cargo/bin
@@ -123,6 +118,10 @@ end
 
 if test -d ~/go/bin
     fish_add_path -g ~/go/bin
+end
+
+if test -d ~/.yarn/bin
+    fish_add_path -g ~/.yarn/bin
 end
 
 # fzf.fish bindings
