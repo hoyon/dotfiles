@@ -165,7 +165,7 @@ let g:airline#extensions#whitespace#enabled = 0
 " fzf
 nmap <C-p> :Files<cr>
 nmap <leader>b :Buffers<cr>
-nmap <leader>/ :Ag<space>
+nmap <leader>/ :Rg<space>
 
 "delimitMate
 let g:delimitMate_expand_cr = 2
