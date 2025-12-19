@@ -50,12 +50,14 @@
  ring-bell-function 'ignore ;; disable audible bell
  next-error-message-highlight 'keep)
 
-;; Move autosave and backup files to reduce clutter and disable lock files
-(make-directory (format "%sautosave/" user-emacs-directory) t)
+;; Store autosave and backup files in ~/.local/share/emacs
+(defvar hym/emacs-local-dir (expand-file-name "~/.local/share/emacs/"))
+(make-directory (concat hym/emacs-local-dir "autosave/") t)
+(make-directory (concat hym/emacs-local-dir "backup/") t)
 
 (setq
- auto-save-file-name-transforms `((".*" ,(format "%sautosave/" user-emacs-directory) t))
- backup-directory-alist `(("" . ,(format "%sbackup" user-emacs-directory)))
+ auto-save-file-name-transforms `((".*" ,(concat hym/emacs-local-dir "autosave/") t))
+ backup-directory-alist `(("" . ,(concat hym/emacs-local-dir "backup/")))
  create-lockfiles nil)
 
 (setq custom-file (expand-file-name "custom.el" user-emacs-directory))
