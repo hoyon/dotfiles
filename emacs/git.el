@@ -70,7 +70,9 @@
              (or hym/git-delta-diff--args "")
              (- (frame-width) 1))
      nil t)
-    (ansi-color-apply-on-region (point-min) (point-max))
+    (if (= (point-min) (point-max))
+        (insert "No changes")
+      (ansi-color-apply-on-region (point-min) (point-max)))
     (goto-char (min pos (point-max)))))
 
 (defun hym/git-delta-diff--show-buffer (buf)
