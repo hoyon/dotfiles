@@ -72,6 +72,7 @@ set -x BAT_THEME ansi
 
 if test -d /opt/homebrew
     eval (/opt/homebrew/bin/brew shellenv)
+    fish_add_path -g /opt/homebrew/opt/rustup/bin
     fish_add_path -g ~/.cargo/bin
     fish_add_path -g (python3 -m site --user-base)/bin
 end
