@@ -1,6 +1,7 @@
 theme = Flexoki Light
 command = /opt/homebrew/bin/fish --login --interactive
 font-family = Berkeley Mono
+scrollback-limit = 100000000
 
 # Needed for claude code shift+enter for new line
 keybind = shift+enter=text:\x1b\r
