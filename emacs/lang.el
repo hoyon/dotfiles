@@ -66,14 +66,10 @@
     "gt" 'exunit-toggle-file-and-test
     "gT" 'exunit-toggle-file-and-test-other-window))
 
-(use-package elixir-mode
-  :hook (elixir-mode . hym/elixir-mode-hook))
-
-(use-package exunit)
+(use-package exunit
+  :hook (elixir-ts-mode . hym/elixir-mode-hook))
 
 (use-package erlang)
-
-(use-package elm-mode)
 
 (setq
  js-indent-level 2
