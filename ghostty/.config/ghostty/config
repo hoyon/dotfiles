@@ -5,3 +5,7 @@ scrollback-limit = 100000000
 
 # Needed for claude code shift+enter for new line
 keybind = shift+enter=text:\x1b\r
+
+# Disbable keybind for fullscreen
+keybind = ctrl+enter=unbind
+keybind = super+enter=unbind
