@@ -96,7 +96,8 @@ COMMAND-FN, if provided, is a function returning the shell command to run."
       (setq-local hym/git-delta-diff--command-fn
                   (or command-fn
                       (lambda ()
-                        (format "GIT_PAGER=cat git diff -U5 %s | delta --side-by-side --width %d"
+                        (format "{ GIT_PAGER=cat git diff --stat %s; echo; GIT_PAGER=cat git diff -U5 %s | delta --side-by-side --width %d; }"
+                                (or args "")
                                 (or args "")
                                 (- (frame-width) 1)))))
       (hym/git-delta-diff-refresh)
