@@ -92,6 +92,7 @@ COMMAND-FN, if provided, is a function returning the shell command to run."
                         (if (string= args "--cached") "staged" "unstaged")))
          (buf (get-buffer-create (format "*delta-diff[%s]: %s*" diff-type (project-name (project-current))))))
     (with-current-buffer buf
+      (special-mode)
       (setq-local hym/git-delta-diff--directory dir)
       (setq-local hym/git-delta-diff--command-fn
                   (or command-fn
@@ -101,7 +102,6 @@ COMMAND-FN, if provided, is a function returning the shell command to run."
                                 (- (frame-width) 1)))))
       (hym/git-delta-diff-refresh)
       (goto-char (point-min))
-      (special-mode)
       (evil-local-set-key 'normal "q" 'tab-close)
       (evil-local-set-key 'normal "gr" 'hym/git-delta-diff-refresh))
     (hym/git-delta-diff--show-buffer buf)))
