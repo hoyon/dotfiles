@@ -125,7 +125,7 @@
 
 (defun hym/find-org ()
   (interactive)
-  (ido-find-file-in-dir "~/org"))
+  (consult-fd "~/org" "\\.org$ "))
 
 (defun hym/open-org-config ()
   (interactive)
