@@ -57,6 +57,9 @@
 (add-hook 'c++-mode-hook 'hym/c-mode-hook)
 
 (defun hym/elixir-mode-hook ()
+  ;; Fix using finding &my_fun/1 when pressing *
+  (modify-syntax-entry ?& ".")
+
   (hym/local-leader-def
     "ta" 'exunit-verify-all
     "tb" 'exunit-verify
@@ -66,10 +69,10 @@
     "gt" 'exunit-toggle-file-and-test
     "gT" 'exunit-toggle-file-and-test-other-window))
 
-(use-package exunit
-  :hook (elixir-ts-mode . hym/elixir-mode-hook))
-
+(use-package exunit)
 (use-package erlang)
+
+(add-hook 'elixir-ts-mode-hook 'hym/elixir-mode-hook)
 
 (setq
  js-indent-level 2
