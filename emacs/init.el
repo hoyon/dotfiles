@@ -191,7 +191,8 @@
 (global-auto-revert-mode)
 
 (setq global-auto-revert-non-file-buffers t
-      auto-revert-verbose nil)
+      auto-revert-verbose nil
+      save-interprogram-paste-before-kill t)
 
 ;; Unset default full screen shortcut
 (global-unset-key (kbd "<f11>"))
