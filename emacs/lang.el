@@ -120,7 +120,7 @@
   :mode "\\.nix\\'")
 
 (use-package clojure-mode)
-;; (use-package cider)
+(use-package cider)
 
 (use-package cmake-mode)
 (use-package csv-mode)
