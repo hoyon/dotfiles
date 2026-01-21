@@ -26,10 +26,14 @@
   :program "gofmt"
   :args '())
 
+(reformatter-define hym/elixir-format
+  :program "mix"
+  :args '("format" "-"))
+
 (defun hym/format-buffer ()
   (interactive)
   (let* ((formatters
-          '((elixir . elixir-format)
+          '((elixir . hym/elixir-format-buffer)
             (rust . rust-format-buffer)
             (zig . zig-format-buffer)
             (terraform . terraform-format-buffer)
@@ -86,7 +90,6 @@
         web-mode-enable-auto-quoting nil))
 
 (use-package web-mode
-  :mode ("\\.eex" "\\.heex" "\\.svelte" "\\.vue" "\\.astro" "\\.njk" "\\.webc")
   :hook (web-mode . hym/web-mode-hook)
   :config
   (setq web-mode-engines-alist
@@ -94,10 +97,6 @@
 
 (use-package markdown-mode
   :commands (markdown-mode gfm-mode)
-  :mode
-  (("\\.md\\'" . markdown-mode)
-   ("\\.markdown\\'" . markdown-mode)
-   ("README\\.md\\'" . gfm-mode))
   :init
   (setq markdown-command "multimarkdown")
   :custom
@@ -116,9 +115,6 @@
   :config
   (setq rego-format-at-save nil))
 
-(use-package nix-mode
-  :mode "\\.nix\\'")
-
 (use-package clojure-mode)
 (use-package cider)
 
@@ -132,12 +128,12 @@
 (use-package qml-mode)
 (use-package smalltalk-mode)
 (use-package just-mode)
+(use-package go-mode)
+(use-package jtsx)
+(use-package powershell)
 
 (use-package terraform-mode
   :custom (terraform-command "tofu"))
-
-(use-package bazel
-  :mode ("Tiltfile" . bazel-mode))
 
 (use-package gdscript-mode
     :straight (gdscript-mode
@@ -145,7 +141,6 @@
                :host github
                :repo "godotengine/emacs-gdscript-mode"))
 
-(use-package go-mode)
 
 (setq go-ts-mode-indent-offset 8)
 
@@ -163,12 +158,34 @@
   :hook ((c++-mode java-mode zig-mode emacs-lisp-mode clojure-mode rust-mode go-ts-mode) . smartparens-mode))
 
 (mapc (lambda (entry) (add-to-list 'auto-mode-alist entry))
-        '(("\\.ts\\'" . typescript-ts-mode)
-          ("\\.tsx\\'" . tsx-ts-mode)
-          ("\\.json\\'" . json-ts-mode)
-          ("\\.yaml\\'" . yaml-ts-mode)
-          ("\\.yml\\'" . yaml-ts-mode)
-          ("\\.glsl\\'" . glsl-ts-mode)))
+      '(
+        ("\\.yaml\\'" . yaml-ts-mode)
+        ("\\.yml\\'" . yaml-ts-mode)
+        ("\\.glsl\\'" . glsl-ts-mode)
+        ("\\.ex\\'" . elixir-ts-mode)
+        ("\\.exs\\'" . elixir-ts-mode)
+
+        ("\\.js\\'" . js-ts-mode)
+        ("\\.mjs\\'" . js-ts-mode)
+        ("\\.ts\\'" . typescript-ts-mode)
+        ("\\.json\\'" . json-ts-mode)
+
+        ("\\.jsx\\'" . jtsx-jsx-mode)
+        ("\\.tsx\\'" . jtsx-tsx-mode)
+
+        ("\\.eex\\'" . web-mode)
+        ("\\.heex\\'" . web-mode)
+        ("\\.svelte\\'" . web-mode)
+        ("\\.vue\\'" . web-mode)
+        ("\\.astro\\'" . web-mode)
+        ("\\.njk\\'" . web-mode)
+        ("\\.webc\\'" . web-mode)
+
+        ("\\.lua\\'" . lua-ts-mode)
+
+        ("\\.md\\'" . markdown-mode)
+        ("\\.markdown\\'" . markdown-mode)
+        ("README\\.md\\'" . gfm-mode)))
 
 (if (and (fboundp 'treesit-available-p) (treesit-available-p))
     (progn
@@ -195,6 +212,7 @@
               (tsx "https://github.com/tree-sitter/tree-sitter-typescript" "master" "tsx/src")
               (typescript "https://github.com/tree-sitter/tree-sitter-typescript" "master" "typescript/src")
               (glsl "https://github.com/tree-sitter-grammars/tree-sitter-glsl")
+              (lua "https://github.com/tree-sitter-grammars/tree-sitter-lua")
               (yaml "https://github.com/ikatyang/tree-sitter-yaml")))
 
       ;; Install all grammars if not yet available
@@ -204,8 +222,6 @@
 
       (setq major-mode-remap-alist
             '((bash-mode . bash-ts-mode)
-              (js-mode . js-ts-mode)
-              (json-mode . json-ts-mode)
               (css-mode . css-ts-mode)
               (python-mode . python-ts-mode)
               (cmake-mode . cmake-ts-mode)
@@ -214,7 +230,5 @@
               (c-mode . c-ts-mode)
               (rust-mode . rust-ts-mode)
               (go-mode . go-ts-mode)
-              (go-dot-mod-mode . go-mod-ts-mode)
-              (elixir-mode . elixir-ts-mode)
-              ))
+              (go-dot-mod-mode . go-mod-ts-mode)))
       ))
