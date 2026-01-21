@@ -123,15 +123,17 @@
         (kill-new file-name))
     (error "Buffer not visiting a file")))
 
-(defun hym/copy-buffer-file-name-relative ()
+(defun hym/copy-buffer-file-name-claude ()
   (interactive)
   (if-let* ((file-name (buffer-file-name))
             (proj (project-current))
             (root (project-root proj))
-            (relative-name (file-relative-name file-name root)))
+            (relative-name (file-relative-name file-name root))
+            (line-num (line-number-at-pos))
+            (str (format "@%s line %d" relative-name line-num)))
       (progn
-        (message relative-name)
-        (kill-new relative-name))
+        (message str)
+        (kill-new str))
     (error "Buffer not visiting a file or not in a project")))
 
 (defun hym/delete-current-file ()
@@ -160,7 +162,7 @@
   "SPC" 'project-find-file
   "fs" 'evil-write
   "fy" 'hym/copy-buffer-file-name
-  "fY" 'hym/copy-buffer-file-name-relative
+  "fY" 'hym/copy-buffer-file-name-claude
   "fd" 'hym/delete-current-file
   "fr" 'rename-visited-file
   "fm" 'hym/chmod-current-file
