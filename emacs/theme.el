@@ -34,6 +34,13 @@
 (add-to-list 'default-frame-alist `(font . ,(format "%s-%s" hym/font-family hym/font-size)))
 (set-frame-font (format "%s-%s" hym/font-family hym/font-size) t t)
 
+(setq face-font-rescale-alist
+      '(("Apple Color Emoji" . 0.65)
+        ("Noto Color Emoji" . 0.65)
+        ("Noto Emoji" . 0.65)
+        ("Segoe UI Emoji" . 0.65)
+        ("Symbola" . 0.65)))
+
 (hym/leader-def
   "af" 'global-text-scale-adjust)
 
