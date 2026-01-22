@@ -1,38 +1,19 @@
 ;; -*- lexical-binding: t -*-
 
-;; (use-package gptel
-;;   :config
-;;   (require 'gptel-integrations)
-
-;;   (setq
-;;    gptel-model 'gpt-4.1
-;;    gptel-backend (gptel-make-gh-copilot "Copilot"))
-
-;;   ;; :custom (gptel-log-level 'debug)
-;; )
-
-
-;; (use-package mcp
-;;   :straight (:host github :repo "lizqwerscott/mcp.el"
-;;                    :branch "master")
-;;   :config
-;;   :after gptel
-;;   :custom
-;;   (mcp-hub-servers
-;;    '(("filesystem" . (:command "/opt/homebrew/bin/npx"
-;;                                :args ("-y" "@modelcontextprotocol/server-filesystem" "/Users/hoyon/code/sandbox")))
-;;      ("steampipe" . (:command "/opt/homebrew/bin/npx"
-;;                               :args ("-y" "@turbot/steampipe-mcp")))))
-;;   :config (require 'mcp-hub)
-;;   ;; :hook (after-init . mcp-hub-start-all-server)
-;;   )
-
-(use-package monet
-  :straight (:host github :repo "stevemolitor/monet" :branch "main")
-
+(use-package claude-code-ide
+  :straight (:type git :host github :repo "manzaltu/claude-code-ide.el")
+  :bind ("C-c C-'" . claude-code-ide-menu)
   :config
+  (claude-code-ide-emacs-tools-setup)
+  (setq claude-code-ide-terminal-backend 'eat)
   (hym/leader-def
-    "Cs" 'monet-start-server
-    "Cx" 'monet-stop-all-servers
-    "Cl" 'monet-list-sessions)
-  )
+    "Cc" 'claude-code-ide
+    "CC" 'claude-code-ide-continue
+    "Cr" 'claude-code-ide-resume
+    "Ct" 'claude-code-ide-toggle
+    "CT" 'claude-code-ide-toggle-recent
+    "Cb" 'claude-code-ide-switch-to-buffer
+    "Cp" 'claude-code-ide-send-prompt
+    "Cm" 'claude-code-ide-menu
+    "Cl" 'claude-code-ide-list-sessions
+    "Cq" 'claude-code-ide-stop))
