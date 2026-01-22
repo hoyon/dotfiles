@@ -62,7 +62,8 @@
           tab-bar
           wgrep
           woman
-          corfu))
+          corfu
+          eat))
   (evil-collection-init))
 
 (use-package evil-nerd-commenter
