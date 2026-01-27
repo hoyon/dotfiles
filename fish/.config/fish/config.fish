@@ -1,14 +1,5 @@
 set fish_greeting ""
 
-# Colourful man in less
-set -x LESS_TERMCAP_mb (printf "\\e[1;91m")    # start blinking
-set -x LESS_TERMCAP_md (printf "\\e[1;91m")    # start bold
-set -x LESS_TERMCAP_me (printf "\\e[0m")       # end mode
-set -x LESS_TERMCAP_so (printf "\\e[1;40;93m") # start standout
-set -x LESS_TERMCAP_se (printf "\\e[0m")       # end standout
-set -x LESS_TERMCAP_us (printf "\\e[1;92m")    # start underlining
-set -x LESS_TERMCAP_ue (printf "\\e[0m")       # end underlining
-
 set SHELL (which fish)
 set -x PAGER less
 
@@ -136,6 +127,12 @@ set -g fish_color_error brred
 set -g fish_color_param brblue
 set -g fish_color_operator brcyan
 set -g fish_color_redirection bryellow
+
+# fish-colored-man colours
+set -g man_blink -o red
+set -g man_bold -o magenta
+set -g man_standout -b white 586e75
+set -g man_underline -u 586e75
 
 if type -q starship
     starship init fish | source
