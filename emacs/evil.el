@@ -63,7 +63,7 @@
           wgrep
           woman
           corfu
-          eat))
+          vterm))
   (evil-collection-init))
 
 (use-package evil-nerd-commenter
