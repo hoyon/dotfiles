@@ -66,7 +66,3 @@
    :states 'normal
    :keymaps 'vterm-mode-map
    "p" 'vterm-yank))
-
-(use-package eat
-  :config
-  (setq eat-shell (executable-find "fish")))
