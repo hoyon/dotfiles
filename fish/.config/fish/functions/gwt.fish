@@ -1,4 +1,4 @@
-function gwt
+function gwt --description "Create a new git worktree from origin/main"
     if test -z "$argv"
         echo "Usage: gwt new-branch-name"
         return 1
