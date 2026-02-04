@@ -6,7 +6,7 @@ function gwt --description "Create a new git worktree from origin/main or a PR"
         if set -q _flag_pr
             echo "Usage: gwt --pr <pr-number>"
         else
-            echo "Usage: gwt <new-branch-name>"
+            echo "Usage: gwt <dir-name> [branch-name]"
         end
         return 1
     end
@@ -25,8 +25,9 @@ function gwt --description "Create a new git worktree from origin/main or a PR"
         git fetch origin $branch
         git worktree add $worktree origin/$branch; or return 1
     else
-        set -l branch $argv[1]
-        set worktree ../$repo-$branch
+        set -l dir_name $argv[1]
+        set -l branch (test (count $argv) -ge 2 && echo $argv[2] || echo $argv[1])
+        set worktree ../$repo-$dir_name
         git fetch origin main
         git worktree add $worktree origin/main -b $branch; or return 1
     end
