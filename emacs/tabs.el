@@ -21,6 +21,34 @@ Uses position instead of index field."
               (tab-bar-select-tab i)))
           (setq i (1+ i)))))))
 
+(defun hym/tab-cycle-in-group (direction)
+  "Cycle to the next (DIRECTION=1) or previous (DIRECTION=-1) tab in the current group."
+  (let* ((tabs (funcall tab-bar-tabs-function))
+         (current-group (funcall tab-bar-tab-group-function (tab-bar--current-tab)))
+         (group-tab-nums nil)
+         (current-num nil)
+         (n 1))
+    (dolist (tab tabs)
+      (when (string= (funcall tab-bar-tab-group-function tab) current-group)
+        (push n group-tab-nums)
+        (when (eq (car tab) 'current-tab)
+          (setq current-num n)))
+      (setq n (1+ n)))
+    (setq group-tab-nums (nreverse group-tab-nums))
+    (let* ((pos (seq-position group-tab-nums current-num))
+           (next-pos (mod (+ pos direction) (length group-tab-nums))))
+      (tab-bar-select-tab (nth next-pos group-tab-nums)))))
+
+(defun hym/tab-next-in-group ()
+  "Switch to the next tab in the current tab group."
+  (interactive)
+  (hym/tab-cycle-in-group 1))
+
+(defun hym/tab-previous-in-group ()
+  "Switch to the previous tab in the current tab group."
+  (interactive)
+  (hym/tab-cycle-in-group -1))
+
 (defun hym/tab-create (name)
   "Creates a tab with the given name if it doens't exist."
   (condition-case nil
@@ -58,6 +86,10 @@ Uses position instead of index field."
 (keymap-global-set "s-7" (lambda () (interactive) (tab-select 7)))
 (keymap-global-set "s-8" (lambda () (interactive) (tab-select 8)))
 (keymap-global-set "s-9" (lambda () (interactive) (tab-select 9)))
+
+(keymap-global-set "C-<tab>" #'hym/tab-next-in-group)
+(keymap-global-set "C-S-<iso-lefttab>" #'hym/tab-previous-in-group) ;; Linux
+(keymap-global-set "C-<backtab>" #'hym/tab-previous-in-group) ;; macOS
 
 (setq tab-bar-new-tab-to 'right
       tab-bar-close-button-show nil
