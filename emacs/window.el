@@ -22,20 +22,6 @@
         (,(rx "*Compilation*")
          . (display-buffer-reuse-window))
 
-        ;; Open info and man in right sidebar
-        (,(rx (or "*info*" (seq "*man " (* anychar) "*") (seq "*WoMan " (* anychar) "*")))
-         . ((display-buffer-in-side-window)
-            (side . right)
-            (slot . 0)
-            (window-width . 80)
-            (window-parameters
-             (no-delete-other-windows . t))))
-
-        ;; Reuse open help buffers
-        (,(rx (or "*Help*" "*helpful"))
-              . ((display-buffer-reuse-window display-buffer-pop-up-window)
-                 (inhibit-same-window . t)))
-
         ;; Always open eshell in new window
         (,(rx anychar "eshell*")
           . ((display-buffer-reuse-window display-buffer-pop-up-window)
@@ -43,8 +29,35 @@
 
         ))
 
-(winner-mode 1)
+(use-package ace-window
+  :config
+  (global-set-key (kbd "C-x o") 'ace-window))
+
+(defun hym/ace-window-prefix ()
+  "Use `ace-window' to display the buffer of the next command.
+The next buffer is the buffer displayed by the next command invoked
+immediately after this command (ignoring reading from the minibuffer).
+Creates a new window before displaying the buffer.
+When `switch-to-buffer-obey-display-actions' is non-nil,
+`switch-to-buffer' commands are also supported."
+  (interactive)
+  (display-buffer-override-next-command
+   (lambda (buffer _)
+     (let (window type)
+       (setq
+        window (aw-select (propertize " ACE" 'face 'mode-line-highlight))
+        type 'reuse)
+       (cons window type)))
+   nil "[ace-window]")
+  (message "Use `ace-window' to display next command buffer..."))
+
+(keymap-global-set "C-x 4 o" 'hym/ace-window-prefix)
+
+(tab-bar-history-mode 1)
 (hym/leader-def
-  "wu" 'winner-undo
-  "wr" 'winner-redo
+  "wu" 'tab-bar-history-back
+  "wr" 'tab-bar-history-forward
   "ws" 'window-toggle-side-windows)
+
+;; TODO configure strokes mode
+;; (global-set-key (kbd "<down-mouse-9>") 'strokes-do-stroke)
