@@ -2,15 +2,24 @@
 
 (tab-bar-mode 1)
 
-(setq tab-bar-new-tab-to 'rightmost)
-
-(defun hym/tab-bar-tab-name-format (tab i)
-  "Format TAB with index I to include the tab number."
-  (propertize
-   (concat (number-to-string i) " " (alist-get 'name tab))
-   'face (funcall tab-bar-tab-face-function tab)))
-
-(setq tab-bar-tab-name-format-function #'hym/tab-bar-tab-name-format)
+;; Stolen from https://www.rahuljuliato.com/posts/emacs-tab-bar-groups#
+(defun hym/tab-switch-to-group ()
+  "Prompt for a tab group and switch to its first tab.
+Uses position instead of index field."
+  (interactive)
+  (let* ((tabs (funcall tab-bar-tabs-function)))
+    (let* ((groups (delete-dups (mapcar (lambda (tab)
+                                          (funcall tab-bar-tab-group-function tab))
+                                        tabs)))
+           (group (completing-read "Switch to group: " groups nil t)))
+      (let ((i 1) (found nil))
+        (dolist (tab tabs)
+          (let ((tab-group (funcall tab-bar-tab-group-function tab)))
+            (when (and (not found)
+                       (string= tab-group group))
+              (setq found t)
+              (tab-bar-select-tab i)))
+          (setq i (1+ i)))))))
 
 (defun hym/tab-create (name)
   "Creates a tab with the given name if it doens't exist."
@@ -26,7 +35,7 @@
   "tk" 'tab-next
   "tc" 'tab-close
   "tr" 'tab-rename
-  "tt" 'tab-switch
+  "tt" 'hym/tab-switch-to-group
   "tn" 'tab-new
   "t1" (lambda () (interactive) (tab-select 1))
   "t2" (lambda () (interactive) (tab-select 2))
@@ -49,3 +58,24 @@
 (keymap-global-set "s-7" (lambda () (interactive) (tab-select 7)))
 (keymap-global-set "s-8" (lambda () (interactive) (tab-select 8)))
 (keymap-global-set "s-9" (lambda () (interactive) (tab-select 9)))
+
+(setq tab-bar-new-tab-to 'right
+      tab-bar-close-button-show nil
+      tab-bar-new-button-show nil
+      tab-bar-tab-hints t
+      tab-bar-auto-width nil
+      tab-bar-separator " "
+      tab-bar-format '(tab-bar-format-tabs-groups tab-bar-separator))
+
+(defun tab-bar-tab-name-format-hints (name _tab i)
+  (if tab-bar-tab-hints (concat (format " %d " i) "") name))
+
+(defun tab-bar-tab-group-format-default (tab _i &optional current-p)
+  (propertize
+   (concat (funcall tab-bar-tab-group-function tab))
+   'face (if current-p 'tab-bar-tab-group-current 'tab-bar-tab-group-inactive)))
+
+;; (add-to-list 'display-buffer-alist
+;; 			   '("\\*scratch\\*"
+;; 				 (display-buffer-in-tab display-buffer-full-frame)
+;; 				 (tab-group . "[EMACS]")))
