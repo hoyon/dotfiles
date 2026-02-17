@@ -21,6 +21,16 @@ Uses position instead of index field."
               (tab-bar-select-tab i)))
           (setq i (1+ i)))))))
 
+(defun hym/tab-group-positions (group)
+  "Return the list of 1-based global tab positions belonging to GROUP."
+  (let ((tabs (funcall tab-bar-tabs-function))
+        (positions nil)
+        (n 1))
+    (dolist (tab tabs (nreverse positions))
+      (when (string= (funcall tab-bar-tab-group-function tab) group)
+        (push n positions))
+      (setq n (1+ n)))))
+
 ;;; Cycle between tab groups
 (defun hym/tab-cycle-group (direction)
   "Cycle to the next (DIRECTION=1) or previous (DIRECTION=-1) tab group."
@@ -78,6 +88,15 @@ Uses position instead of index field."
   (interactive)
   (hym/tab-cycle-in-group -1))
 
+(defun hym/tab-select-in-group (local-n)
+  "Select the LOCAL-N'th tab in the current tab group."
+  (interactive "nTab number: ")
+  (let* ((positions (hym/tab-group-positions
+                     (funcall tab-bar-tab-group-function (tab-bar--current-tab))))
+         (global-pos (nth (1- local-n) positions)))
+    (when global-pos
+      (tab-bar-select-tab global-pos))))
+
 (defun hym/tab-create (name)
   "Creates a tab with the given name if it doens't exist."
   (condition-case nil
@@ -94,26 +113,26 @@ Uses position instead of index field."
   "tr" 'tab-rename
   "tt" 'hym/tab-switch-to-group
   "tn" 'tab-new
-  "t1" (lambda () (interactive) (tab-select 1))
-  "t2" (lambda () (interactive) (tab-select 2))
-  "t3" (lambda () (interactive) (tab-select 3))
-  "t4" (lambda () (interactive) (tab-select 4))
-  "t5" (lambda () (interactive) (tab-select 5))
-  "t6" (lambda () (interactive) (tab-select 6))
-  "t7" (lambda () (interactive) (tab-select 7))
-  "t8" (lambda () (interactive) (tab-select 8))
-  "t9" (lambda () (interactive) (tab-select 9)))
+  "t1" (lambda () (interactive) (hym/tab-select-in-group 1))
+  "t2" (lambda () (interactive) (hym/tab-select-in-group 2))
+  "t3" (lambda () (interactive) (hym/tab-select-in-group 3))
+  "t4" (lambda () (interactive) (hym/tab-select-in-group 4))
+  "t5" (lambda () (interactive) (hym/tab-select-in-group 5))
+  "t6" (lambda () (interactive) (hym/tab-select-in-group 6))
+  "t7" (lambda () (interactive) (hym/tab-select-in-group 7))
+  "t8" (lambda () (interactive) (hym/tab-select-in-group 8))
+  "t9" (lambda () (interactive) (hym/tab-select-in-group 9)))
 
 ;; Use cmd+number to change tab
-(keymap-global-set "s-1" (lambda () (interactive) (tab-select 1)))
-(keymap-global-set "s-2" (lambda () (interactive) (tab-select 2)))
-(keymap-global-set "s-3" (lambda () (interactive) (tab-select 3)))
-(keymap-global-set "s-4" (lambda () (interactive) (tab-select 4)))
-(keymap-global-set "s-5" (lambda () (interactive) (tab-select 5)))
-(keymap-global-set "s-6" (lambda () (interactive) (tab-select 6)))
-(keymap-global-set "s-7" (lambda () (interactive) (tab-select 7)))
-(keymap-global-set "s-8" (lambda () (interactive) (tab-select 8)))
-(keymap-global-set "s-9" (lambda () (interactive) (tab-select 9)))
+(keymap-global-set "s-1" (lambda () (interactive) (hym/tab-select-in-group 1)))
+(keymap-global-set "s-2" (lambda () (interactive) (hym/tab-select-in-group 2)))
+(keymap-global-set "s-3" (lambda () (interactive) (hym/tab-select-in-group 3)))
+(keymap-global-set "s-4" (lambda () (interactive) (hym/tab-select-in-group 4)))
+(keymap-global-set "s-5" (lambda () (interactive) (hym/tab-select-in-group 5)))
+(keymap-global-set "s-6" (lambda () (interactive) (hym/tab-select-in-group 6)))
+(keymap-global-set "s-7" (lambda () (interactive) (hym/tab-select-in-group 7)))
+(keymap-global-set "s-8" (lambda () (interactive) (hym/tab-select-in-group 8)))
+(keymap-global-set "s-9" (lambda () (interactive) (hym/tab-select-in-group 9)))
 
 (keymap-global-set "C-<tab>" #'hym/tab-next-in-group)
 (keymap-global-set "C-S-<iso-lefttab>" #'hym/tab-previous-in-group) ;; Linux
@@ -127,8 +146,13 @@ Uses position instead of index field."
       tab-bar-separator " "
       tab-bar-format '(tab-bar-format-tabs-groups tab-bar-separator))
 
-(defun tab-bar-tab-name-format-hints (name _tab i)
-  (if tab-bar-tab-hints (concat (format " %d " i) "") name))
+(defun tab-bar-tab-name-format-hints (name tab i)
+  (if tab-bar-tab-hints
+      (let* ((positions (hym/tab-group-positions
+                         (funcall tab-bar-tab-group-function tab)))
+             (local-i (1+ (seq-position positions i))))
+        (format " %d " local-i))
+    name))
 
 (defun tab-bar-tab-group-format-default (tab _i &optional current-p)
   (propertize
