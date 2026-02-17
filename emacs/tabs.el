@@ -138,6 +138,19 @@ Uses position instead of index field."
 (keymap-global-set "C-S-<iso-lefttab>" #'hym/tab-previous-in-group) ;; Linux
 (keymap-global-set "C-<backtab>" #'hym/tab-previous-in-group) ;; macOS
 
+(defun hym/move-new-tab-to-group-end (&rest _)
+  "Move newly created tab to the end of its group."
+  (let* ((tabs (funcall tab-bar-tabs-function))
+         (current (seq-find (lambda (tab) (eq (car tab) 'current-tab)) tabs))
+         (group (funcall tab-bar-tab-group-function current))
+         (positions (hym/tab-group-positions group))
+         (last-pos (car (last positions)))
+         (current-pos (1+ (tab-bar--current-tab-index tabs))))
+    (when (> last-pos current-pos)
+      (tab-bar-move-tab-to last-pos))))
+
+(advice-add 'tab-bar-new-tab :after #'hym/move-new-tab-to-group-end)
+
 (setq tab-bar-new-tab-to 'right
       tab-bar-close-button-show nil
       tab-bar-new-button-show nil
