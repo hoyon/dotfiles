@@ -21,6 +21,35 @@ Uses position instead of index field."
               (tab-bar-select-tab i)))
           (setq i (1+ i)))))))
 
+;;; Cycle between tab groups
+(defun hym/tab-cycle-group (direction)
+  "Cycle to the next (DIRECTION=1) or previous (DIRECTION=-1) tab group."
+  (let* ((tabs (funcall tab-bar-tabs-function))
+         (current-group (funcall tab-bar-tab-group-function (tab-bar--current-tab)))
+         (groups (delete-dups (mapcar (lambda (tab)
+                                        (funcall tab-bar-tab-group-function tab))
+                                      tabs)))
+         (pos (seq-position groups current-group #'string=))
+         (next-pos (mod (+ pos direction) (length groups)))
+         (next-group (nth next-pos groups))
+         (n 1))
+    (dolist (tab tabs)
+      (when (string= (funcall tab-bar-tab-group-function tab) next-group)
+        (tab-bar-select-tab n)
+        (cl-return))
+      (setq n (1+ n)))))
+
+(defun hym/tab-switch-to-next-group ()
+  "Switch to the first tab in the next tab group."
+  (interactive)
+  (hym/tab-cycle-group 1))
+
+(defun hym/tab-switch-to-prev-group ()
+  "Switch to the first tab in the previous tab group."
+  (interactive)
+  (hym/tab-cycle-group -1))
+
+;;; Cycle within tab groups
 (defun hym/tab-cycle-in-group (direction)
   "Cycle to the next (DIRECTION=1) or previous (DIRECTION=-1) tab in the current group."
   (let* ((tabs (funcall tab-bar-tabs-function))
@@ -59,8 +88,8 @@ Uses position instead of index field."
            (tab-bar-rename-tab name))))
 
 (hym/leader-def
-  "tj" 'tab-previous
-  "tk" 'tab-next
+  "tj" 'hym/tab-switch-to-prev-group
+  "tk" 'hym/tab-switch-to-next-group
   "tc" 'tab-close
   "tr" 'tab-rename
   "tt" 'hym/tab-switch-to-group
@@ -73,8 +102,7 @@ Uses position instead of index field."
   "t6" (lambda () (interactive) (tab-select 6))
   "t7" (lambda () (interactive) (tab-select 7))
   "t8" (lambda () (interactive) (tab-select 8))
-  "t9" (lambda () (interactive) (tab-select 9))
-  )
+  "t9" (lambda () (interactive) (tab-select 9)))
 
 ;; Use cmd+number to change tab
 (keymap-global-set "s-1" (lambda () (interactive) (tab-select 1)))
