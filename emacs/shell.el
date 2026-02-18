@@ -42,7 +42,10 @@
     (1 (find-file (car args)))
     (_ (error "too many args"))))
 
-(add-hook 'eshell-mode-hook (lambda () (setenv "TERM" "xterm-256color")))
+(defun hym/eshell-setup ()
+  (setenv "TERM" "xterm-256color"))
+
+(add-hook 'eshell-mode-hook #'hym/eshell-setup)
 
 ;; vterm config
 (use-package vterm

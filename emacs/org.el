@@ -148,7 +148,7 @@
 
 (load-config "org-uk-holidays.el")
 
-(defun hym/save-org-buffers ()
+(defun hym/save-org-buffers (&rest _)
   "Save `org-agenda-files' buffers without user confirmation.
 See also `org-save-all-org-buffers'"
   (interactive)
@@ -158,9 +158,7 @@ See also `org-save-all-org-buffers'"
                t)))
   (message "Saving org-agenda-files buffers... done"))
 
-(advice-add 'org-refile :after
-        (lambda (&rest _)
-          (hym/save-org-buffers)))
+(advice-add 'org-refile :after #'hym/save-org-buffers)
 
 (use-package org-modern
   :config
