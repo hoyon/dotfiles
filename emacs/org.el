@@ -65,7 +65,7 @@
     (let ((buf (or (get-file-buffer filename)
                    (find-file-noselect filename))))
       (message (concat "opening " filename "..."))
-      (pop-to-buffer buf)
+      (switch-to-buffer buf)
       (unless (file-exists-p filename)
         (write-region "" nil filename))
       (org-show-all)
