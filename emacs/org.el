@@ -52,16 +52,21 @@
                t))
            nil 'file)))
 
+(defun hym/weekly-file-path ()
+  (let ((monday (hym/get-monday (current-time))))
+    (unless (file-exists-p hym/weekly-dir)
+      (make-directory hym/weekly-dir t))
+    (expand-file-name (format-time-string "%F.org" monday) hym/weekly-dir)))
+
+(defun hym/weekly-today-heading ()
+  (let ((now (current-time)))
+    (format-time-string (concat "%A %-d" (hym/ordinal-suffix now) " %B") now)))
+
 (defun hym/open-weekly-note ()
   "Open the note for the current week at today's date"
   (interactive)
-  (let* ((now (current-time))
-         (monday (hym/get-monday now))
-         (filename (expand-file-name (format-time-string "%F.org" monday) hym/weekly-dir))
-         (today (format-time-string (concat "%A %-d" (hym/ordinal-suffix now) " %B") now)))
-
-    (unless (file-exists-p hym/weekly-dir)
-      (make-directory hym/weekly-dir t))
+  (let* ((filename (hym/weekly-file-path))
+         (today (hym/weekly-today-heading)))
     (let ((buf (or (get-file-buffer filename)
                    (find-file-noselect filename))))
       (message (concat "opening " filename "..."))
@@ -75,8 +80,19 @@
         (unless (bolp) (insert "\n"))
         (insert (concat "* " today "\n"))))))
 
+(defun hym/weekly-capture-find-heading ()
+  (let ((heading (hym/weekly-today-heading)))
+    (goto-char (point-min))
+    (unless (re-search-forward (format "^\\* %s$" (regexp-quote heading)) nil t)
+      (goto-char (point-max))
+      (unless (bolp) (insert "\n"))
+      (insert "* " heading "\n")
+      (beginning-of-line 0))))
+
 (setq org-capture-templates
       `(("i" "Inbox" entry (file+headline "inbox.org" "Inbox")
+         ,(concat "** TODO %?\n"))
+        ("c" "Weekly TODO" entry (file+function hym/weekly-file-path hym/weekly-capture-find-heading)
          ,(concat "** TODO %?\n"))))
 
 (setq org-refile-targets
