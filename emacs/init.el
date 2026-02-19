@@ -60,6 +60,10 @@
  backup-directory-alist `(("" . ,(concat hym/emacs-local-dir "backup/")))
  create-lockfiles nil)
 
+(if (not (eq system-type 'darwin))
+    ;; See https://blog.dzema.name/2023/02/19/emacs-forge-github-macos-keychain.html
+    (setq auth-sources '(macos-keychain-generic macos-keychain-internet)))
+
 (setq custom-file (expand-file-name "custom.el" user-emacs-directory))
 (load custom-file)
 
