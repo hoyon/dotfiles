@@ -61,59 +61,47 @@ end
 
 set -x BAT_THEME ansi
 
-if test -d /opt/homebrew
+# --- PATH setup ---
+
+if test -d /opt/homebrew; and not set -q HOMEBREW_PREFIX
     eval (/opt/homebrew/bin/brew shellenv)
-    fish_add_path -g /opt/homebrew/opt/rustup/bin
-    fish_add_path -g ~/.cargo/bin
-    fish_add_path -g (python3 -m site --user-base)/bin
 end
 
+set _extra_paths \
+    ~/.local/bin \
+    ~/.cargo/bin \
+    /opt/homebrew/opt/rustup/bin \
+    ~/go/bin \
+    ~/.nimble/bin \
+    ~/.yarn/bin
+
+for p in $_extra_paths
+    if test -d $p
+        fish_add_path -g $p
+    end
+end
+set --erase _extra_paths
+
+# asdf — must be last to ensure shims take priority
 if test -e ~/.asdf/asdf.fish
     source ~/.asdf/asdf.fish
 else if test -e /opt/asdf-vm/asdf.fish
     source /opt/asdf-vm/asdf.fish
 end
 
-if test -z $ASDF_DATA_DIR
-    set _asdf_shims "$HOME/.asdf/shims"
-else
-    set _asdf_shims "$ASDF_DATA_DIR/shims"
-end
+if type -q asdf
+    if test -z $ASDF_DATA_DIR
+        set _asdf_shims "$HOME/.asdf/shims"
+    else
+        set _asdf_shims "$ASDF_DATA_DIR/shims"
+    end
 
-# Do not use fish_add_path (added in Fish 3.2) because it
-# potentially changes the order of items in PATH
-if not contains $_asdf_shims $PATH
+    # Remove and re-prepend to maintain correct ordering in nested shells (eg tmux)
+    if set -l idx (contains -i -- $_asdf_shims $PATH)
+        set -e PATH[$idx]
+    end
     set -gx --prepend PATH $_asdf_shims
-end
-set --erase _asdf_shims
-
-if test -e /nix/var/nix/profiles/default/etc/profile.d/nix.fish
-    source /nix/var/nix/profiles/default/etc/profile.d/nix.fish
-    direnv hook fish | source
-end
-
-if test -d ~/.local/bin
-    fish_add_path -g ~/.local/bin
-end
-
-if test -d ~/.nimble/bin
-    fish_add_path -g ~/.nimble/bin
-end
-
-if test -d ~/kde/src/kdesrc-build
-    fish_add_path -g ~/kde/src/kdesrc-build
-end
-
-if test -d ~/.dotnet/tools
-    fish_add_path -g ~/.dotnet/tools
-end
-
-if test -d ~/go/bin
-    fish_add_path -g ~/go/bin
-end
-
-if test -d ~/.yarn/bin
-    fish_add_path -g ~/.yarn/bin
+    set --erase _asdf_shims
 end
 
 # fzf.fish bindings
