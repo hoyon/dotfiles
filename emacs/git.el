@@ -2,6 +2,7 @@
 
 (use-package magit
   :config
+  (add-hook 'magit-status-sections-hook #'magit-insert-worktrees t)
   (hym/leader-def
     "gg" 'magit-status
     "gb" 'magit-blame))
