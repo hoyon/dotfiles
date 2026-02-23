@@ -80,6 +80,47 @@
         (unless (bolp) (insert "\n"))
         (insert (concat "* " today "\n"))))))
 
+(defun hym/weekly-parse-date (filename)
+  (let ((parts (split-string (file-name-sans-extension (file-name-nondirectory filename)) "-")))
+    (encode-time 0 0 0
+                 (string-to-number (nth 2 parts))
+                 (string-to-number (nth 1 parts))
+                 (string-to-number (nth 0 parts)))))
+
+(defun hym/weekly-friendly-name (monday-time)
+  (let* ((current-monday (hym/get-monday (current-time)))
+         (days-diff (/ (float-time (time-subtract current-monday monday-time)) 86400))
+         (weeks-ago (round (/ days-diff 7)))
+         (year-fmt (unless (string= (format-time-string "%Y" monday-time)
+                                    (format-time-string "%Y" (current-time)))
+                     " %Y"))
+         (date-str (format-time-string
+                    (concat "%-d" (hym/ordinal-suffix monday-time) " %B" year-fmt)
+                    monday-time)))
+    (cond
+     ((= weeks-ago 0) (format "This week (%s)" date-str))
+     ((= weeks-ago 1) (format "Last week (%s)" date-str))
+     ((< weeks-ago 5) (format "%d weeks ago (%s)" weeks-ago date-str))
+     (t (concat "Week beginning " date-str)))))
+
+(defun hym/open-weekly-pick ()
+  (interactive)
+  (let ((files (directory-files hym/weekly-dir t "\\.org$")))
+    (unless files
+      (user-error "No weekly files found in %s" hym/weekly-dir))
+    (let* ((entries (mapcar
+                     (lambda (f)
+                       (cons (hym/weekly-friendly-name (hym/weekly-parse-date f)) f))
+                     files))
+           (entries (nreverse entries))
+           (choice (completing-read "Weekly note: "
+                                    (lambda (string pred action)
+                                      (if (eq action 'metadata)
+                                          '(metadata (display-sort-function . identity))
+                                        (complete-with-action action entries string pred)))
+                                    nil t)))
+      (find-file (cdr (assoc choice entries))))))
+
 (defun hym/weekly-capture-find-heading ()
   (let ((heading (hym/weekly-today-heading)))
     (goto-char (point-min))
@@ -160,7 +201,8 @@
   "om" 'hym/create-meeting-file
   "of" 'hym/find-org
   "oA" 'org-archive-subtree
-  "ow" 'hym/open-weekly-note)
+  "ow" 'hym/open-weekly-note
+  "oW" 'hym/open-weekly-pick)
 
 (load-config "org-uk-holidays.el")
 
