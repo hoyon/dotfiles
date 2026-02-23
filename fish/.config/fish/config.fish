@@ -11,7 +11,7 @@ else
     set -x VISUAL vim
 end
 
-set -x ERL_AFLAGS "-kernel shell_history enabled"
+set -x ERL_AFLAGS "-kernel shell_history enabled -kernel net_ticktime 5"
 set -x THEFUCK_PRIORITY "git_hook_bypass=1100"
 set -x CPM_SOURCE_CACHE "$HOME/.cache/CPM" # CMake Package Manager
 set -x GODOT "$HOME/.config/godotenv/godot/bin"
