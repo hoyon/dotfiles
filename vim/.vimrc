@@ -41,6 +41,7 @@ Plug 'joshdick/onedark.vim'
 
 let g:polyglot_disabled = ['org']
 Plug 'sheerun/vim-polyglot'
+Plug 'imsnif/kdl.vim'
 
 call plug#end()
 
