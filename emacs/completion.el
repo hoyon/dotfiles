@@ -1,6 +1,7 @@
 ;; -*- lexical-binding: t -*-
 
 (use-package corfu
+  :config
   (global-corfu-mode))
 
 (setq eglot-code-action-indicator "!!"

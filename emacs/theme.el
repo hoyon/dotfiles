@@ -16,14 +16,12 @@
 
 (setq show-paren-context-when-offscreen 'child-frame)
 
-(use-package moe-theme)
-(use-package doom-themes)
-(use-package ef-themes)
-
 (use-package modus-themes
   :init
   (setq modus-themes-italic-constructs nil
         modus-themes-bold-constructs nil))
+
+(use-package ef-themes)
 
 (setq
  hym/font-family "Berkeley Mono"

@@ -53,7 +53,9 @@
         '(calc
           cider
           compile
+          corfu
           dired
+          forge
           grep
           help
           helpful
@@ -64,10 +66,9 @@
           org
           restclient
           tab-bar
+          vterm
           wgrep
-          woman
-          corfu
-          vterm))
+          woman))
   (evil-collection-init))
 
 (use-package evil-nerd-commenter
