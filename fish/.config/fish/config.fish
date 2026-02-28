@@ -122,9 +122,9 @@ set -g man_bold -o magenta
 set -g man_standout -b white 586e75
 set -g man_underline -u 586e75
 
-if type -q starship
-    starship init fish | source
-end
+# Tide prompt
+set -g tide_character_vi_icon_default "❯"
+set -g tide_right_prompt_items status cmd_duration context jobs gcloud aws time
 
 # switch to /bin/sh for dumb terminals (eg emacs tramp mode)
 if test "$TERM" = "dumb"
