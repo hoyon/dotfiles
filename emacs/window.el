@@ -30,8 +30,8 @@
         ))
 
 (use-package ace-window
-  :config
-  (global-set-key (kbd "C-x o") 'ace-window))
+  :bind
+  (("C-x o" . ace-window)))
 
 (defun hym/ace-window-prefix ()
   "Use `ace-window' to display the buffer of the next command.
@@ -51,7 +51,7 @@ When `switch-to-buffer-obey-display-actions' is non-nil,
    nil "[ace-window]")
   (message "Use `ace-window' to display next command buffer..."))
 
-(keymap-global-set "C-x 4 o" 'hym/ace-window-prefix)
+(general-define-key "C-x 4 o" 'hym/ace-window-prefix)
 
 (tab-bar-history-mode 1)
 (hym/leader-def

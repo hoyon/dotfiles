@@ -52,18 +52,24 @@
   :init
   (setq vterm-always-compile-module t)
   :config
-  (setq vterm-shell "/bin/fish")
+  (setq vterm-shell (executable-find "fish"))
+
+  (defun hym/vterm-send-key (key)
+    "Return a command that sends KEY to vterm."
+    (lambda () (interactive) (vterm-send key)))
 
   (general-define-key
    :states 'insert
    :keymaps 'vterm-mode-map
-   "C-a" 'vterm-send-C-a
-   "C-e" 'vterm-send-C-e
-   "C-l" 'vterm-send-C-l
-   "C-u" 'vterm-send-C-u
-   "C-p" 'vterm-send-C-p
-   "C-n" 'vterm-send-C-p
-   "C-d" 'vterm-send-C-d)
+   "C-a" (hym/vterm-send-key "C-a")
+   "C-e" (hym/vterm-send-key "C-e")
+   "C-l" (hym/vterm-send-key "C-l")
+   "C-u" (hym/vterm-send-key "C-u")
+   "C-p" (hym/vterm-send-key "C-p")
+   "C-n" (hym/vterm-send-key "C-n")
+   "C-d" (hym/vterm-send-key "C-d")
+   "C-c" (hym/vterm-send-key "C-c")
+   "C-r" (hym/vterm-send-key "C-r"))
 
   (general-define-key
    :states 'normal

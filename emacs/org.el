@@ -197,5 +197,7 @@ See also `org-save-all-org-buffers'"
 
 (use-package verb
   :config
-  (define-key org-mode-map (kbd "C-c C-r") verb-command-map)
+  (general-define-key
+   :keymaps 'org-mode-map
+   "C-c C-r" verb-command-map)
   (add-to-list 'verb-content-type-handlers '("application/hal\\+json" verb-handler-json)))

@@ -86,18 +86,18 @@
   (auto-revert-mode)
   (hs-minor-mode))
 
+(use-package general)
+
 (load-config "evil.el")
 
-(use-package general
-  :config
-  (general-create-definer hym/leader-def
-    :prefix "SPC"
-    :states 'normal
-    :keymaps 'override)
-  (general-create-definer hym/local-leader-def
-    :prefix ","
-    :states 'normal
-    :keymaps 'local))
+(general-create-definer hym/leader-def
+  :prefix "SPC"
+  :states 'normal
+  :keymaps 'override)
+(general-create-definer hym/local-leader-def
+  :prefix ","
+  :states 'normal
+  :keymaps 'local)
 
 (load-config "theme.el")
 (load-config "vertico.el")
@@ -182,17 +182,20 @@
   "hm" 'man)
 
 (use-package helpful
+  :bind
+  (("C-h f" . helpful-callable)
+   ("C-h v" . helpful-variable)
+   ("C-h k" . helpful-key)
+   ("C-c C-d" . helpful-at-point))
   :config
-  (global-set-key (kbd "C-h f") #'helpful-callable)
-  (global-set-key (kbd "C-h v") #'helpful-variable)
-  (global-set-key (kbd "C-h k") #'helpful-key)
-  (global-set-key (kbd "C-c C-d") #'helpful-at-point)
   (hym/leader-def
     "hf" 'helpful-callable
     "hv" 'helpful-variable
     "hk" 'helpful-key))
 
-(define-key minibuffer-mode-map (kbd "C-S-v") 'yank)
+(general-define-key
+ :keymaps 'minibuffer-mode-map
+ "C-S-v" 'yank)
 
 (global-auto-revert-mode)
 

@@ -124,19 +124,19 @@ Uses position instead of index field."
   "t9" (lambda () (interactive) (hym/tab-select-in-group 9)))
 
 ;; Use cmd+number to change tab
-(keymap-global-set "s-1" (lambda () (interactive) (hym/tab-select-in-group 1)))
-(keymap-global-set "s-2" (lambda () (interactive) (hym/tab-select-in-group 2)))
-(keymap-global-set "s-3" (lambda () (interactive) (hym/tab-select-in-group 3)))
-(keymap-global-set "s-4" (lambda () (interactive) (hym/tab-select-in-group 4)))
-(keymap-global-set "s-5" (lambda () (interactive) (hym/tab-select-in-group 5)))
-(keymap-global-set "s-6" (lambda () (interactive) (hym/tab-select-in-group 6)))
-(keymap-global-set "s-7" (lambda () (interactive) (hym/tab-select-in-group 7)))
-(keymap-global-set "s-8" (lambda () (interactive) (hym/tab-select-in-group 8)))
-(keymap-global-set "s-9" (lambda () (interactive) (hym/tab-select-in-group 9)))
-
-(keymap-global-set "C-<tab>" #'hym/tab-next-in-group)
-(keymap-global-set "C-S-<iso-lefttab>" #'hym/tab-previous-in-group) ;; Linux
-(keymap-global-set "C-<backtab>" #'hym/tab-previous-in-group) ;; macOS
+(general-define-key
+ "s-1" (lambda () (interactive) (hym/tab-select-in-group 1))
+ "s-2" (lambda () (interactive) (hym/tab-select-in-group 2))
+ "s-3" (lambda () (interactive) (hym/tab-select-in-group 3))
+ "s-4" (lambda () (interactive) (hym/tab-select-in-group 4))
+ "s-5" (lambda () (interactive) (hym/tab-select-in-group 5))
+ "s-6" (lambda () (interactive) (hym/tab-select-in-group 6))
+ "s-7" (lambda () (interactive) (hym/tab-select-in-group 7))
+ "s-8" (lambda () (interactive) (hym/tab-select-in-group 8))
+ "s-9" (lambda () (interactive) (hym/tab-select-in-group 9))
+ "C-<tab>" 'hym/tab-next-in-group
+ "C-S-<iso-lefttab>" 'hym/tab-previous-in-group ;; Linux
+ "C-<backtab>" 'hym/tab-previous-in-group) ;; macOS
 
 (defun hym/move-new-tab-to-group-end (&rest _)
   "Move newly created tab to the end of its group."

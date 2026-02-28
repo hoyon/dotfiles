@@ -18,14 +18,16 @@
   :config
   (hym/leader-def
     "gt" 'git-timemachine)
-  (evil-define-minor-mode-key 'normal 'git-timemachine-mode
-    "p" 'git-timemachine-show-previous-revision
-    "n" 'git-timemachine-show-next-revision
-    "q" 'git-timemachine-quit
-    "g" 'git-timemachine-show-nth-revision
-    "t" 'git-timemachine-show-revision-fuzzy
-    "b" 'git-timemachine-blame
-    "c" 'git-timemachine-show-commit))
+  (general-define-key
+   :states 'normal
+   :keymaps 'git-timemachine-mode-map
+   "p" 'git-timemachine-show-previous-revision
+   "n" 'git-timemachine-show-next-revision
+   "q" 'git-timemachine-quit
+   "g" 'git-timemachine-show-nth-revision
+   "t" 'git-timemachine-show-revision-fuzzy
+   "b" 'git-timemachine-blame
+   "c" 'git-timemachine-show-commit))
 
 (use-package git-link
   :config
@@ -166,5 +168,6 @@ COMMAND-FN, if provided, is a function returning the shell command to run."
   "gD" 'hym/git-delta-diff-unstaged
   "gf" 'hym/git-delta-diff-fork-point)
 
-(with-eval-after-load 'magit
-  (define-key magit-status-mode-map "D" 'hym/git-delta-diff-dwim))
+(general-define-key
+ :keymaps 'magit-status-mode-map
+ "D" 'hym/git-delta-diff-dwim)

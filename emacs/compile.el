@@ -12,5 +12,6 @@
     (select-window compilation-buffer)
     (quit-window)))
 
-(evil-define-key 'normal 'global
-  (kbd "<escape>") 'hym/close-compilation-buffer)
+(general-define-key
+ :states 'normal
+ "<escape>" 'hym/close-compilation-buffer)
