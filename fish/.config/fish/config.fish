@@ -124,6 +124,7 @@ set -g man_underline -u 586e75
 
 # Tide prompt
 set -g tide_character_vi_icon_default "❯"
+set -g tide_character_color "brmagenta"
 set -g tide_right_prompt_items status cmd_duration context jobs gcloud aws time
 
 # switch to /bin/sh for dumb terminals (eg emacs tramp mode)
