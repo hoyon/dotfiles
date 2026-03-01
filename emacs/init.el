@@ -113,7 +113,7 @@
 (load-config "tabs.el")
 (load-config "treemacs.el")
 (load-config "modes.el")
-(load-config "claude.el")
+(load-config "agents.el")
 
 (defun hym/grep-for-symbol-at-point ()
   (interactive)
