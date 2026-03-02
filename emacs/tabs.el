@@ -97,6 +97,17 @@ Uses position instead of index field."
     (when global-pos
       (tab-bar-select-tab global-pos))))
 
+(defun hym/tab-select-group (n)
+  "Select the first tab of the N'th tab group (1-based)."
+  (interactive "nGroup number: ")
+  (let* ((tabs (funcall tab-bar-tabs-function))
+         (groups (delete-dups (mapcar (lambda (tab)
+                                        (funcall tab-bar-tab-group-function tab))
+                                      tabs)))
+         (group (nth (1- n) groups)))
+    (when group
+      (tab-bar-select-tab (car (hym/tab-group-positions group))))))
+
 (defun hym/tab-create (name)
   "Creates a tab with the given name if it doens't exist."
   (condition-case nil
@@ -133,7 +144,21 @@ Uses position instead of index field."
  "s-6" (lambda () (interactive) (hym/tab-select-in-group 6))
  "s-7" (lambda () (interactive) (hym/tab-select-in-group 7))
  "s-8" (lambda () (interactive) (hym/tab-select-in-group 8))
- "s-9" (lambda () (interactive) (hym/tab-select-in-group 9))
+ "s-9" (lambda () (interactive) (hym/tab-select-in-group 9)))
+
+;; Use cmd+ctrl+number to switch tab group
+(general-define-key
+ "C-s-1" (lambda () (interactive) (hym/tab-select-group 1))
+ "C-s-2" (lambda () (interactive) (hym/tab-select-group 2))
+ "C-s-3" (lambda () (interactive) (hym/tab-select-group 3))
+ "C-s-4" (lambda () (interactive) (hym/tab-select-group 4))
+ "C-s-5" (lambda () (interactive) (hym/tab-select-group 5))
+ "C-s-6" (lambda () (interactive) (hym/tab-select-group 6))
+ "C-s-7" (lambda () (interactive) (hym/tab-select-group 7))
+ "C-s-8" (lambda () (interactive) (hym/tab-select-group 8))
+ "C-s-9" (lambda () (interactive) (hym/tab-select-group 9)))
+
+(general-define-key
  "C-<tab>" 'hym/tab-next-in-group
  "C-S-<iso-lefttab>" 'hym/tab-previous-in-group ;; Linux
  "C-<backtab>" 'hym/tab-previous-in-group) ;; macOS
