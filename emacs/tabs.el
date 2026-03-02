@@ -117,6 +117,43 @@ Uses position instead of index field."
     (error (tab-new)
            (tab-bar-rename-tab name))))
 
+(defun hym/tab-new-in-group ()
+  "Create a new tab in a prompted tab group.
+If the group exists, the tab is added to it. Otherwise a new group is created."
+  (interactive)
+  (let* ((tabs (funcall tab-bar-tabs-function))
+         (groups (delete-dups (mapcar (lambda (tab)
+                                        (funcall tab-bar-tab-group-function tab))
+                                      tabs)))
+         (group (completing-read "Tab group: " groups nil nil)))
+    (tab-new)
+    (tab-bar-change-tab-group group)
+    (hym/move-new-tab-to-group-end)))
+
+(defun hym/tab-rename-group ()
+  "Rename the current tab group."
+  (interactive)
+  (let* ((tabs (funcall tab-bar-tabs-function))
+         (current-group (funcall tab-bar-tab-group-function (tab-bar--current-tab)))
+         (new-name (read-string (format "Rename group '%s' to: " current-group)))
+         (n 1))
+    (dolist (tab tabs)
+      (when (string= (funcall tab-bar-tab-group-function tab) current-group)
+        (tab-bar-change-tab-group new-name n))
+      (setq n (1+ n)))))
+
+(defun hym/tab-move-to-group ()
+  "Move the current tab to a different tab group.
+If the group exists, the tab is moved into it. Otherwise a new group is created."
+  (interactive)
+  (let* ((tabs (funcall tab-bar-tabs-function))
+         (groups (delete-dups (mapcar (lambda (tab)
+                                        (funcall tab-bar-tab-group-function tab))
+                                      tabs)))
+         (group (completing-read "Move to group: " groups nil nil)))
+    (tab-bar-change-tab-group group)
+    (hym/move-new-tab-to-group-end)))
+
 (hym/leader-def
   "tj" 'hym/tab-switch-to-prev-group
   "tk" 'hym/tab-switch-to-next-group
@@ -124,6 +161,9 @@ Uses position instead of index field."
   "tr" 'tab-rename
   "tt" 'hym/tab-switch-to-group
   "tn" 'tab-new
+  "tN" 'hym/tab-new-in-group
+  "tR" 'hym/tab-rename-group
+  "tm" 'hym/tab-move-to-group
   "t1" (lambda () (interactive) (hym/tab-select-in-group 1))
   "t2" (lambda () (interactive) (hym/tab-select-in-group 2))
   "t3" (lambda () (interactive) (hym/tab-select-in-group 3))
