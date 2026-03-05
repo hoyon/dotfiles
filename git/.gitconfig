@@ -20,7 +20,6 @@
     defaultBranch = main
 [core]
     pager = delta
-    fsmonitor = true
 
 [delta]
     light = true
@@ -31,3 +30,6 @@
     diffFilter = delta --color-only
 [add.interactive]
     useBuiltin = false
+
+[merge]
+    conflictStyle = zdiff3
