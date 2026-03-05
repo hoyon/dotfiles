@@ -35,6 +35,10 @@ function gwtd --description "Delete a git worktree using fzf"
     for worktree in $worktrees
         echo "Deleting worktree: $worktree"
         if not git worktree remove "$worktree"
+            echo ""
+            git -C "$worktree" diff --stat HEAD
+            git -C "$worktree" ls-files --others --exclude-standard | sed 's/^/ ?? /'
+            echo ""
             read -l -P "Deleting worktree failed. Force delete? [y/N] " confirm
             if test "$confirm" = y -o "$confirm" = Y
                 git worktree remove --force "$worktree"
