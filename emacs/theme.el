@@ -110,6 +110,15 @@ The exact color values are taken from the active Ef theme."
 
   (add-hook 'ef-themes-post-load-hook #'hym/ef-themes-hl-todo-faces))
 
+(defun hym/ef-themes-tab-group-faces ()
+  (ef-themes-with-colors
+    (set-face-attribute 'tab-bar-tab-group-current nil
+                        :foreground magenta-warmer :weight 'bold)
+    (set-face-attribute 'tab-bar-tab-group-inactive nil
+                        :foreground magenta)))
+
+(add-hook 'ef-themes-post-load-hook #'hym/ef-themes-tab-group-faces)
+
 ;; ef-elea-light on macOS, ef-melissa-light everywhere else
 (if (eq system-type 'darwin)
     (load-theme 'ef-elea-light t)
