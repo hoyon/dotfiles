@@ -8,17 +8,23 @@ function gup
         set stashed 1
     end
 
-    set -l fork_point (git merge-base --fork-point $default_branch)
-    git fetch origin $default_branch
-    and git rebase origin/$default_branch
+    set -l current_branch (git branch --show-current)
 
-    if test -n "$fork_point"
-        if test "$fork_point" = (git rev-parse origin/$default_branch)
-            echo "Already up to date"
-        else
-            echo ""
-            echo "Changes from origin/$default_branch:"
-            git diff --stat $fork_point origin/$default_branch
+    if test "$current_branch" = "$default_branch"
+        git pull
+    else
+        set -l fork_point (git merge-base --fork-point $default_branch)
+        git fetch origin $default_branch
+        and git rebase origin/$default_branch
+
+        if test -n "$fork_point"
+            if test "$fork_point" = (git rev-parse origin/$default_branch)
+                echo "Already up to date"
+            else
+                echo ""
+                echo "Changes from origin/$default_branch:"
+                git --no-pager diff --stat $fork_point origin/$default_branch
+            end
         end
     end
 
