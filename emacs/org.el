@@ -143,12 +143,25 @@
       org-outline-path-complete-in-steps nil)
 
 (setq org-todo-keywords
-      '((sequence "TODO(t)" "|" "DONE(d)" "WONTDO(w)" "MIGRATED(m)")))
+      '((sequence "TODO(t)" "NEXT(n)" "|" "DONE(d)" "WONTDO(w)" "MIGRATED(m)")))
+
+(ef-themes-with-colors
+  (setq org-todo-keyword-faces
+        `(("NEXT" . (:foreground ,yellow-warmer :weight bold)))))
 
 (setq org-log-done 'time)
 
 (setq org-agenda-custom-commands
-      '(("g" "Get Things Done (GTD)"
+      `(("w" "Weekly TODOs"
+         ,(mapcar
+           (lambda (f)
+             (let ((name (hym/weekly-friendly-name (hym/weekly-parse-date f))))
+               `(todo ""
+                      ((org-agenda-files (quote (,f)))
+                       (org-agenda-sorting-strategy '(todo-state-down))
+                       (org-agenda-overriding-header ,(concat "\n" name "\n"))))))
+           (nreverse (directory-files hym/weekly-dir t "\\.org$"))))
+        ("g" "Get Things Done (GTD)"
          ((agenda ""
                   ((org-agenda-skip-function
                     '(org-agenda-skip-entry-if 'deadline))
@@ -173,6 +186,7 @@
                       (org-agenda-overriding-header "\nInbox\n")))
           (tags "CLOSED>=\"<today>\""
                 ((org-agenda-overriding-header "\nCompleted today\n")))))))
+
 
 (defun hym/org-capture-inbox ()
   (interactive)
