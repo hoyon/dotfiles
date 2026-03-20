@@ -88,8 +88,6 @@
 
 (use-package general)
 
-(load-config "evil.el")
-
 (general-create-definer hym/leader-def
   :prefix "SPC"
   :states 'normal
@@ -99,6 +97,7 @@
   :states 'normal
   :keymaps 'local)
 
+(load-config "evil.el")
 (load-config "worktree.el")
 (load-config "theme.el")
 (load-config "vertico.el")
