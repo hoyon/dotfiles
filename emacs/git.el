@@ -119,15 +119,14 @@ COMMAND-FN, if provided, is a function returning the shell command to run."
   (interactive)
   (hym/git-delta-diff))
 
-(defun hym/git-delta-diff-fork-point ()
-  "Show delta diff from fork point with default branch."
+(defun hym/git-delta-diff-merge-base ()
+  "Show delta diff from merge base with default branch."
   (interactive)
   (let* ((default-directory (magit-toplevel))
          (default-branch (magit-main-branch))
-         (fork-point (or (magit-git-string "merge-base" "--fork-point" default-branch "HEAD")
-                         (magit-git-string "merge-base" default-branch "HEAD"))))
-    (message fork-point)
-    (hym/git-delta-diff (format "%s..HEAD" fork-point) "fork-point")))
+         (merge-base (magit-git-string "merge-base" default-branch "HEAD")))
+    (message merge-base)
+    (hym/git-delta-diff (format "%s..HEAD" merge-base) "merge-base")))
 
 (defun hym/git-delta-diff--section-type-p (type)
   "Return non-nil if current section or its parent has TYPE."
@@ -166,7 +165,7 @@ COMMAND-FN, if provided, is a function returning the shell command to run."
 (hym/leader-def
   "gd" 'hym/git-delta-diff-staged
   "gD" 'hym/git-delta-diff-unstaged
-  "gf" 'hym/git-delta-diff-fork-point)
+  "gf" 'hym/git-delta-diff-merge-base)
 
 (general-define-key
  :keymaps 'magit-status-mode-map
