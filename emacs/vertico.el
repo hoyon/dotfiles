@@ -142,4 +142,6 @@
   :hook
   (embark-collect-mode . consult-preview-at-point-mode))
 
-(use-package wgrep)
+(use-package wgrep
+  :custom
+  (wgrep-auto-save-buffer t))
