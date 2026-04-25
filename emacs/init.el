@@ -72,10 +72,17 @@
 (load "server")
 (unless (server-running-p) (server-start))
 
+;; Make sure PATH is set correctly
 (use-package exec-path-from-shell
   :config
   (when (memq window-system '(mac ns x))
     (exec-path-from-shell-initialize)))
+
+(if-let* ((local-bin (expand-file-name "~/.local/bin"))
+           (_ (file-directory-p local-bin)))
+    (progn
+      (add-to-list 'exec-path local-bin)
+      (setenv "PATH" (concat local-bin ":" (getenv "PATH")))))
 
 (use-package compat)
 (use-package delight)
