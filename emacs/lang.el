@@ -141,6 +141,12 @@
                :host github
                :repo "godotengine/emacs-gdscript-mode"))
 
+(use-package slang-mode
+  :straight (:host github :repo "k1ngst0m/slang-mode")
+  :mode (("\\.slang\\'" . slang-mode)
+         ("\\.sl\\'" . slang-mode)
+         ("\\.slangh\\'" . slang-mode)))
+
 
 (setq go-ts-mode-indent-offset 8)
 
