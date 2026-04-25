@@ -69,5 +69,4 @@
   "pt" 'hym/project-test
   "p&" 'project-async-shell-command
   "p!" 'project-shell-command
-  "pe" 'project-eshell
-  "pv" 'vterm)
+  "pe" 'project-eshell)
