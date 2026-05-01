@@ -2,6 +2,25 @@
 
 (tab-bar-mode 1)
 
+(defvar hym/default-tab-group "emacs"
+  "Tab group used when a tab has no group assigned.")
+
+(defun hym/ensure-tab-in-group (&optional frame)
+  "Ensure the current tab on FRAME has a tab group, defaulting to `hym/default-tab-group'."
+  (with-selected-frame (or frame (selected-frame))
+    (let* ((current (tab-bar--current-tab))
+           (group (funcall tab-bar-tab-group-function current)))
+      (unless group
+        (tab-bar-change-tab-group hym/default-tab-group)))))
+
+(add-hook 'emacs-startup-hook #'hym/ensure-tab-in-group)
+(add-hook 'after-make-frame-functions #'hym/ensure-tab-in-group)
+(add-hook 'server-after-make-frame-hook #'hym/ensure-tab-in-group)
+
+;; New tabs inherit the group of the tab they were created from, so
+;; `tab-new' never produces a groupless tab.
+(setq tab-bar-new-tab-group t)
+
 (defvar hym/tab-group-last-tab (make-hash-table :test 'equal)
   "Maps group names to the last active tab name in that group.")
 
