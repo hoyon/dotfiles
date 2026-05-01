@@ -55,6 +55,7 @@
           compile
           corfu
           dired
+          eldoc
           forge
           grep
           help

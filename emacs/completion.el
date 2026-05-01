@@ -21,7 +21,8 @@
 otherwise fall back to helpful."
   (interactive)
   (if (bound-and-true-p eglot--managed-mode)
-      (eldoc-doc-buffer t)
+      (when-let ((buf (eldoc-doc-buffer)))
+        (pop-to-buffer buf))
     (helpful-at-point)))
 
 ;; Keep eldoc/eglot docs clipped to a single echo-area line
