@@ -162,6 +162,26 @@ COMMAND-FN, if provided, is a function returning the shell command to run."
      (t
       (hym/git-delta-diff-unstaged)))))
 
+(defvar hym/git-delta-diff--resize-timer nil)
+
+(defun hym/git-delta-diff--refresh-visible (frame)
+  "Refresh delta diff buffers visible in FRAME."
+  (dolist (win (window-list frame))
+    (let ((buf (window-buffer win)))
+      (when (and (string-prefix-p "*delta-diff[" (buffer-name buf))
+                 (buffer-local-value 'hym/git-delta-diff--command-fn buf))
+        (with-current-buffer buf
+          (hym/git-delta-diff-refresh))))))
+
+(defun hym/git-delta-diff--on-resize (_frame)
+  "Debounced handler for frame resize — refreshes all delta diff buffers."
+  (when (timerp hym/git-delta-diff--resize-timer)
+    (cancel-timer hym/git-delta-diff--resize-timer))
+  (setq hym/git-delta-diff--resize-timer
+        (run-with-idle-timer 0.5 nil #'hym/git-delta-diff--refresh-visible _frame)))
+
+(add-hook 'window-size-change-functions #'hym/git-delta-diff--on-resize)
+
 (hym/leader-def
   "gd" 'hym/git-delta-diff-staged
   "gD" 'hym/git-delta-diff-unstaged
