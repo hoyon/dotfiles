@@ -83,6 +83,16 @@
    "gct" 'evilnc-comment-or-uncomment-html-tag
    "gcd" 'evilnc-copy-and-comment-lines))
 
+(use-package evil-goggles
+  :after evil
+  :delight
+  :config
+  (evil-goggles-mode)
+  (setq
+   evil-goggles-duration 0.1
+   evil-goggles-enable-delete nil
+   evil-goggles-enable-paste nil))
+
 (use-package evil-surround
   :config
   (global-evil-surround-mode 1))
