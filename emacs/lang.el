@@ -131,6 +131,8 @@
 (use-package go-mode)
 (use-package jtsx)
 (use-package powershell)
+(use-package racket-mode)
+(use-package sly)
 
 (use-package terraform-mode
   :custom (terraform-command "tofu"))

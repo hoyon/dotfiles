@@ -66,6 +66,7 @@
           man
           org
           restclient
+          sly
           tab-bar
           vterm
           wgrep
