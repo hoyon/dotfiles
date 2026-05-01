@@ -2,3 +2,4 @@ TAGS
 .ccls-cache/
 **/.claude/settings.local.json
 **/.agent-shell/
+.dexter.db*
