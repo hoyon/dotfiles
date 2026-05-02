@@ -35,6 +35,8 @@ otherwise fall back to helpful."
   (add-to-list 'eglot-server-programs
                '(elixir-ts-mode . ("dexter" "lsp"))))
 
+(add-hook 'eglot-managed-mode-hook (lambda () (eglot-inlay-hints-mode -1)))
+
 (add-hook 'elixir-ts-mode-hook #'eglot-ensure)
 (add-hook 'go-ts-mode-hook #'eglot-ensure)
 
@@ -49,4 +51,5 @@ otherwise fall back to helpful."
   "cp" 'flymake-goto-prev-error
   "cd" 'hym/show-docs
   "cq" 'hym/dismiss-docs
-  "ce" 'eglot)
+  "ce" 'eglot
+  "ci" 'eglot-inlay-hints-mode)
