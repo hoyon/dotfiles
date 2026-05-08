@@ -22,8 +22,43 @@ otherwise fall back to helpful."
   (interactive)
   (if (bound-and-true-p eglot--managed-mode)
       (when-let ((buf (eldoc-doc-buffer)))
-        (pop-to-buffer buf))
+        (pop-to-buffer buf)
+        (evil-local-set-key 'normal "q" 'quit-window))
     (helpful-at-point)))
+
+(defun hym/show-full-diagnostic ()
+  "Show full Flymake diagnostic(s) at point in a separate buffer."
+  (interactive)
+  (let ((diags (hym/flymake-diagnostics-at-point)))
+    (unless diags
+      (user-error "No Flymake diagnostic at point"))
+    (let ((entries
+           (mapcar
+            (lambda (diag)
+              (let* ((src (or (flymake-diagnostic-buffer diag) (current-buffer)))
+                     (beg (flymake-diagnostic-beg diag))
+                     (pos (if (markerp beg) (marker-position beg) beg)))
+                (with-current-buffer src
+                  (list :type (upcase (symbol-name (flymake-diagnostic-type diag)))
+                        :line (line-number-at-pos pos)
+                        :col (save-excursion
+                               (goto-char pos)
+                               (1+ (current-column)))
+                        :text (flymake-diagnostic-text diag)))))
+            diags)))
+      (with-current-buffer (get-buffer-create "*Flymake diagnostic*")
+        (let ((inhibit-read-only t))
+          (erase-buffer)
+          (dolist (entry entries)
+            (insert (format "%s at %s:%s\n\n%s\n\n"
+                            (plist-get entry :type)
+                            (plist-get entry :line)
+                            (plist-get entry :col)
+                            (plist-get entry :text))))
+          (goto-char (point-min))
+          (special-mode)
+          (evil-local-set-key 'normal "q" 'quit-window))
+        (pop-to-buffer (current-buffer))))))
 
 ;; Keep eldoc/eglot docs clipped to a single echo-area line
 (setq eldoc-echo-area-use-multiline-p nil)
@@ -50,6 +85,7 @@ otherwise fall back to helpful."
   "cn" 'flymake-goto-next-error
   "cp" 'flymake-goto-prev-error
   "cd" 'hym/show-docs
+  "cD" 'hym/show-full-diagnostic
   "cq" 'hym/dismiss-docs
   "ce" 'eglot
   "ci" 'eglot-inlay-hints-mode)
