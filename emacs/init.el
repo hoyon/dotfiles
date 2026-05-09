@@ -118,10 +118,12 @@
 (load-config "completion.el")
 (load-config "compile.el")
 (load-config "org.el")
-(load-config "tabs.el")
 (load-config "treemacs.el")
 (load-config "modes.el")
 (load-config "agents.el")
+
+(load-config "tabs.el")
+(hym-tabs-mode 1)
 
 (defun hym/grep-for-symbol-at-point ()
   (interactive)

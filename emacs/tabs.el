@@ -1,9 +1,39 @@
 ;; -*- lexical-binding: t -*-
-
-(tab-bar-mode 1)
+(require 'seq)
+(require 'tab-bar)
 
 (defvar hym/default-tab-group "emacs"
   "Tab group used when a tab has no group assigned.")
+
+(defun hym-tabs--apply-settings ()
+  "Apply tab-bar settings used by `hym-tabs-mode'."
+  (setq tab-bar-new-tab-group t
+        tab-bar-new-tab-to 'right
+        tab-bar-close-button-show nil
+        tab-bar-new-button-show nil
+        tab-bar-tab-hints t
+        tab-bar-auto-width nil
+        tab-bar-separator " "
+        tab-bar-format '(tab-bar-format-tabs-groups tab-bar-separator)))
+
+(define-minor-mode hym-tabs-mode
+  "Enable custom grouped tab-bar behavior."
+  :global t
+  (if hym-tabs-mode
+      (progn
+        (hym-tabs--apply-settings)
+        (tab-bar-mode 1)
+        (add-hook 'emacs-startup-hook #'hym/ensure-tab-in-group)
+        (add-hook 'after-make-frame-functions #'hym/ensure-tab-in-group)
+        (add-hook 'server-after-make-frame-hook #'hym/ensure-tab-in-group)
+        (advice-add 'tab-bar-new-tab :after #'hym/move-new-tab-to-group-end)
+        (advice-add 'tab-bar-select-tab :around #'hym/tab-select-tab-remember-group)
+        (hym/ensure-tab-in-group))
+    (remove-hook 'emacs-startup-hook #'hym/ensure-tab-in-group)
+    (remove-hook 'after-make-frame-functions #'hym/ensure-tab-in-group)
+    (remove-hook 'server-after-make-frame-hook #'hym/ensure-tab-in-group)
+    (advice-remove 'tab-bar-new-tab #'hym/move-new-tab-to-group-end)
+    (advice-remove 'tab-bar-select-tab #'hym/tab-select-tab-remember-group)))
 
 (defun hym/ensure-tab-in-group (&optional frame)
   "Ensure the current tab on FRAME has a tab group, defaulting to `hym/default-tab-group'."
@@ -12,14 +42,6 @@
            (group (funcall tab-bar-tab-group-function current)))
       (unless group
         (tab-bar-change-tab-group hym/default-tab-group)))))
-
-(add-hook 'emacs-startup-hook #'hym/ensure-tab-in-group)
-(add-hook 'after-make-frame-functions #'hym/ensure-tab-in-group)
-(add-hook 'server-after-make-frame-hook #'hym/ensure-tab-in-group)
-
-;; New tabs inherit the group of the tab they were created from, so
-;; `tab-new' never produces a groupless tab.
-(setq tab-bar-new-tab-group t)
 
 (defvar hym/tab-group-last-tab (make-hash-table :test 'equal)
   "Maps group names to the last active tab name in that group.")
@@ -185,54 +207,56 @@ If the group exists, the tab is moved into it. Otherwise a new group is created.
     (tab-bar-change-tab-group group)
     (hym/move-new-tab-to-group-end)))
 
-(hym/leader-def
-  "tj" 'hym/tab-switch-to-prev-group
-  "tk" 'hym/tab-switch-to-next-group
-  "tc" 'tab-close
-  "tr" 'tab-rename
-  "tt" 'hym/tab-switch-to-group
-  "tn" 'tab-new
-  "tN" 'hym/tab-new-in-group
-  "tR" 'hym/tab-rename-group
-  "tm" 'hym/tab-move-to-group
-  "t1" (lambda () (interactive) (hym/tab-select-in-group 1))
-  "t2" (lambda () (interactive) (hym/tab-select-in-group 2))
-  "t3" (lambda () (interactive) (hym/tab-select-in-group 3))
-  "t4" (lambda () (interactive) (hym/tab-select-in-group 4))
-  "t5" (lambda () (interactive) (hym/tab-select-in-group 5))
-  "t6" (lambda () (interactive) (hym/tab-select-in-group 6))
-  "t7" (lambda () (interactive) (hym/tab-select-in-group 7))
-  "t8" (lambda () (interactive) (hym/tab-select-in-group 8))
-  "t9" (lambda () (interactive) (hym/tab-select-in-group 9)))
+(defun hym-tabs-setup-keybindings ()
+  "Install keybindings for grouped tab-bar commands."
+  (hym/leader-def
+    "tj" 'hym/tab-switch-to-prev-group
+    "tk" 'hym/tab-switch-to-next-group
+    "tc" 'tab-close
+    "tr" 'tab-rename
+    "tt" 'hym/tab-switch-to-group
+    "tn" 'tab-new
+    "tN" 'hym/tab-new-in-group
+    "tR" 'hym/tab-rename-group
+    "tm" 'hym/tab-move-to-group
+    "t1" (lambda () (interactive) (hym/tab-select-in-group 1))
+    "t2" (lambda () (interactive) (hym/tab-select-in-group 2))
+    "t3" (lambda () (interactive) (hym/tab-select-in-group 3))
+    "t4" (lambda () (interactive) (hym/tab-select-in-group 4))
+    "t5" (lambda () (interactive) (hym/tab-select-in-group 5))
+    "t6" (lambda () (interactive) (hym/tab-select-in-group 6))
+    "t7" (lambda () (interactive) (hym/tab-select-in-group 7))
+    "t8" (lambda () (interactive) (hym/tab-select-in-group 8))
+    "t9" (lambda () (interactive) (hym/tab-select-in-group 9)))
 
-;; Use cmd+number to change tab
-(general-define-key
- "s-1" (lambda () (interactive) (hym/tab-select-in-group 1))
- "s-2" (lambda () (interactive) (hym/tab-select-in-group 2))
- "s-3" (lambda () (interactive) (hym/tab-select-in-group 3))
- "s-4" (lambda () (interactive) (hym/tab-select-in-group 4))
- "s-5" (lambda () (interactive) (hym/tab-select-in-group 5))
- "s-6" (lambda () (interactive) (hym/tab-select-in-group 6))
- "s-7" (lambda () (interactive) (hym/tab-select-in-group 7))
- "s-8" (lambda () (interactive) (hym/tab-select-in-group 8))
- "s-9" (lambda () (interactive) (hym/tab-select-in-group 9)))
+  ;; Use cmd+number to change tab.
+  (general-define-key
+   "s-1" (lambda () (interactive) (hym/tab-select-in-group 1))
+   "s-2" (lambda () (interactive) (hym/tab-select-in-group 2))
+   "s-3" (lambda () (interactive) (hym/tab-select-in-group 3))
+   "s-4" (lambda () (interactive) (hym/tab-select-in-group 4))
+   "s-5" (lambda () (interactive) (hym/tab-select-in-group 5))
+   "s-6" (lambda () (interactive) (hym/tab-select-in-group 6))
+   "s-7" (lambda () (interactive) (hym/tab-select-in-group 7))
+   "s-8" (lambda () (interactive) (hym/tab-select-in-group 8))
+   "s-9" (lambda () (interactive) (hym/tab-select-in-group 9)))
 
-;; Use spc+number to switch tab group
-(hym/leader-def
- "1" (lambda () (interactive) (hym/tab-select-group 1))
- "2" (lambda () (interactive) (hym/tab-select-group 2))
- "3" (lambda () (interactive) (hym/tab-select-group 3))
- "4" (lambda () (interactive) (hym/tab-select-group 4))
- "5" (lambda () (interactive) (hym/tab-select-group 5))
- "6" (lambda () (interactive) (hym/tab-select-group 6))
- "7" (lambda () (interactive) (hym/tab-select-group 7))
- "8" (lambda () (interactive) (hym/tab-select-group 8))
- "9" (lambda () (interactive) (hym/tab-select-group 9)))
+  ;; Use SPC+number to switch tab group.
+  (hym/leader-def
+    "1" (lambda () (interactive) (hym/tab-select-group 1))
+    "2" (lambda () (interactive) (hym/tab-select-group 2))
+    "3" (lambda () (interactive) (hym/tab-select-group 3))
+    "4" (lambda () (interactive) (hym/tab-select-group 4))
+    "5" (lambda () (interactive) (hym/tab-select-group 5))
+    "6" (lambda () (interactive) (hym/tab-select-group 6))
+    "7" (lambda () (interactive) (hym/tab-select-group 7))
+    "8" (lambda () (interactive) (hym/tab-select-group 8))
+    "9" (lambda () (interactive) (hym/tab-select-group 9)))
 
-(general-define-key
- "C-<tab>" 'hym/tab-next-in-group
- "C-S-<iso-lefttab>" 'hym/tab-previous-in-group ;; Linux
- "C-<backtab>" 'hym/tab-previous-in-group) ;; macOS
+  (general-define-key
+   "C-<tab>" 'hym/tab-next-in-group
+   "C-S-<iso-lefttab>" 'hym/tab-previous-in-group
+   "C-<backtab>" 'hym/tab-previous-in-group))
 
 (defun hym/move-new-tab-to-group-end (&rest _)
   "Move newly created tab to the end of its group."
@@ -244,8 +268,6 @@ If the group exists, the tab is moved into it. Otherwise a new group is created.
          (current-pos (1+ (tab-bar--current-tab-index tabs))))
     (when (> last-pos current-pos)
       (tab-bar-move-tab-to last-pos))))
-
-(advice-add 'tab-bar-new-tab :after #'hym/move-new-tab-to-group-end)
 
 (defun hym/tab-select-tab-remember-group (orig-fn &rest args)
   "Redirect cross-group tab switches to the last active tab in the target group."
@@ -269,16 +291,6 @@ If the group exists, the tab is moved into it. Otherwise a new group is created.
               (setq pos (1+ pos)))
             (funcall orig-fn (or redirect fallback))))))))
 
-(advice-add 'tab-bar-select-tab :around #'hym/tab-select-tab-remember-group)
-
-(setq tab-bar-new-tab-to 'right
-      tab-bar-close-button-show nil
-      tab-bar-new-button-show nil
-      tab-bar-tab-hints t
-      tab-bar-auto-width nil
-      tab-bar-separator " "
-      tab-bar-format '(tab-bar-format-tabs-groups tab-bar-separator))
-
 (defun tab-bar-tab-name-format-hints (name tab i)
   (if tab-bar-tab-hints
       (let* ((positions (hym/tab-group-positions
@@ -296,7 +308,8 @@ If the group exists, the tab is moved into it. Otherwise a new group is created.
      (format "%d: %s" group-n group)
      'face (if current-p 'tab-bar-tab-group-current 'tab-bar-tab-group-inactive))))
 
-;; (add-to-list 'display-buffer-alist
-;; 			   '("\\*scratch\\*"
-;; 				 (display-buffer-in-tab display-buffer-full-frame)
-;; 				 (tab-group . "[EMACS]")))
+(when (and (fboundp 'hym/leader-def)
+           (fboundp 'general-define-key))
+  (hym-tabs-setup-keybindings))
+
+(provide 'hym-tabs)
