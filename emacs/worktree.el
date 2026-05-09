@@ -2,14 +2,25 @@
 
 ;; Git worktree integration for Emacs
 
+(require 'subr-x)
+(require 'vc-git)
+
+(defun hym/worktree--git-string (directory &rest args)
+  "Run git with ARGS in DIRECTORY, returning trimmed stdout on success."
+  (with-temp-buffer
+    (let ((default-directory directory))
+      (when (= 0 (apply #'call-process "git" nil (list t nil) nil args))
+        (string-trim (buffer-string))))))
+
+
 ;;; Core worktree detection
 
 (defun hym/worktree-list ()
   "Return list of (path branch) for all worktrees in current repo.
 Returns nil if not in a git repo."
   (when-let* ((default-directory (or (vc-git-root default-directory)
-                                      default-directory))
-              (output (shell-command-to-string "git worktree list --porcelain 2>/dev/null")))
+                                     default-directory))
+              (output (hym/worktree--git-string default-directory "worktree" "list" "--porcelain")))
     (let (worktrees current-path current-branch)
       (dolist (line (split-string output "\n"))
         (cond
@@ -74,10 +85,8 @@ Returns (path branch) or nil."
   (message "Deleting worktree: %s" path)
   (if (= 0 (call-process "git" nil nil nil "worktree" "remove" path))
       (message "Deleted worktree: %s" path)
-    (let ((diff (string-trim (shell-command-to-string
-                               (format "git -C %s diff --stat HEAD" (shell-quote-argument path)))))
-          (untracked (string-trim (shell-command-to-string
-                                    (format "git -C %s ls-files --others --exclude-standard" (shell-quote-argument path))))))
+    (let ((diff (or (hym/worktree--git-string path "diff" "--stat" "HEAD") ""))
+          (untracked (or (hym/worktree--git-string path "ls-files" "--others" "--exclude-standard") "")))
       (when (yes-or-no-p
              (format "Delete failed.\n%s%s\nForce delete %s?"
                      (if (string-empty-p diff) "" (concat diff "\n"))
@@ -93,7 +102,7 @@ Returns (path branch) or nil."
 (defun hym/worktree-delete ()
   "Delete a git worktree, selected via completing-read."
   (interactive)
-  (let* ((current-root (string-trim (shell-command-to-string "git rev-parse --show-toplevel 2>/dev/null")))
+  (let* ((current-root (or (hym/worktree--git-string default-directory "rev-parse" "--show-toplevel") ""))
          (secondaries (hym/worktree--non-main))
          (candidates (mapcar (lambda (wt)
                                (let* ((path (car wt))
