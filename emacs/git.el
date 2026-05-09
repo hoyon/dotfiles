@@ -153,7 +153,7 @@ COMMAND-FN, if provided, is a function returning the shell command to run."
       (let ((qf (shell-quote-argument file)))
         (hym/git-delta-diff
          nil (format "untracked: %s" file)
-         (lambda () (format "git diff --no-index /dev/null %s 2>/dev/null | delta --side-by-side --width %d"
+         (lambda () (format "git diff --no-index /dev/null %s | delta --side-by-side --width %d"
                             qf (- (frame-width) 1))))))
      (file
       (hym/git-delta-diff (format "-- %s" (shell-quote-argument file))))
