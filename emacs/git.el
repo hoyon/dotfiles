@@ -135,16 +135,26 @@ COMMAND-FN, if provided, is a function returning the shell command to run."
         (and-let* ((parent (oref section parent)))
           (eq (oref parent type) type)))))
 
+(defun hym/git-delta-diff--selected-commit-range ()
+  "Return a git diff range covering the selected commits."
+  (when-let ((commits (magit-region-values 'commit t)))
+    (when (cdr commits)
+      (deactivate-mark)
+      (format "%s^..%s" (car (last commits)) (car commits)))))
+
 (defun hym/git-delta-diff-dwim ()
   "Show delta diff based on context in Magit buffer."
   (interactive)
   (let* ((section (magit-current-section))
          (file (or (magit-file-at-point)
                    (and section (oref section value))))
+         (commit-range (hym/git-delta-diff--selected-commit-range))
          (commit (magit-commit-at-point))
          (in-staged (hym/git-delta-diff--section-type-p 'staged))
          (in-untracked (hym/git-delta-diff--section-type-p 'untracked)))
     (cond
+     (commit-range
+      (hym/git-delta-diff commit-range "selected commits"))
      (commit
       (hym/git-delta-diff (format "%s^..%s" commit commit)))
      ((and file in-staged)
