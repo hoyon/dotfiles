@@ -26,7 +26,11 @@
 
 (use-package orderless
   :ensure t
-  :custom (completion-styles '(orderless)))
+  :custom
+  (completion-styles '(orderless))
+  (completion-ignore-case t)
+  (read-buffer-completion-ignore-case t)
+  (read-file-name-completion-ignore-case t))
 
 ;; Example configuration for Consult
 (use-package consult
