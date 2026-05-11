@@ -198,5 +198,5 @@ COMMAND-FN, if provided, is a function returning the shell command to run."
   "gf" 'hym/git-delta-diff-merge-base)
 
 (general-define-key
- :keymaps 'magit-status-mode-map
+ :keymaps '(magit-status-mode-map magit-log-mode-map)
  "D" 'hym/git-delta-diff-dwim)
