@@ -3,7 +3,9 @@
 ;; config
 
 ; disable dispatch menu
-(setq project-switch-commands 'project-find-file)
+(setq
+ project-switch-commands 'project-find-file
+ compilation-ask-about-save nil)
 
 ;; project compile shortcuts
 
