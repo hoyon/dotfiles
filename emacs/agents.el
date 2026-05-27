@@ -51,7 +51,7 @@
   :config
 
   (setq
-   agent-shell-preferred-agent-config (agent-shell-anthropic-make-claude-code-config)
+   agent-shell-preferred-agent-config (agent-shell-openai-make-codex-config)
    agent-shell-session-strategy 'new
 
    agent-shell-anthropic-claude-environment (agent-shell-make-environment-variables
