@@ -132,7 +132,7 @@ The exact color values are taken from the active Ef theme."
                         :foreground fg-dim
                         :background bg-ochre
                         :weight 'normal
-                        :box nil))
+                        :box nil)))
 
 (add-hook 'ef-themes-post-load-hook #'hym/ef-themes-tab-group-faces)
 
