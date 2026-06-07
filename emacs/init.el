@@ -111,6 +111,7 @@
 (load-config "vertico.el")
 (load-config "shell.el")
 (load-config "git.el")
+(load-config "git-delta.el")
 (load-config "window.el")
 (load-config "project.el")
 (load-config "docs.el")
