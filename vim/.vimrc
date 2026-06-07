@@ -102,7 +102,6 @@ vnoremap <silent> k gk
 
 "Space as an additional leader
 map <space> <leader>
-inoremap jk <ESC>
 nmap <silent> <leader><space> :nohlsearch<cr>
 
 "Prevent searches being highlighed when vimrc reloads
