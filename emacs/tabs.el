@@ -27,12 +27,14 @@
         (add-hook 'after-make-frame-functions #'hym/ensure-tab-in-group)
         (add-hook 'server-after-make-frame-hook #'hym/ensure-tab-in-group)
         (advice-add 'tab-bar-new-tab :after #'hym/move-new-tab-to-group-end)
+        (advice-add 'tab-bar-close-tab :around #'hym/tab-close-in-current-group)
         (advice-add 'tab-bar-select-tab :around #'hym/tab-select-tab-remember-group)
         (hym/ensure-tab-in-group))
     (remove-hook 'emacs-startup-hook #'hym/ensure-tab-in-group)
     (remove-hook 'after-make-frame-functions #'hym/ensure-tab-in-group)
     (remove-hook 'server-after-make-frame-hook #'hym/ensure-tab-in-group)
     (advice-remove 'tab-bar-new-tab #'hym/move-new-tab-to-group-end)
+    (advice-remove 'tab-bar-close-tab #'hym/tab-close-in-current-group)
     (advice-remove 'tab-bar-select-tab #'hym/tab-select-tab-remember-group)))
 
 (defun hym/ensure-tab-in-group (&optional frame)
@@ -207,13 +209,20 @@ If the group exists, the tab is moved into it. Otherwise a new group is created.
     (tab-bar-change-tab-group group)
     (hym/move-new-tab-to-group-end)))
 
+(defun hym/tab-close-current-group ()
+  "Close all tabs in the current tab group."
+  (interactive)
+  (tab-bar-close-group-tabs
+   (funcall tab-bar-tab-group-function (tab-bar--current-tab))))
+
 (defun hym-tabs-setup-keybindings ()
   "Install keybindings for grouped tab-bar commands."
   (hym/leader-def
     "tj" 'hym/tab-switch-to-prev-group
     "tk" 'hym/tab-switch-to-next-group
     "tc" 'tab-close
-    "tr" 'tab-rename
+    "tC" 'hym/tab-close-current-group
+    "tr" 'tab-bar-rename-tab
     "tt" 'hym/tab-switch-to-group
     "tn" 'tab-new
     "tN" 'hym/tab-new-in-group
@@ -269,6 +278,23 @@ If the group exists, the tab is moved into it. Otherwise a new group is created.
     (when (> last-pos current-pos)
       (tab-bar-move-tab-to last-pos))))
 
+(defun hym/tab-close-in-current-group (orig-fn &optional tab-number to-number)
+  "Keep selection in the current tab group after closing its current tab.
+Use Emacs' normal close behavior when closing another tab, when TO-NUMBER
+was supplied explicitly, or when the current tab is the last in its group."
+  (let* ((tabs (funcall tab-bar-tabs-function))
+         (current-pos (1+ (tab-bar--current-tab-index tabs)))
+         (closing-pos (or tab-number current-pos)))
+    (if (or to-number (/= closing-pos current-pos))
+        (funcall orig-fn tab-number to-number)
+      (let* ((current-group
+              (funcall tab-bar-tab-group-function (tab-bar--current-tab)))
+             (positions (delq current-pos
+                              (hym/tab-group-positions current-group)))
+             (next-pos (seq-find (lambda (pos) (> pos current-pos)) positions))
+             (replacement (or next-pos (car (last positions)))))
+        (funcall orig-fn tab-number replacement)))))
+
 (defun hym/tab-select-tab-remember-group (orig-fn &rest args)
   "Redirect cross-group tab switches to the last active tab in the target group."
   (hym/tab-group-save-current)
@@ -291,12 +317,33 @@ If the group exists, the tab is moved into it. Otherwise a new group is created.
               (setq pos (1+ pos)))
             (funcall orig-fn (or redirect fallback))))))))
 
+(defun hym/tab-bar-mouse-close (event)
+  "Close the group or tab clicked with mouse EVENT."
+  (interactive "e")
+  (let* ((item (tab-bar--event-to-item (event-start event)))
+         (key (car item)))
+    (if (and (symbolp key)
+             (string-prefix-p "group-" (symbol-name key)))
+        (let* ((tab-number
+                (string-to-number
+                 (substring (symbol-name key) (length "group-"))))
+               (tab (nth (1- tab-number) (funcall tab-bar-tabs-function)))
+               (group (and tab
+                           (funcall tab-bar-tab-group-function tab))))
+          (when group
+            (tab-bar-close-group-tabs group)))
+      (tab-bar-mouse-close-tab event))))
+
+(define-key tab-bar-map [down-mouse-2] #'hym/tab-bar-mouse-close)
+
 (defun tab-bar-tab-name-format-hints (name tab i)
   (if tab-bar-tab-hints
       (let* ((positions (hym/tab-group-positions
                          (funcall tab-bar-tab-group-function tab)))
              (local-i (1+ (seq-position positions i))))
-        (format " %d " local-i))
+        (if (alist-get 'explicit-name tab)
+            (format "«%d %s»" local-i name)
+          (format "«%d»" local-i)))
     name))
 
 (defun tab-bar-tab-group-format-default (tab _i &optional current-p)
@@ -305,8 +352,9 @@ If the group exists, the tab is moved into it. Otherwise a new group is created.
                                       (funcall tab-bar-tabs-function))))
          (group-n (1+ (seq-position groups group #'string=))))
     (propertize
-     (format "%d: %s" group-n group)
-     'face (if current-p 'tab-bar-tab-group-current 'tab-bar-tab-group-inactive))))
+     (format "┃%d %s┃" group-n group)
+     'face (if current-p 'tab-bar-tab-group-current 'tab-bar-tab-group-inactive)
+     'help-echo "mouse-2: close this tab group")))
 
 (when (and (fboundp 'hym/leader-def)
            (fboundp 'general-define-key))

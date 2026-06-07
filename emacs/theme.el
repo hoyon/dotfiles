@@ -112,10 +112,27 @@ The exact color values are taken from the active Ef theme."
 
 (defun hym/ef-themes-tab-group-faces ()
   (ef-themes-with-colors
+    (set-face-attribute 'tab-bar nil
+                        :background bg-ochre)
     (set-face-attribute 'tab-bar-tab-group-current nil
-                        :foreground magenta-warmer :weight 'bold)
+                        :foreground fg-alt
+                        :background bg-alt
+                        :box `(:line-width 1 :color ,bg-alt)
+                        :weight 'bold)
     (set-face-attribute 'tab-bar-tab-group-inactive nil
-                        :foreground magenta)))
+                        :foreground fg-dim
+                        :background bg-dim
+                        :box `(:line-width 1 :color ,bg-dim))
+    (set-face-attribute 'tab-bar-tab nil
+                        :foreground fg-alt
+                        :background bg-ochre
+                        :weight 'bold
+                        :box nil)
+    (set-face-attribute 'tab-bar-tab-inactive nil
+                        :foreground fg-dim
+                        :background bg-ochre
+                        :weight 'normal
+                        :box nil))
 
 (add-hook 'ef-themes-post-load-hook #'hym/ef-themes-tab-group-faces)
 
