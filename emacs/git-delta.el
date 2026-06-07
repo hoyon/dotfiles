@@ -1,3 +1,5 @@
+;; -*- lexical-binding: t -*-
+
 ;; Use delta to show side by side diffs of staged and unstaged changes
 
 (defvar-local hym/git-delta-diff--directory nil)
@@ -22,7 +24,8 @@
       (progn
         (tab-bar-switch-to-tab (alist-get 'name tab))
         (switch-to-buffer buf))
-    (switch-to-buffer-other-tab buf)))
+    (switch-to-buffer-other-tab buf)
+    (tab-bar-rename-tab "delta")))
 
 (defun hym/git-delta-diff (&optional args buf-name command-fn)
   "Show git diff through delta side-by-side in a buffer.
@@ -116,22 +119,38 @@ COMMAND-FN, if provided, is a function returning the shell command to run."
 
 (defvar hym/git-delta-diff--resize-timer nil)
 
+(defun hym/git-delta-diff--frame-size (frame)
+  "Return FRAME's size in character columns and rows."
+  (cons (frame-width frame) (frame-height frame)))
+
+(defun hym/git-delta-diff--remember-frame-size (frame)
+  "Record FRAME's current size."
+  (set-frame-parameter frame 'hym/git-delta-diff--size
+                       (hym/git-delta-diff--frame-size frame)))
+
 (defun hym/git-delta-diff--refresh-visible (frame)
   "Refresh delta diff buffers visible in FRAME."
-  (dolist (win (window-list frame))
-    (let ((buf (window-buffer win)))
-      (when (and (string-prefix-p "*delta-diff[" (buffer-name buf))
-                 (buffer-local-value 'hym/git-delta-diff--command-fn buf))
-        (with-current-buffer buf
-          (hym/git-delta-diff-refresh))))))
+  (when (frame-live-p frame)
+    (dolist (win (window-list frame))
+      (let ((buf (window-buffer win)))
+        (when (and (string-prefix-p "*delta-diff[" (buffer-name buf))
+                   (buffer-local-value 'hym/git-delta-diff--command-fn buf))
+          (with-current-buffer buf
+            (hym/git-delta-diff-refresh)))))))
 
-(defun hym/git-delta-diff--on-resize (_frame)
-  "Debounced handler for frame resize — refreshes all delta diff buffers."
-  (when (timerp hym/git-delta-diff--resize-timer)
-    (cancel-timer hym/git-delta-diff--resize-timer))
-  (setq hym/git-delta-diff--resize-timer
-        (run-with-idle-timer 0.5 nil #'hym/git-delta-diff--refresh-visible _frame)))
+(defun hym/git-delta-diff--on-resize (frame)
+  "Refresh delta diff buffers after FRAME's dimensions change."
+  (let ((size (hym/git-delta-diff--frame-size frame)))
+    (unless (equal size (frame-parameter frame 'hym/git-delta-diff--size))
+      (set-frame-parameter frame 'hym/git-delta-diff--size size)
+      (when (timerp hym/git-delta-diff--resize-timer)
+        (cancel-timer hym/git-delta-diff--resize-timer))
+      (setq hym/git-delta-diff--resize-timer
+            (run-at-time
+             0.3 nil #'hym/git-delta-diff--refresh-visible frame)))))
 
+(mapc #'hym/git-delta-diff--remember-frame-size (frame-list))
+(add-hook 'after-make-frame-functions #'hym/git-delta-diff--remember-frame-size)
 (add-hook 'window-size-change-functions #'hym/git-delta-diff--on-resize)
 
 (hym/leader-def
