@@ -88,6 +88,7 @@ Use an Eglot hover snapshot when LSP is live, otherwise fall back to Helpful."
 
 (add-hook 'elixir-ts-mode-hook #'eglot-ensure)
 (add-hook 'go-ts-mode-hook #'eglot-ensure)
+(add-hook 'rust-mode-hook #'eglot-ensure)
 
 ;; Bindings
 (hym/leader-def

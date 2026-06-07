@@ -102,7 +102,10 @@
   :custom
   (markdown-gfm-use-electric-backquote nil))
 
-(use-package rust-mode)
+(use-package rust-mode
+  :init
+  (setq rust-mode-treesitter-derive t))
+
 (use-package cargo
   :after rust-mode
   :hook (rust-mode . cargo-minor-mode))
@@ -236,7 +239,6 @@
               (dockerfile-mode . dockerfile-ts-mode)
               (c++-mode . c++-ts-mode)
               (c-mode . c-ts-mode)
-              (rust-mode . rust-ts-mode)
               (go-mode . go-ts-mode)
               (go-dot-mod-mode . go-mod-ts-mode)))
       ))
