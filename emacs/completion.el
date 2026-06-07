@@ -43,6 +43,12 @@ Use an Eglot hover snapshot when LSP is live, otherwise fall back to Helpful."
 ;; Keep eldoc/eglot docs clipped to a single echo-area line
 (setq eldoc-echo-area-use-multiline-p nil)
 
+(with-eval-after-load 'eldoc
+  (with-eval-after-load 'evil
+    (eldoc-add-command-completions
+     "evil-backward-" "evil-beginning-of-" "evil-end-of-" "evil-first-"
+     "evil-forward-" "evil-goto-" "evil-last-" "evil-next-" "evil-previous-")))
+
 ;; Eglot - auto-enable for elixir and go
 (with-eval-after-load 'eglot
   (setq eglot-autoshutdown t
