@@ -55,6 +55,7 @@
      compile
      corfu
      dired
+     diff-mode
      eldoc
      forge
      git-timemachine
@@ -69,6 +70,7 @@
      restclient
      sly
      tab-bar
+     vc-dir
      vterm
      wgrep
      woman)))
