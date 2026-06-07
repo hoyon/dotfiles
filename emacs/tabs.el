@@ -40,65 +40,109 @@
 (defun hym/ensure-tab-in-group (&optional frame)
   "Ensure the current tab on FRAME has a tab group, defaulting to `hym/default-tab-group'."
   (with-selected-frame (or frame (selected-frame))
-    (let* ((current (tab-bar--current-tab))
-           (group (funcall tab-bar-tab-group-function current)))
-      (unless group
-        (tab-bar-change-tab-group hym/default-tab-group)))))
+    (unless (hym/tab-group)
+      (tab-bar-change-tab-group hym/default-tab-group))))
 
 (defvar hym/tab-group-last-tab (make-hash-table :test 'equal)
-  "Maps group names to the last active tab name in that group.")
+  "Map frame and group pairs to the stable ID of their last active tab.")
+
+(defvar hym/tab-restore-group-selection t
+  "Whether cross-group tab selection should restore the last active tab.")
+
+(defun hym/tab-group (&optional tab)
+  "Return the group of TAB, or the current tab when TAB is nil."
+  (funcall tab-bar-tab-group-function (or tab (tab-bar--current-tab))))
+
+(defun hym/tab-id (tab)
+  "Return TAB's stable private ID, creating one when necessary."
+  (or (alist-get 'hym-id tab)
+      (let ((id (gensym "hym-tab-")))
+        ;; Tab-bar preserves custom alist entries when switching tabs.
+        (setcdr (last tab) (list (cons 'hym-id id)))
+        id)))
+
+(defun hym/tab-groups (&optional tabs)
+  "Return group names in display order for TABS."
+  (delete-dups
+   (mapcar #'hym/tab-group (or tabs (funcall tab-bar-tabs-function)))))
+
+(defun hym/tab-find-position (predicate &optional tabs)
+  "Return the 1-based position of the first tab matching PREDICATE in TABS."
+  (let ((position 1)
+        found)
+    (dolist (tab (or tabs (funcall tab-bar-tabs-function)) found)
+      (when (and (null found) (funcall predicate tab))
+        (setq found position))
+      (setq position (1+ position)))))
+
+(defun hym/tab-position-by-id (id &optional tabs)
+  "Return the 1-based position of the tab with ID in TABS."
+  (and id
+       (hym/tab-find-position
+        (lambda (tab) (eq (alist-get 'hym-id tab) id))
+        tabs)))
+
+(defun hym/tab-group-key (group)
+  "Return the frame-local lookup key for GROUP."
+  (cons (selected-frame) group))
+
+(defun hym/tab-group-last-id (group)
+  "Return the last active tab ID recorded for GROUP in this frame."
+  (gethash (hym/tab-group-key group) hym/tab-group-last-tab))
+
+(defun hym/tab-group-remember (group id)
+  "Remember ID as the last active tab in GROUP for this frame."
+  (puthash (hym/tab-group-key group) id hym/tab-group-last-tab))
+
+(defun hym/tab-group-position (group &optional preferred-id tabs)
+  "Return a position in GROUP, preferring the tab with PREFERRED-ID."
+  (let ((tabs (or tabs (funcall tab-bar-tabs-function))))
+    (or (and preferred-id
+             (hym/tab-find-position
+              (lambda (tab)
+                (and (equal (hym/tab-group tab) group)
+                     (eq (alist-get 'hym-id tab) preferred-id)))
+              tabs))
+        (hym/tab-find-position
+         (lambda (tab) (equal (hym/tab-group tab) group))
+         tabs))))
 
 (defun hym/tab-group-save-current ()
   "Save the current tab as the last active tab for its group."
-  (let* ((current (tab-bar--current-tab))
-         (group (funcall tab-bar-tab-group-function current))
-         (name (alist-get 'name current)))
-    (puthash group name hym/tab-group-last-tab)))
+  (let ((current (tab-bar--current-tab-find)))
+    (hym/tab-group-remember (hym/tab-group current) (hym/tab-id current))))
 
 (defun hym/tab-group-switch-to (group)
   "Switch to GROUP, restoring the last active tab if possible."
   (hym/tab-group-save-current)
-  (let* ((tabs (funcall tab-bar-tabs-function))
-         (last-tab-name (gethash group hym/tab-group-last-tab))
-         (n 1)
-         (target nil)
-         (fallback nil))
-    (dolist (tab tabs)
-      (when (string= (funcall tab-bar-tab-group-function tab) group)
-        (unless fallback (setq fallback n))
-        (when (and last-tab-name (string= (alist-get 'name tab) last-tab-name))
-          (setq target n)))
-      (setq n (1+ n)))
-    (tab-bar-select-tab (or target fallback))))
+  (when-let ((position
+              (hym/tab-group-position
+               group (hym/tab-group-last-id group))))
+    (let ((hym/tab-restore-group-selection nil))
+      (tab-bar-select-tab position))))
 
 (defun hym/tab-switch-to-group ()
   "Prompt for a tab group and switch to it."
   (interactive)
-  (let* ((tabs (funcall tab-bar-tabs-function))
-         (groups (delete-dups (mapcar (lambda (tab)
-                                        (funcall tab-bar-tab-group-function tab))
-                                      tabs)))
+  (let* ((groups (hym/tab-groups))
          (group (completing-read "Switch to group: " groups nil t)))
     (hym/tab-group-switch-to group)))
 
-(defun hym/tab-group-positions (group)
-  "Return the list of 1-based global tab positions belonging to GROUP."
-  (let ((tabs (funcall tab-bar-tabs-function))
+(defun hym/tab-group-positions (group &optional tabs)
+  "Return 1-based positions of tabs in GROUP within TABS."
+  (let ((tabs (or tabs (funcall tab-bar-tabs-function)))
         (positions nil)
         (n 1))
     (dolist (tab tabs (nreverse positions))
-      (when (string= (funcall tab-bar-tab-group-function tab) group)
+      (when (equal (hym/tab-group tab) group)
         (push n positions))
       (setq n (1+ n)))))
 
 ;;; Cycle between tab groups
 (defun hym/tab-cycle-group (direction)
   "Cycle to the next (DIRECTION=1) or previous (DIRECTION=-1) tab group."
-  (let* ((tabs (funcall tab-bar-tabs-function))
-         (current-group (funcall tab-bar-tab-group-function (tab-bar--current-tab)))
-         (groups (delete-dups (mapcar (lambda (tab)
-                                        (funcall tab-bar-tab-group-function tab))
-                                      tabs)))
+  (let* ((current-group (hym/tab-group))
+         (groups (hym/tab-groups))
          (pos (seq-position groups current-group #'string=))
          (next-pos (mod (+ pos direction) (length groups)))
          (next-group (nth next-pos groups)))
@@ -118,20 +162,11 @@
 (defun hym/tab-cycle-in-group (direction)
   "Cycle to the next (DIRECTION=1) or previous (DIRECTION=-1) tab in the current group."
   (let* ((tabs (funcall tab-bar-tabs-function))
-         (current-group (funcall tab-bar-tab-group-function (tab-bar--current-tab)))
-         (group-tab-nums nil)
-         (current-num nil)
-         (n 1))
-    (dolist (tab tabs)
-      (when (string= (funcall tab-bar-tab-group-function tab) current-group)
-        (push n group-tab-nums)
-        (when (eq (car tab) 'current-tab)
-          (setq current-num n)))
-      (setq n (1+ n)))
-    (setq group-tab-nums (nreverse group-tab-nums))
-    (let* ((pos (seq-position group-tab-nums current-num))
-           (next-pos (mod (+ pos direction) (length group-tab-nums))))
-      (tab-bar-select-tab (nth next-pos group-tab-nums)))))
+         (group-tab-nums (hym/tab-group-positions (hym/tab-group) tabs))
+         (current-num (1+ (tab-bar--current-tab-index tabs)))
+         (pos (seq-position group-tab-nums current-num))
+         (next-pos (mod (+ pos direction) (length group-tab-nums))))
+    (tab-bar-select-tab (nth next-pos group-tab-nums))))
 
 (defun hym/tab-next-in-group ()
   "Switch to the next tab in the current tab group."
@@ -146,8 +181,7 @@
 (defun hym/tab-select-in-group (local-n)
   "Select the LOCAL-N'th tab in the current tab group."
   (interactive "nTab number: ")
-  (let* ((positions (hym/tab-group-positions
-                     (funcall tab-bar-tab-group-function (tab-bar--current-tab))))
+  (let* ((positions (hym/tab-group-positions (hym/tab-group)))
          (global-pos (nth (1- local-n) positions)))
     (when global-pos
       (tab-bar-select-tab global-pos))))
@@ -155,16 +189,12 @@
 (defun hym/tab-select-group (n)
   "Select the last active tab of the N'th tab group (1-based)."
   (interactive "nGroup number: ")
-  (let* ((tabs (funcall tab-bar-tabs-function))
-         (groups (delete-dups (mapcar (lambda (tab)
-                                        (funcall tab-bar-tab-group-function tab))
-                                      tabs)))
-         (group (nth (1- n) groups)))
+  (let ((group (nth (1- n) (hym/tab-groups))))
     (when group
       (hym/tab-group-switch-to group))))
 
 (defun hym/tab-create (name)
-  "Creates a tab with the given name if it doens't exist."
+  "Create a tab named NAME unless it already exists."
   (condition-case nil
       (unless (equal (alist-get 'name (tab-bar--current-tab))
                      name)
@@ -176,11 +206,7 @@
   "Create a new tab in a prompted tab group.
 If the group exists, the tab is added to it. Otherwise a new group is created."
   (interactive)
-  (let* ((tabs (funcall tab-bar-tabs-function))
-         (groups (delete-dups (mapcar (lambda (tab)
-                                        (funcall tab-bar-tab-group-function tab))
-                                      tabs)))
-         (group (completing-read "Tab group: " groups nil nil)))
+  (let ((group (completing-read "Tab group: " (hym/tab-groups) nil nil)))
     (tab-new)
     (tab-bar-change-tab-group group)
     (hym/move-new-tab-to-group-end)))
@@ -189,11 +215,11 @@ If the group exists, the tab is added to it. Otherwise a new group is created."
   "Rename the current tab group."
   (interactive)
   (let* ((tabs (funcall tab-bar-tabs-function))
-         (current-group (funcall tab-bar-tab-group-function (tab-bar--current-tab)))
+         (current-group (hym/tab-group))
          (new-name (read-string (format "Rename group '%s' to: " current-group)))
          (n 1))
     (dolist (tab tabs)
-      (when (string= (funcall tab-bar-tab-group-function tab) current-group)
+      (when (equal (hym/tab-group tab) current-group)
         (tab-bar-change-tab-group new-name n))
       (setq n (1+ n)))))
 
@@ -201,19 +227,14 @@ If the group exists, the tab is added to it. Otherwise a new group is created."
   "Move the current tab to a different tab group.
 If the group exists, the tab is moved into it. Otherwise a new group is created."
   (interactive)
-  (let* ((tabs (funcall tab-bar-tabs-function))
-         (groups (delete-dups (mapcar (lambda (tab)
-                                        (funcall tab-bar-tab-group-function tab))
-                                      tabs)))
-         (group (completing-read "Move to group: " groups nil nil)))
+  (let ((group (completing-read "Move to group: " (hym/tab-groups) nil nil)))
     (tab-bar-change-tab-group group)
     (hym/move-new-tab-to-group-end)))
 
 (defun hym/tab-close-current-group ()
   "Close all tabs in the current tab group."
   (interactive)
-  (tab-bar-close-group-tabs
-   (funcall tab-bar-tab-group-function (tab-bar--current-tab))))
+  (tab-bar-close-group-tabs (hym/tab-group)))
 
 (defun hym-tabs-setup-keybindings ()
   "Install keybindings for grouped tab-bar commands."
@@ -271,7 +292,7 @@ If the group exists, the tab is moved into it. Otherwise a new group is created.
   "Move newly created tab to the end of its group."
   (let* ((tabs (funcall tab-bar-tabs-function))
          (current (seq-find (lambda (tab) (eq (car tab) 'current-tab)) tabs))
-         (group (funcall tab-bar-tab-group-function current))
+         (group (hym/tab-group current))
          (positions (hym/tab-group-positions group))
          (last-pos (car (last positions)))
          (current-pos (1+ (tab-bar--current-tab-index tabs))))
@@ -287,35 +308,43 @@ was supplied explicitly, or when the current tab is the last in its group."
          (closing-pos (or tab-number current-pos)))
     (if (or to-number (/= closing-pos current-pos))
         (funcall orig-fn tab-number to-number)
-      (let* ((current-group
-              (funcall tab-bar-tab-group-function (tab-bar--current-tab)))
+      (let* ((current-group (hym/tab-group))
+             (closing-id (hym/tab-id (nth (1- closing-pos) tabs)))
              (positions (delq current-pos
-                              (hym/tab-group-positions current-group)))
+                              (hym/tab-group-positions current-group tabs)))
              (next-pos (seq-find (lambda (pos) (> pos current-pos)) positions))
-             (replacement (or next-pos (car (last positions)))))
-        (funcall orig-fn tab-number replacement)))))
+             (replacement (or next-pos (car (last positions))))
+             (replacement-id
+              (and replacement (hym/tab-id (nth (1- replacement) tabs)))))
+        (prog1
+            (let ((hym/tab-restore-group-selection nil))
+              (funcall orig-fn tab-number replacement))
+          (when (and replacement-id
+                     (null (hym/tab-position-by-id closing-id)))
+            (when-let ((replacement-pos
+                        (hym/tab-position-by-id replacement-id)))
+              (unless (eq (alist-get 'hym-id (tab-bar--current-tab))
+                          replacement-id)
+                (let ((hym/tab-restore-group-selection nil))
+                  (tab-bar-select-tab replacement-pos)))
+              (hym/tab-group-remember current-group replacement-id))))))))
 
 (defun hym/tab-select-tab-remember-group (orig-fn &rest args)
   "Redirect cross-group tab switches to the last active tab in the target group."
-  (hym/tab-group-save-current)
-  (let* ((n (or (car args) (1+ (tab-bar--current-tab-index))))
-         (tabs (funcall tab-bar-tabs-function))
-         (target-tab (nth (1- n) tabs)))
-    (if (null target-tab)
-        (apply orig-fn args)
-      (let ((target-group (funcall tab-bar-tab-group-function target-tab))
-            (current-group (funcall tab-bar-tab-group-function (tab-bar--current-tab))))
-        (if (string= target-group current-group)
-            (apply orig-fn args)
-          (let ((last-tab-name (gethash target-group hym/tab-group-last-tab))
-                (pos 1) (redirect nil) (fallback nil))
-            (dolist (tab tabs)
-              (when (string= (funcall tab-bar-tab-group-function tab) target-group)
-                (unless fallback (setq fallback pos))
-                (when (and last-tab-name (string= (alist-get 'name tab) last-tab-name))
-                  (setq redirect pos)))
-              (setq pos (1+ pos)))
-            (funcall orig-fn (or redirect fallback))))))))
+  (if (not hym/tab-restore-group-selection)
+      (apply orig-fn args)
+    (hym/tab-group-save-current)
+    (let* ((n (or (car args) (1+ (tab-bar--current-tab-index))))
+           (tabs (funcall tab-bar-tabs-function))
+           (target-tab (nth (1- n) tabs))
+           (target-group (and target-tab (hym/tab-group target-tab))))
+      (if (or (null target-tab)
+              (equal target-group (hym/tab-group)))
+          (apply orig-fn args)
+        (funcall
+         orig-fn
+         (hym/tab-group-position
+          target-group (hym/tab-group-last-id target-group) tabs))))))
 
 (defun hym/tab-bar-mouse-close (event)
   "Close the group or tab clicked with mouse EVENT."
@@ -328,8 +357,7 @@ was supplied explicitly, or when the current tab is the last in its group."
                 (string-to-number
                  (substring (symbol-name key) (length "group-"))))
                (tab (nth (1- tab-number) (funcall tab-bar-tabs-function)))
-               (group (and tab
-                           (funcall tab-bar-tab-group-function tab))))
+               (group (and tab (hym/tab-group tab))))
           (when group
             (tab-bar-close-group-tabs group)))
       (tab-bar-mouse-close-tab event))))
@@ -339,7 +367,7 @@ was supplied explicitly, or when the current tab is the last in its group."
 (defun tab-bar-tab-name-format-hints (name tab i)
   (if tab-bar-tab-hints
       (let* ((positions (hym/tab-group-positions
-                         (funcall tab-bar-tab-group-function tab)))
+                         (hym/tab-group tab)))
              (local-i (1+ (seq-position positions i))))
         (if (alist-get 'explicit-name tab)
             (format "«%d %s»" local-i name)
@@ -347,9 +375,8 @@ was supplied explicitly, or when the current tab is the last in its group."
     name))
 
 (defun tab-bar-tab-group-format-default (tab _i &optional current-p)
-  (let* ((group (funcall tab-bar-tab-group-function tab))
-         (groups (delete-dups (mapcar (lambda (t_) (funcall tab-bar-tab-group-function t_))
-                                      (funcall tab-bar-tabs-function))))
+  (let* ((group (hym/tab-group tab))
+         (groups (hym/tab-groups))
          (group-n (1+ (seq-position groups group #'string=))))
     (propertize
      (format "┃%d %s┃" group-n group)
