@@ -11,19 +11,33 @@
 
 (defun hym/dismiss-docs ()
   (interactive)
-  (dolist (name '("*helpful*" "*eldoc*"))
+  (dolist (name '("*helpful*" "*eldoc*" "*Eglot documentation*"))
     (when-let* ((buf (get-buffer name))
                 (win (get-buffer-window buf t)))
       (quit-window nil win))))
 
 (defun hym/show-docs ()
-  "Show docs for the symbol at point: eglot's hover buffer when LSP is live,
-otherwise fall back to helpful."
+  "Show fixed docs for the symbol at point.
+Use an Eglot hover snapshot when LSP is live, otherwise fall back to Helpful."
   (interactive)
   (if (bound-and-true-p eglot--managed-mode)
-      (when-let ((buf (eldoc-doc-buffer)))
-        (pop-to-buffer buf)
-        (evil-local-set-key 'normal "q" 'quit-window))
+      (let* ((server (eglot--current-server-or-lose))
+             (hover (jsonrpc-request
+                     server
+                     :textDocument/hover
+                     (eglot--TextDocumentPositionParams)))
+             (contents (plist-get hover :contents)))
+        (unless (and contents (not (seq-empty-p contents)))
+          (user-error "No documentation at point"))
+        (let ((docs (eglot--hover-info contents (plist-get hover :range))))
+          (with-current-buffer (get-buffer-create "*Eglot documentation*")
+            (let ((inhibit-read-only t))
+              (erase-buffer)
+              (insert docs)
+              (goto-char (point-min))
+              (special-mode)
+              (evil-local-set-key 'normal "q" #'quit-window))
+            (pop-to-buffer (current-buffer)))))
     (helpful-at-point)))
 
 (defun hym/show-full-diagnostic ()
