@@ -30,6 +30,10 @@
   :program "mix"
   :args '("format" "-"))
 
+(reformatter-define hym/sql-format
+  :program "pg_format"
+  :args '("--no-space-function"))
+
 (defun hym/format-buffer ()
   (interactive)
   (let* ((formatters
@@ -42,7 +46,8 @@
             (c++ . hym/clang-format-buffer)
             (c . hym/clang-format-buffer)
             (mhtml . hym/html-format-buffer)
-            (go . hym/go-format-buffer)))
+            (go . hym/go-format-buffer)
+            (sql . hym/sql-format-buffer)))
          (base-mode (intern (replace-regexp-in-string "-ts-mode$\\|-mode$" "" (symbol-name major-mode))))
          (formatter (alist-get base-mode formatters)))
     (funcall (or formatter
