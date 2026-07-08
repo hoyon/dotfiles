@@ -61,6 +61,33 @@
               (count-lines beg end)
               (abs (- (hym/column-of-pos end) (hym/column-of-pos beg)))))))
 
+  ;; Replace flymake's noisy default lighter (title + boxed counters) with a
+  ;; compact segment. The lighter itself is suppressed below via
+  ;; `flymake-mode-line-format'.
+  (telephone-line-defsegment* hym/telephone-line-flymake-segment ()
+    "Compact flymake diagnostics counters."
+    (when (bound-and-true-p flymake-mode)
+      (let ((errors 0) (warnings 0) (notes 0))
+        (dolist (diag (flymake-diagnostics))
+          (pcase (flymake-diagnostic-type diag)
+            (:error (cl-incf errors))
+            (:warning (cl-incf warnings))
+            (:note (cl-incf notes))))
+        (let ((parts (delq nil
+                           (list
+                            (when (> errors 0)
+                              (propertize (format "%dE" errors) 'face 'error))
+                            (when (> warnings 0)
+                              (propertize (format "%dW" warnings) 'face 'warning))
+                            (when (> notes 0)
+                              (propertize (format "%dN" notes) 'face 'shadow))))))
+          (if parts
+              (string-join parts " ")
+            (propertize "✓" 'face 'success))))))
+
+  (with-eval-after-load 'flymake
+    (setq flymake-mode-line-format nil))
+
   (setq telephone-line-lhs
       '((evil   . (telephone-line-evil-tag-segment))
         (accent . (telephone-line-process-segment
@@ -69,7 +96,8 @@
 
   (setq telephone-line-rhs
       '((nil    . (telephone-line-misc-info-segment))
-        (nil   . (hym/telephone-line-region-segment))
+        (nil   .  (hym/telephone-line-region-segment
+                  hym/telephone-line-flymake-segment))
         (accent . (telephone-line-simple-major-mode-segment))
         (evil   . (telephone-line-airline-position-segment))))
 
