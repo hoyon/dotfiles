@@ -1,0 +1,42 @@
+#!/bin/sh
+# Install hym-agent-hook into Claude Code (~/.claude/settings.json) and Codex
+# (~/.codex/hooks.json) so agent lifecycle events signal the Emacs workspace
+# harness. Run this once per machine:
+#
+#     ~/dotfiles/claude/hooks/install-hooks
+#
+# Idempotent: re-running cleanly replaces this hook's entries (matched by the
+# absolute path resolved below). It never touches other tools' hook entries
+# (e.g. cohort's). Requires jq. After installing, Codex may prompt to trust the
+# new hook on first run.
+set -e
+command -v jq >/dev/null 2>&1 || { echo "install-hooks: jq is required" >&2; exit 1; }
+
+here=$(cd "$(dirname "$0")" && pwd)
+hook="$here/hym-agent-hook"
+
+# Register OUR hook for TOOL's EVENTS in FILE. Removes any prior entry pointing
+# at $hook first, then adds "$hook <Event>" per event, so it reconciles on
+# re-run and leaves other entries alone.
+install_into() {
+  file="$1"; events="$2"
+  mkdir -p "$(dirname "$file")"
+  [ -f "$file" ] || echo '{}' > "$file"
+  tmp=$(mktemp)
+  jq --arg hook "$hook" --arg events "$events" '
+    (.hooks //= {})
+    | .hooks |= with_entries(
+        .value |= map(select(
+          ([.hooks[]?.command // ""] | any(contains($hook))) | not)))
+    | reduce ($events | split(" ")[]) as $ev (.;
+        .hooks[$ev] = ((.hooks[$ev] // [])
+          + [{hooks: [{type: "command", command: ($hook + " " + $ev)}]}]))
+    | .hooks |= with_entries(select(.value | length > 0))
+  ' "$file" > "$tmp" && mv "$tmp" "$file"
+  echo "installed hym-agent-hook -> $file"
+}
+
+install_into "$HOME/.claude/settings.json" \
+  "SessionStart UserPromptSubmit PreToolUse PostToolUse PermissionRequest Notification Stop SessionEnd"
+install_into "$HOME/.codex/hooks.json" \
+  "SessionStart UserPromptSubmit PreToolUse PostToolUse PermissionRequest Stop"

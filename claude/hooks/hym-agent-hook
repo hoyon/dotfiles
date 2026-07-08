@@ -1,0 +1,14 @@
+#!/bin/sh
+# Signal the Emacs workspace harness of a coding-agent lifecycle event.
+# Registered in ~/.claude/settings.json and ~/.codex/hooks.json (see the
+# install-hooks script alongside this file), which pass the event name as $1.
+# Inert unless HYM_WORKSPACE_SLUG is set (only Emacs-spawned agent terminals
+# set it), so it coexists with other agents' hooks.
+[ -n "$HYM_WORKSPACE_SLUG" ] || exit 0
+event="$1"
+# Fall back to the stdin payload's hook_event_name when no arg was passed.
+[ -n "$event" ] || event=$(jq -r '.hook_event_name // empty' 2>/dev/null)
+[ -n "$event" ] || exit 0
+case "$event" in *[!A-Za-z]*) exit 0 ;; esac
+emacsclient --eval "(hym-workspace-agent-signal \"$HYM_WORKSPACE_SLUG\" \"$event\")" >/dev/null 2>&1 || true
+exit 0

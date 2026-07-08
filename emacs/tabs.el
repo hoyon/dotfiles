@@ -235,6 +235,7 @@ created if it does not already exist."
          (buf (hym/git-delta-diff-buffer range label nil)))
     (hym/tab-new-in-group group)
     (switch-to-buffer buf)
+    (hym/git-delta-diff-refresh)
     (tab-bar-rename-tab label)
     (hym/raise-frame)))
 
@@ -266,16 +267,10 @@ If the group exists, the tab is moved into it. Otherwise a new group is created.
 (defun hym-tabs-setup-keybindings ()
   "Install keybindings for grouped tab-bar commands."
   (hym/leader-def
-    "tj" 'hym/tab-switch-to-prev-group
-    "tk" 'hym/tab-switch-to-next-group
     "tc" 'tab-close
     "tC" 'hym/tab-close-current-group
     "tr" 'tab-bar-rename-tab
-    "tt" 'hym/tab-switch-to-group
     "tn" 'tab-new
-    "tN" 'hym/tab-new-in-group
-    "tR" 'hym/tab-rename-group
-    "tm" 'hym/tab-move-to-group
     "t1" (lambda () (interactive) (hym/tab-select-in-group 1))
     "t2" (lambda () (interactive) (hym/tab-select-in-group 2))
     "t3" (lambda () (interactive) (hym/tab-select-in-group 3))
@@ -297,18 +292,6 @@ If the group exists, the tab is moved into it. Otherwise a new group is created.
    "s-7" (lambda () (interactive) (hym/tab-select-in-group 7))
    "s-8" (lambda () (interactive) (hym/tab-select-in-group 8))
    "s-9" (lambda () (interactive) (hym/tab-select-in-group 9)))
-
-  ;; Use SPC+number to switch tab group.
-  (hym/leader-def
-    "1" (lambda () (interactive) (hym/tab-select-group 1))
-    "2" (lambda () (interactive) (hym/tab-select-group 2))
-    "3" (lambda () (interactive) (hym/tab-select-group 3))
-    "4" (lambda () (interactive) (hym/tab-select-group 4))
-    "5" (lambda () (interactive) (hym/tab-select-group 5))
-    "6" (lambda () (interactive) (hym/tab-select-group 6))
-    "7" (lambda () (interactive) (hym/tab-select-group 7))
-    "8" (lambda () (interactive) (hym/tab-select-group 8))
-    "9" (lambda () (interactive) (hym/tab-select-group 9)))
 
   (general-define-key
    "C-<tab>" 'hym/tab-next-in-group

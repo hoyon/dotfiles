@@ -1,0 +1,330 @@
+;; -*- lexical-binding: t -*-
+
+(defvar hym-workspace-sidebar-type-icons
+  '((worktree . "⑂") (project . "▪") (notes . "≡"))
+  "Alist mapping workspace type to a display marker. Swap for nerd-icons later.")
+
+(defun hym-workspace-sidebar--icon (type)
+  (or (alist-get type hym-workspace-sidebar-type-icons) "·"))
+
+(defface hym-workspace-sidebar-current
+  '((t :inherit bold))
+  "Face for the name of the workspace you are currently in."
+  :group 'hym-workspace)
+
+(defface hym-workspace-sidebar-name
+  '((t :inherit default))
+  "Face for a workspace name."
+  :group 'hym-workspace)
+
+(defface hym-workspace-sidebar-meta
+  '((t :inherit shadow))
+  "Face for a workspace's type/meta line."
+  :group 'hym-workspace)
+
+(defvar hym-workspace-sidebar-status-functions nil
+  "Functions contributing status lines to a workspace card.
+Each is called with a workspace plist and returns a list of strings
+\(propertize them as you like) shown indented beneath the workspace, or
+nil.  This is how later features surface state such as a running server
+or an agent waiting for input without the sidebar knowing about them.")
+
+(defvar hym-workspace-sidebar--indent "     "
+  "Indent for a card's meta and status lines, aligning under the name.")
+
+(defun hym-workspace-sidebar--badges (ws)
+  "Collect status lines for WS from `hym-workspace-sidebar-status-functions'."
+  (apply #'append
+         (mapcar (lambda (f) (funcall f ws))
+                 hym-workspace-sidebar-status-functions)))
+
+(defun hym-workspace-sidebar--meta (ws)
+  "Return the dimmed type/repo-count line text for WS."
+  (let ((type (hym-workspace-type ws)))
+    (concat (hym-workspace-sidebar--icon type) " " (symbol-name type)
+            (when (eq type 'worktree)
+              (let ((n (length (hym-workspace-repos ws))))
+                (format " · %d repo%s" n (if (= n 1) "" "s")))))))
+
+(defun hym-workspace-sidebar--card (ws)
+  "Return a propertized multi-line card block for WS."
+  (let* ((name (hym-workspace-name ws))
+         (current (equal name (hym/tab-group)))
+         (dot (if (hym-workspace-open-p ws) "●" "○"))
+         (marker (if current "▸" " "))
+         (name-face (if current
+                        'hym-workspace-sidebar-current
+                      'hym-workspace-sidebar-name))
+         (lines (append
+                 (list (concat " " marker " " dot " "
+                               (propertize name 'face name-face)))
+                 (list (concat hym-workspace-sidebar--indent
+                               (propertize (hym-workspace-sidebar--meta ws)
+                                           'face 'hym-workspace-sidebar-meta)))
+                 (mapcar (lambda (b) (concat hym-workspace-sidebar--indent b))
+                         (hym-workspace-sidebar--badges ws))))
+         (block (concat (mapconcat #'identity lines "\n") "\n")))
+    (add-text-properties 0 (length block)
+                         (list 'hym-workspace name
+                               'mouse-face 'highlight
+                               'help-echo "mouse-1: switch to this workspace")
+                         block)
+    block))
+
+(defvar hym-workspace-sidebar--point-name nil
+  "Workspace the sidebar cursor should rest on across re-renders.
+Tracked explicitly because switching a workspace restores a per-tab
+window configuration that clobbers the shared sidebar's point, so the
+buffer's own point is not a reliable record of where the user was.")
+
+(defvar hym-workspace-sidebar--point-line nil
+  "Buffer line to restore point to, used when it still shows the same
+workspace as `hym-workspace-sidebar--point-name'.  Captured at the time
+of the user's action, before a workspace switch clobbers the point, so
+the cursor stays exactly where it was rather than snapping to the card.")
+
+(defun hym-workspace-sidebar--at-point ()
+  "Return the workspace name on the current line, or nil."
+  (get-text-property (line-beginning-position) 'hym-workspace))
+
+(defun hym-workspace-sidebar--goto-workspace (name)
+  "Move point to NAME's card, or to the top when absent."
+  (goto-char (point-min))
+  (when name
+    (let ((found nil))
+      (while (and (not found) (not (eobp)))
+        (if (equal (get-text-property (point) 'hym-workspace) name)
+            (setq found t)
+          (forward-line 1)))
+      (unless found (goto-char (point-min))))))
+
+(defvar hym-workspace-sidebar--show-archived nil
+  "Whether the archived workspaces section is expanded.")
+
+(defun hym-workspace-sidebar--render ()
+  "Fill the current buffer with the active workspace list.
+Restore point to the exact remembered line when it still shows the
+remembered workspace, else to that workspace's card, keeping the window's
+point in sync."
+  (let ((inhibit-read-only t)
+        (name (or hym-workspace-sidebar--point-name
+                  (hym-workspace-sidebar--at-point)))
+        (line hym-workspace-sidebar--point-line))
+    (erase-buffer)
+    (insert (propertize " WORKSPACES\n\n" 'face 'bold))
+    (dolist (ws (hym-workspace-active))
+      (insert (hym-workspace-sidebar--card ws))
+      (insert "\n"))
+    (let ((archived (and hym-workspace-sidebar--show-archived
+                         (hym-workspace-archived))))
+      (when archived
+        (insert (propertize "\n ARCHIVED\n\n" 'face 'shadow))
+        (dolist (ws archived)
+          (insert (hym-workspace-sidebar--card ws))
+          (insert "\n"))))
+    (unless (and line
+                 (progn
+                   (goto-char (point-min))
+                   (forward-line (1- line))
+                   (equal (get-text-property (line-beginning-position)
+                                             'hym-workspace)
+                          name)))
+      (hym-workspace-sidebar--goto-workspace name))
+    (when-let ((win (get-buffer-window (current-buffer) t)))
+      (set-window-point win (point)))))
+
+(defun hym-workspace-sidebar--remember-point ()
+  "Record the workspace and line at point so re-renders can restore them."
+  (when-let ((name (hym-workspace-sidebar--at-point)))
+    (setq hym-workspace-sidebar--point-name name
+          hym-workspace-sidebar--point-line (line-number-at-pos))))
+
+(defvar hym-workspace-sidebar-buffer-name "*workspaces*")
+
+(define-derived-mode hym-workspace-sidebar-mode special-mode "Workspaces"
+  "Major mode for the workspace sidebar."
+  (setq-local cursor-type nil)
+  (setq buffer-read-only t)
+  (add-hook 'post-command-hook #'hym-workspace-sidebar--remember-point nil t))
+
+(defun hym-workspace-sidebar-refresh ()
+  "Re-render the sidebar buffer if it exists."
+  (interactive)
+  (if (derived-mode-p 'hym-workspace-sidebar-mode)
+      (hym-workspace-sidebar--render)
+    (when-let ((buf (get-buffer hym-workspace-sidebar-buffer-name)))
+      (with-current-buffer buf (hym-workspace-sidebar--render)))))
+
+(defun hym-workspace-sidebar--get-buffer ()
+  (let ((buf (get-buffer-create hym-workspace-sidebar-buffer-name)))
+    (with-current-buffer buf
+      (unless (derived-mode-p 'hym-workspace-sidebar-mode)
+        (hym-workspace-sidebar-mode))
+      (hym-workspace-sidebar--render))
+    buf))
+
+(defvar hym-workspace-sidebar--visible nil
+  "Whether the sidebar should be shown, so it survives tab-config restores.")
+
+(defun hym-workspace-sidebar--show ()
+  (display-buffer-in-side-window
+   (hym-workspace-sidebar--get-buffer)
+   '((side . left) (window-width . 28)
+     (dedicated . t)
+     (preserve-size . (t . nil))
+     (window-parameters . ((no-delete-other-windows . t))))))
+
+(defun hym-workspace-sidebar-toggle ()
+  "Toggle the workspace sidebar in a left side window."
+  (interactive)
+  (let ((win (get-buffer-window hym-workspace-sidebar-buffer-name)))
+    (if win
+        (progn
+          (setq hym-workspace-sidebar--visible nil)
+          (delete-window win))
+      (setq hym-workspace-sidebar--visible t)
+      (hym-workspace-sidebar--show))))
+
+(defun hym-workspace-sidebar--ensure-window (&rest _)
+  "Re-display the sidebar in its side window when it should be visible.
+A tab is a saved window configuration, so opening or switching tabs
+restores a layout without the side window; this puts it back."
+  (when (and hym-workspace-sidebar--visible
+             (not (get-buffer-window hym-workspace-sidebar-buffer-name)))
+    (hym-workspace-sidebar--show)))
+
+(defun hym-workspace-sidebar--sync (&rest _)
+  "Keep the sidebar present and its open/closed marks current."
+  (hym-workspace-sidebar--ensure-window)
+  (hym-workspace-sidebar-refresh))
+
+(add-hook 'tab-bar-tab-post-open-functions #'hym-workspace-sidebar--sync)
+(add-hook 'tab-bar-tab-post-select-functions #'hym-workspace-sidebar--sync)
+(add-hook 'hym-workspace-after-open-hook #'hym-workspace-sidebar--sync)
+(add-hook 'hym-workspace-registry-change-hook #'hym-workspace-sidebar-refresh)
+
+(defun hym-workspace-sidebar-visit ()
+  "Open or switch to the workspace on the current line."
+  (interactive)
+  (when-let* ((name (hym-workspace-sidebar--at-point))
+              (ws (hym-workspace-get name)))
+    (setq hym-workspace-sidebar--point-name name
+          hym-workspace-sidebar--point-line (line-number-at-pos))
+    (hym-workspace-open ws)
+    (hym-workspace-sidebar-refresh)))
+
+(defun hym-workspace-sidebar-close-ws ()
+  "Close (tear down tabs of) the workspace on the current line."
+  (interactive)
+  (when-let ((ws (hym-workspace-get (hym-workspace-sidebar--at-point))))
+    (hym-workspace-close ws)
+    (hym-workspace-sidebar-refresh)))
+
+(defun hym-workspace-sidebar-retry ()
+  "Retry provisioning for the worktree workspace on the current line."
+  (interactive)
+  (when-let* ((name (hym-workspace-sidebar--at-point))
+              (ws (hym-workspace-get name)))
+    (when (and (eq (hym-workspace-type ws) 'worktree)
+               (fboundp 'hym-workspace-provision-retry))
+      (hym-workspace-provision-retry ws))))
+
+(defun hym-workspace-sidebar-archive ()
+  "Archive the workspace on the current line."
+  (interactive)
+  (when-let* ((name (hym-workspace-sidebar--at-point))
+              (ws (hym-workspace-get name)))
+    (if (and (eq (hym-workspace-type ws) 'worktree)
+             (fboundp 'hym-workspace-archive-worktree))
+        (when (yes-or-no-p
+               (format "Archive %s? Removes its worktrees; uncommitted changes are lost. "
+                       name))
+          (hym-workspace-archive-worktree ws))
+      (hym-workspace-close ws)
+      (hym-workspace-put (plist-put (copy-sequence ws) :archived t)))
+    (hym-workspace-sidebar-refresh)))
+
+(defun hym-workspace-sidebar-new ()
+  "Create a new workspace, then refresh the sidebar."
+  (interactive)
+  (call-interactively #'hym-workspace-new)
+  (hym-workspace-sidebar-refresh))
+
+(defun hym-workspace-sidebar-toggle-archived ()
+  "Show or hide the archived workspaces section."
+  (interactive)
+  (setq hym-workspace-sidebar--show-archived
+        (not hym-workspace-sidebar--show-archived))
+  (hym-workspace-sidebar-refresh))
+
+(defun hym-workspace-sidebar-unarchive ()
+  "Unarchive the workspace on the current line."
+  (interactive)
+  (when-let* ((name (hym-workspace-sidebar--at-point))
+              (ws (hym-workspace-get name)))
+    (when (hym-workspace-archived-p ws)
+      (if (and (eq (hym-workspace-type ws) 'worktree)
+               (fboundp 'hym-workspace-unarchive))
+          (hym-workspace-unarchive ws)
+        (hym-workspace-put (plist-put (copy-sequence ws) :archived nil)))
+      (hym-workspace-sidebar-refresh))))
+
+(defun hym-workspace-sidebar-add-repo ()
+  "Add a repo to the worktree workspace on the current line."
+  (interactive)
+  (when-let* ((name (hym-workspace-sidebar--at-point))
+              (ws (hym-workspace-get name)))
+    (when (and (eq (hym-workspace-type ws) 'worktree)
+               (fboundp 'hym-workspace-add-repo))
+      (hym-workspace-add-repo
+       ws (completing-read "Add repo: "
+                           (seq-difference (hym-workspace--available-repos)
+                                           (hym-workspace-repos ws))
+                           nil t)))))
+
+(defun hym-workspace-sidebar-rename (new-name)
+  "Rename the workspace on the current line to NEW-NAME."
+  (interactive (list (read-string "New name: " (hym-workspace-sidebar--at-point))))
+  (when-let* ((old (hym-workspace-sidebar--at-point))
+              (ws (hym-workspace-get old)))
+    (setq hym-workspace-sidebar--point-name new-name)
+    (hym-workspace-rename ws new-name)
+    (hym-workspace-sidebar-refresh)))
+
+(defun hym-workspace-sidebar-mouse-visit (event)
+  "Switch to the workspace clicked with EVENT."
+  (interactive "e")
+  (mouse-set-point event)
+  (hym-workspace-sidebar-visit))
+
+(let ((map hym-workspace-sidebar-mode-map))
+  (define-key map (kbd "RET") #'hym-workspace-sidebar-visit)
+  (define-key map [mouse-1] #'hym-workspace-sidebar-mouse-visit)
+  (define-key map "d" #'hym-workspace-sidebar-close-ws)
+  (define-key map "x" #'hym-workspace-sidebar-archive)
+  (define-key map "c" #'hym-workspace-sidebar-new)
+  (define-key map "+" #'hym-workspace-sidebar-new)
+  (define-key map "g" #'hym-workspace-sidebar-refresh)
+  (define-key map (kbd "TAB") #'hym-workspace-sidebar-toggle-archived)
+  (define-key map "a" #'hym-workspace-sidebar-add-repo)
+  (define-key map "u" #'hym-workspace-sidebar-unarchive)
+  (define-key map "r" #'hym-workspace-sidebar-rename)
+  (define-key map "!" #'hym-workspace-sidebar-retry))
+
+(when (fboundp 'evil-define-key)
+  (evil-set-initial-state 'hym-workspace-sidebar-mode 'normal)
+  (evil-define-key 'normal hym-workspace-sidebar-mode-map
+    (kbd "RET") #'hym-workspace-sidebar-visit
+    [mouse-1] #'hym-workspace-sidebar-mouse-visit
+    "d" #'hym-workspace-sidebar-close-ws
+    "x" #'hym-workspace-sidebar-archive
+    "c" #'hym-workspace-sidebar-new
+    "+" #'hym-workspace-sidebar-new
+    "g" #'hym-workspace-sidebar-refresh
+    (kbd "TAB") #'hym-workspace-sidebar-toggle-archived
+    "a" #'hym-workspace-sidebar-add-repo
+    "u" #'hym-workspace-sidebar-unarchive
+    "r" #'hym-workspace-sidebar-rename
+    "!" #'hym-workspace-sidebar-retry))
+
+(provide 'hym-workspaces-sidebar)

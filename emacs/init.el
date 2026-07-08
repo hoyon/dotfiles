@@ -128,6 +128,38 @@
 (load-config "tabs.el")
 (hym-tabs-mode 1)
 
+(load-config "workspaces.el")
+(load-config "workspaces-sidebar.el")
+(load-config "workspaces-worktree.el")
+(load-config "workspaces-run.el")
+(load-config "workspaces-git.el")
+(load-config "workspaces-notes.el")
+(hym-workspace-mode 1)
+(hym/leader-def
+  "oo" 'hym-workspace-sidebar-toggle
+  "on" 'hym-workspace-new
+  "oa" 'hym-workspace-add-repo
+  "ot" 'hym-workspace-run-shell
+  "or" 'hym-workspace-run-server
+  "oc" 'hym-workspace-run-agent
+  "og" 'hym-workspace-git-status
+  "od" 'hym-workspace-git-diff
+  "ol" 'hym-workspace-git-log
+  "oN" 'hym-workspace-notes
+  "os" 'hym-workspace-scratch
+  "tj" 'hym-workspace-prev
+  "tk" 'hym-workspace-next
+  "tt" 'hym-workspace-switch
+  "1" (lambda () (interactive) (hym-workspace-select-index 1))
+  "2" (lambda () (interactive) (hym-workspace-select-index 2))
+  "3" (lambda () (interactive) (hym-workspace-select-index 3))
+  "4" (lambda () (interactive) (hym-workspace-select-index 4))
+  "5" (lambda () (interactive) (hym-workspace-select-index 5))
+  "6" (lambda () (interactive) (hym-workspace-select-index 6))
+  "7" (lambda () (interactive) (hym-workspace-select-index 7))
+  "8" (lambda () (interactive) (hym-workspace-select-index 8))
+  "9" (lambda () (interactive) (hym-workspace-select-index 9)))
+
 (defun hym/grep-for-symbol-at-point ()
   (interactive)
   (consult-ripgrep nil (symbol-name (symbol-at-point))))
