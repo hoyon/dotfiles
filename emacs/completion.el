@@ -62,6 +62,52 @@ Use an Eglot hover snapshot when LSP is live, otherwise fall back to Helpful."
 (add-hook 'go-ts-mode-hook #'eglot-ensure)
 (add-hook 'rust-mode-hook #'eglot-ensure)
 
+(defun hym/eglot-code-actions-buffer ()
+  "Offer Eglot fixes for every diagnostic, previewing their locations."
+  (interactive)
+  (require 'consult)
+  (let* ((server (eglot--current-server-or-lose))
+         (diagnostics
+          (cl-remove-if-not
+           (lambda (diag)
+             (cdr (assoc 'eglot-lsp-diag (eglot--diag-data diag))))
+           (flymake-diagnostics (point-min) (point-max))))
+         (candidates
+          (cl-loop
+           for diag in diagnostics
+           append
+           (cl-loop
+            for action in (eglot-code-actions
+                           (flymake-diagnostic-beg diag)
+                           (flymake-diagnostic-end diag)
+                           "quickfix")
+            collect (cons action diag)))))
+    (unless candidates
+      (user-error "No Eglot quick fixes in this buffer"))
+    (let* (choices
+           (display-candidates
+            (cl-loop
+             for (action . diag) in candidates
+             for location =
+             (list (copy-marker (flymake-diagnostic-beg diag))
+                   (cons 0 (- (flymake-diagnostic-end diag)
+                              (flymake-diagnostic-beg diag))))
+             for line =
+             (line-number-at-pos (flymake-diagnostic-beg diag) t)
+             do (push (cons location action) choices)
+             collect
+             (propertize (format "L%-4d %s" line (plist-get action :title))
+                         'consult--candidate location)))
+           (selected
+            (consult--read
+             display-candidates
+             :prompt "Eglot quick fix: "
+             :require-match t
+             :sort nil
+             :lookup #'consult--lookup-candidate
+             :state (consult--jump-state))))
+      (eglot-execute server (cdr (assoc selected choices))))))
+
 ;; Bindings
 (hym/leader-def
   "cj" 'xref-find-definitions
@@ -69,6 +115,7 @@ Use an Eglot hover snapshot when LSP is live, otherwise fall back to Helpful."
   "cr" 'xref-find-references
   "cR" 'eglot-rename
   "ca" 'eglot-code-actions
+  "cA" 'hym/eglot-code-actions-buffer
   "cn" 'flymake-goto-next-error
   "cp" 'flymake-goto-prev-error
   "cd" 'hym/show-docs
