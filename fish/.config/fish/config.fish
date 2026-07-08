@@ -73,7 +73,8 @@ set _extra_paths \
     ~/go/bin \
     ~/.nimble/bin \
     ~/.yarn/bin \
-    ~/.bun/bin
+    ~/.bun/bin \
+    ~/scripts/bin
 
 for p in $_extra_paths
     if test -d $p
