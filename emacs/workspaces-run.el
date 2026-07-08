@@ -1,4 +1,5 @@
 ;; -*- lexical-binding: t -*-
+(require 'cl-lib)
 (require 'seq)
 
 ;; Declared special so our `let' binds them dynamically even before
@@ -18,10 +19,8 @@
   "Map workspace slug to the name of its server (`ghostel-compile') buffer.")
 
 (defvar hym-workspace--agent-state (make-hash-table :test 'equal)
-  "Map workspace slug to agent state: working | waiting | permission.")
-
-(defvar hym-workspace--agent-state-updated-at (make-hash-table :test 'equal)
-  "Map workspace slug to the float time when its agent state last changed.")
+  "Map (SLUG SESSION) to agent state plists.
+Each value has keys :slug, :agent, :session, :state, and :updated-at.")
 
 (defcustom hym-workspace-agent-working-timeout 300
   "Seconds after which an unrefreshed `working' agent state is considered stale.
@@ -41,15 +40,55 @@ agent buffer is killed."
   (when (fboundp 'hym-workspace-sidebar-refresh)
     (hym-workspace-sidebar-refresh)))
 
-(defun hym-workspace--agent-clear-state (slug)
-  "Clear tracked agent state for SLUG."
-  (remhash slug hym-workspace--agent-state)
-  (remhash slug hym-workspace--agent-state-updated-at))
+(defun hym-workspace--agent-state-key (slug session)
+  "Return the hash key for SLUG and SESSION."
+  (list slug session))
 
-(defun hym-workspace--agent-state-stale-p (slug state)
-  "Return non-nil when SLUG's STATE should be discarded as stale."
-  (and (eq state 'working)
-       (let ((updated-at (gethash slug hym-workspace--agent-state-updated-at)))
+(defun hym-workspace--agent-entry-slug (key entry)
+  "Return the workspace slug represented by KEY and ENTRY."
+  (or (plist-get (and (consp entry) entry) :slug)
+      (and (stringp key) key)))
+
+(defun hym-workspace--agent-entry-state (entry)
+  "Return the state represented by ENTRY."
+  (if (consp entry)
+      (plist-get entry :state)
+    entry))
+
+(defun hym-workspace--agent-entry-updated-at (entry)
+  "Return ENTRY's last update time, or nil for legacy entries."
+  (when (consp entry)
+    (plist-get entry :updated-at)))
+
+(defun hym-workspace--agent-normalize-entry (key entry)
+  "Return ENTRY as a session plist, accepting the old slug -> state shape."
+  (if (consp entry)
+      entry
+    (list :slug key :agent "agent" :session "default"
+          :state entry :updated-at nil)))
+
+(defun hym-workspace--agent-clear-state (slug &optional session)
+  "Clear tracked agent state for SLUG.
+When SESSION is non-nil, clear only that session."
+  (if session
+      (progn
+        (remhash (hym-workspace--agent-state-key slug session)
+                 hym-workspace--agent-state)
+        (when (equal session "default")
+          (remhash slug hym-workspace--agent-state)))
+    (let (keys)
+      (maphash
+       (lambda (key entry)
+         (when (equal slug (hym-workspace--agent-entry-slug key entry))
+           (push key keys)))
+       hym-workspace--agent-state)
+      (dolist (key keys)
+        (remhash key hym-workspace--agent-state)))))
+
+(defun hym-workspace--agent-state-stale-p (entry)
+  "Return non-nil when ENTRY should be discarded as stale."
+  (and (eq (hym-workspace--agent-entry-state entry) 'working)
+       (let ((updated-at (hym-workspace--agent-entry-updated-at entry)))
          (and updated-at
               (> (- (float-time) updated-at)
                  hym-workspace-agent-working-timeout)))))
@@ -57,14 +96,15 @@ agent buffer is killed."
 (defun hym-workspace--agent-sweep-stale-working ()
   "Clear stale `working' agent states.
 Return non-nil when anything changed."
-  (let (changed)
+  (let (keys)
     (maphash
-     (lambda (slug state)
-       (when (hym-workspace--agent-state-stale-p slug state)
-         (hym-workspace--agent-clear-state slug)
-         (setq changed t)))
+     (lambda (key entry)
+       (when (hym-workspace--agent-state-stale-p entry)
+         (push key keys)))
      hym-workspace--agent-state)
-    changed))
+    (dolist (key keys)
+      (remhash key hym-workspace--agent-state))
+    keys))
 
 (defun hym-workspace--agent-ensure-stale-timer ()
   "Start the stale-agent timer if it is not already running."
@@ -77,42 +117,103 @@ Return non-nil when anything changed."
              (when (hym-workspace--agent-sweep-stale-working)
                (hym-workspace--run-refresh)))))))
 
-(defun hym-workspace-agent-signal (slug event)
-  "Update SLUG's agent state from a Claude Code hook EVENT, and refresh.
+(defun hym-workspace--agent-event-state (event old)
+  "Return EVENT's new state, using OLD for unknown events."
+  (pcase event
+    ((or "UserPromptSubmit" "PreToolUse" "PostToolUse" "SessionStart")
+     'working)
+    ("Stop" 'waiting)
+    ((or "Notification" "PermissionRequest") 'permission)
+    ("SessionEnd" nil)
+    (_ old)))
+
+(defun hym-workspace-agent-signal (slug &rest args)
+  "Update SLUG's agent state from hook ARGS, and refresh.
+The preferred call shape is (SLUG AGENT SESSION EVENT).  The older
+(SLUG EVENT) shape is accepted as a compatibility fallback.
 Only re-renders when the state actually changes, so the stream of tool
 events during an active turn doesn't churn the sidebar. Called from the
 hook via `emacsclient --eval'."
-  (let ((old (gethash slug hym-workspace--agent-state))
-        (new (pcase event
-               ((or "UserPromptSubmit" "PreToolUse" "PostToolUse" "SessionStart")
-                'working)
-               ("Stop" 'waiting)
-               ((or "Notification" "PermissionRequest") 'permission)
-               ("SessionEnd" nil)
-               (_ (gethash slug hym-workspace--agent-state)))))
-    (if (eq new old)
+  (let* ((agent (if (= (length args) 1) "agent" (or (nth 0 args) "agent")))
+         (session (if (= (length args) 1) "default" (or (nth 1 args) "default")))
+         (event (if (= (length args) 1) (car args) (nth 2 args)))
+         (key (hym-workspace--agent-state-key slug session))
+         (entry (gethash key hym-workspace--agent-state))
+         (legacy-entry (and (equal session "default")
+                            (gethash slug hym-workspace--agent-state)))
+         (old (plist-get entry :state))
+         (new (hym-workspace--agent-event-state event old)))
+    (if (and (null new) (equal event "SessionEnd") (or entry legacy-entry))
+        (progn
+          (hym-workspace--agent-clear-state slug session)
+          (hym-workspace--run-refresh))
+      (if (eq new old)
         (when new
-          (puthash slug (float-time) hym-workspace--agent-state-updated-at)
+          (plist-put entry :updated-at (float-time))
+          (puthash key entry hym-workspace--agent-state)
           (hym-workspace--agent-ensure-stale-timer))
-      (if new
-          (progn
-            (puthash slug new hym-workspace--agent-state)
-            (puthash slug (float-time) hym-workspace--agent-state-updated-at)
-            (hym-workspace--agent-ensure-stale-timer))
-        (hym-workspace--agent-clear-state slug))
-      (hym-workspace--run-refresh))))
+        (if new
+            (progn
+              (puthash key
+                       (list :slug slug :agent agent :session session
+                             :state new :updated-at (float-time))
+                       hym-workspace--agent-state)
+              (hym-workspace--agent-ensure-stale-timer))
+          (hym-workspace--agent-clear-state slug session))
+        (hym-workspace--run-refresh)))))
+
+(defun hym-workspace--agent-entries (slug)
+  "Return non-stale tracked agent entries for SLUG."
+  (let (entries keys)
+    (maphash
+     (lambda (key entry)
+       (when (equal slug (hym-workspace--agent-entry-slug key entry))
+         (if (hym-workspace--agent-state-stale-p entry)
+             (push key keys)
+           (push (hym-workspace--agent-normalize-entry key entry)
+                 entries))))
+     hym-workspace--agent-state)
+    (dolist (key keys)
+      (remhash key hym-workspace--agent-state))
+    (when keys (hym-workspace--run-refresh))
+    (sort entries
+          (lambda (a b)
+            (string< (format "%s/%s" (plist-get a :agent) (plist-get a :session))
+                     (format "%s/%s" (plist-get b :agent) (plist-get b :session)))))))
+
+(defun hym-workspace--agent-duplicate-agent-p (agent entries)
+  "Return non-nil when AGENT occurs more than once in ENTRIES."
+  (> (cl-count agent entries :key (lambda (entry) (plist-get entry :agent))
+               :test #'equal)
+     1))
+
+(defun hym-workspace--agent-short-session (session)
+  "Return a compact display suffix for SESSION."
+  (if (> (length session) 6)
+      (substring session -6)
+    session))
+
+(defun hym-workspace--agent-badge-line (entry entries)
+  "Return the sidebar badge line for agent ENTRY among ENTRIES."
+  (let* ((agent (plist-get entry :agent))
+         (label (if (hym-workspace--agent-duplicate-agent-p agent entries)
+                    (format "%s#%s"
+                            agent
+                            (hym-workspace--agent-short-session
+                             (plist-get entry :session)))
+                  agent)))
+    (pcase (plist-get entry :state)
+      ('working (format "- %s running" label))
+      ('waiting (propertize (format "~ %s waiting" label) 'face 'warning))
+      ('permission (propertize (format "! %s needs permission" label)
+                               'face 'error)))))
 
 (defun hym-workspace--agent-badge (ws)
-  "Status function: a badge line for WS's tracked agent state."
-  (let* ((key (hym-workspace--key ws))
-         (state (gethash key hym-workspace--agent-state)))
-    (when (hym-workspace--agent-state-stale-p key state)
-      (hym-workspace--agent-clear-state key)
-      (setq state nil))
-    (pcase state
-      ('working (list "- agent running"))
-      ('waiting (list (propertize "~ agent waiting" 'face 'warning)))
-      ('permission (list (propertize "! needs permission" 'face 'error))))))
+  "Status function: badge lines for WS's tracked agent sessions."
+  (let ((entries (hym-workspace--agent-entries (hym-workspace--key ws))))
+    (mapcar (lambda (entry)
+              (hym-workspace--agent-badge-line entry entries))
+            entries)))
 
 (defun hym-workspace--server-badge (ws)
   "Status function: a badge line while WS's server process is live."
@@ -146,12 +247,18 @@ Prompt only when more than one agent is configured."
         (t (assoc (completing-read "Agent: " (mapcar #'car hym-workspace-agents) nil t)
                   hym-workspace-agents))))
 
-(defun hym-workspace--agent-env (ws name)
+(defun hym-workspace--agent-session-id (name)
+  "Return a fresh session id for an agent NAME."
+  (format "%s-%x-%x" name (emacs-pid) (random most-positive-fixnum)))
+
+(defun hym-workspace--agent-env (ws name &optional session)
   "Return the identifying env vars for WS's NAME agent terminal.
 Keyed on `hym-workspace--key' so project/notes workspaces (no slug) get a
 real key rather than the literal \"nil\"."
   (list (format "HYM_WORKSPACE_SLUG=%s" (hym-workspace--key ws))
-        (format "HYM_WORKSPACE_AGENT=%s" name)))
+        (format "HYM_WORKSPACE_AGENT=%s" name)
+        (format "HYM_WORKSPACE_AGENT_SESSION=%s"
+                (or session (hym-workspace--agent-session-id name)))))
 
 (defun hym-workspace-run-shell ()
   "Open a shell tab at the current workspace's root."
@@ -211,7 +318,8 @@ real key rather than the literal \"nil\"."
     (let* ((agent (hym-workspace--pick-agent))
            (name (car agent))
            (command (cdr agent))
-           (key (hym-workspace--key ws)))
+           (key (hym-workspace--key ws))
+           (session (hym-workspace--agent-session-id name)))
       (hym-workspace-spawn-tab
        ws "agent"
        (lambda ()
@@ -219,13 +327,14 @@ real key rather than the literal \"nil\"."
          ;; injected env (HYM_WORKSPACE_SLUG) takes effect.
          (let ((default-directory (hym-workspace-root ws))
                (ghostel-environment
-                (append (hym-workspace--agent-env ws name) ghostel-environment)))
+                (append (hym-workspace--agent-env ws name session)
+                        ghostel-environment)))
            (ghostel t))
          ;; Clear agent state if the terminal dies without a clean SessionEnd,
          ;; so a stale waiting/permission badge doesn't stick.
          (add-hook 'kill-buffer-hook
                    (lambda ()
-                     (hym-workspace--agent-clear-state key)
+                     (hym-workspace--agent-clear-state key session)
                      (hym-workspace--run-refresh))
                    nil t)
          (ghostel-send-string (concat command "\n")))))))
@@ -237,20 +346,21 @@ real key rather than the literal \"nil\"."
               (require 'agent-shell nil t))
     (user-error "agent-shell is not available"))
   (when-let ((ws (hym-workspace-current)))
-    (let ((key (hym-workspace--key ws)))
+    (let* ((key (hym-workspace--key ws))
+           (session (hym-workspace--agent-session-id "agent-shell")))
       (hym-workspace-spawn-tab
        ws "agent-shell"
        (lambda ()
          (let ((default-directory (hym-workspace-root ws))
                (process-environment
-                (append (hym-workspace--agent-env ws "agent-shell")
+                (append (hym-workspace--agent-env ws "agent-shell" session)
                         process-environment)))
            (agent-shell-new-shell))
          ;; Clear agent state if the shell buffer dies without a clean
          ;; SessionEnd, matching the Ghostty agent tab behaviour.
          (add-hook 'kill-buffer-hook
                    (lambda ()
-                     (hym-workspace--agent-clear-state key)
+                     (hym-workspace--agent-clear-state key session)
                      (hym-workspace--run-refresh))
                    nil t))))))
 
