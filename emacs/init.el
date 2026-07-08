@@ -122,6 +122,7 @@
 (load-config "treemacs.el")
 (load-config "modes.el")
 (load-config "agents.el")
+(load-config "docker.el")
 
 (load-config "tabs.el")
 (hym-tabs-mode 1)

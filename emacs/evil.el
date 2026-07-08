@@ -56,6 +56,7 @@
      corfu
      dired
      diff-mode
+     docker
      eldoc
      forge
      git-timemachine
