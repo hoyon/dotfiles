@@ -75,3 +75,11 @@
    :states 'normal
    :keymaps 'vterm-mode-map
    "p" 'vterm-yank))
+
+(use-package ghostel
+  :config
+  (setq ghostel-shell (executable-find "fish")))
+
+(use-package evil-ghostel
+  :after (ghostel evil)
+  :hook (ghostel-mode . evil-ghostel-mode))
