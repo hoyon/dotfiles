@@ -39,6 +39,21 @@
           (hym-workspace--loaded nil))
       (should (equal (hym-workspace-name (car (hym-workspace-registry))) "notes")))))
 
+(ert-deftest hym-workspace-save-creates-missing-registry-directory ()
+  (let* ((tmp (make-temp-file "hym-ws-home" t))
+         (missing-dir (expand-file-name "missing/workspaces" tmp))
+         (hym-workspace-registry-file (expand-file-name "registry.eld" missing-dir))
+         (hym-workspace--registry nil)
+         (hym-workspace--loaded t)
+         (hym-workspace--load-failed nil))
+    (unwind-protect
+        (progn
+          (should-not (file-exists-p missing-dir))
+          (hym-workspace-put '(:name "notes" :type notes :root "~/org"))
+          (should (file-directory-p missing-dir))
+          (should (file-exists-p hym-workspace-registry-file)))
+      (delete-directory tmp t))))
+
 (ert-deftest hym-workspace-remove-deletes-and-persists ()
   (hym-workspace-test-with-empty-registry
     (hym-workspace-put '(:name "keep" :type project :root "~/k"))

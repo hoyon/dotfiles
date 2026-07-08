@@ -117,6 +117,7 @@ is present but unreadable, so a later save cannot clobber it."
   (when hym-workspace--load-failed
     (error "Refusing to save: workspace registry failed to load; resolve %s first"
            hym-workspace-registry-file))
+  (make-directory (file-name-directory hym-workspace-registry-file) t)
   (with-temp-file hym-workspace-registry-file
     (let ((print-length nil) (print-level nil))
       (pp hym-workspace--registry (current-buffer)))))
