@@ -33,6 +33,22 @@ function gwtd --description "Delete a git worktree using fzf"
     end
 
     for worktree in $worktrees
+        # Clean up the worktree's dev database
+        if test -f "$worktree/.env.local"
+            set -l db_name (grep '^DB_NAME=' "$worktree/.env.local" | cut -d= -f2)
+            if test -n "$db_name"
+                echo "Deleting DSLR snapshot: $db_name"
+                dslr --url "postgres://postgres:postgres@localhost:5432/"$db_name"_server_dev" delete $db_name 2>/dev/null
+                echo "Dropping database: "$db_name"_server_dev"
+                dropdb --if-exists "$db_name"_server_dev
+                # Also drop the branch test DB
+                set -l test_branch (git -C "$worktree" rev-parse --abbrev-ref HEAD 2>/dev/null)
+                if test -n "$test_branch"
+                    dropdb --if-exists "$test_branch"_server_test
+                end
+            end
+        end
+
         echo "Deleting worktree: $worktree"
         if not git worktree remove "$worktree"
             echo ""
