@@ -79,7 +79,8 @@
     "gT" 'exunit-toggle-file-and-test-other-window))
 
 (use-package exunit)
-(use-package erlang)
+(use-package erlang-ts
+  :mode ("\\.erl\\'" . erlang-ts-mode))
 
 (add-hook 'elixir-ts-mode-hook 'hym/elixir-mode-hook)
 
