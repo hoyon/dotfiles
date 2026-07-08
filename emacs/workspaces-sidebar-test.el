@@ -16,13 +16,16 @@
      (unwind-protect (progn ,@body)
        (when (file-exists-p temp) (delete-file temp)))))
 
-(ert-deftest hym-workspace-sidebar-card-shows-name-and-repo-count ()
+(ert-deftest hym-workspace-sidebar-card-shows-worktree-repos-without-type-meta ()
   (hym-workspace-sidebar-test-with-registry
     (let ((card (hym-workspace-sidebar--card
                  '(:name "zippy" :type worktree :root "~/orca/zippy"
                    :repos ("a" "b")))))
       (should (string-match-p "zippy" card))
-      (should (string-match-p "2 repos" card))
+      (should (string-match-p "^  a " card))
+      (should (string-match-p "^  b " card))
+      (should-not (string-match-p "worktree" card))
+      (should-not (string-match-p "2 repos" card))
       (should (equal (get-text-property 2 'hym-workspace card) "zippy"))
       (should (eq (get-text-property 2 'pointer card) 'hand))
       (let ((line-end (string-match-p "\n" card)))
@@ -63,8 +66,8 @@
     (with-temp-buffer
       (hym-workspace-sidebar--render)
       (goto-char (point-min))
-      (should (search-forward "1 ○ one" nil t))
-      (should (search-forward "2 ○ two" nil t)))))
+      (should (search-forward "1 one" nil t))
+      (should (search-forward "2 two" nil t)))))
 
 (ert-deftest hym-workspace-sidebar-at-point-returns-name ()
   (hym-workspace-sidebar-test-with-registry
@@ -132,18 +135,22 @@
     (hym-workspace-put '(:name "a" :type worktree :root "~" :repos ("x")))
     (hym-workspace-put '(:name "b" :type worktree :root "~" :repos ("y")))
     (with-temp-buffer
-      (hym-workspace-sidebar--render)
-      (goto-char (point-min))
-      (search-forward "b")
-      (forward-line 1)
-      (should (equal (hym-workspace-sidebar--at-point) "b"))
-      (let ((meta (buffer-substring (line-beginning-position) (line-end-position)))
-            (hym-workspace-sidebar--point-name "b")
-            (hym-workspace-sidebar--point-line (line-number-at-pos)))
-        (should (string-match-p "worktree" meta))
+      (let ((hym-workspace-sidebar-status-functions
+             (list (lambda (ws)
+                     (when (equal (hym-workspace-name ws) "b")
+                       (list "agent running"))))))
         (hym-workspace-sidebar--render)
-        (should (equal (buffer-substring (line-beginning-position) (line-end-position))
-                       meta))))))
+        (goto-char (point-min))
+        (search-forward "b")
+        (forward-line 1)
+        (should (equal (hym-workspace-sidebar--at-point) "b"))
+        (let ((repo (buffer-substring (line-beginning-position) (line-end-position)))
+              (hym-workspace-sidebar--point-name "b")
+              (hym-workspace-sidebar--point-line (line-number-at-pos)))
+          (should (string-match-p "y" repo))
+          (hym-workspace-sidebar--render)
+          (should (equal (buffer-substring (line-beginning-position) (line-end-position))
+                         repo)))))))
 
 (ert-deftest hym-workspace-sidebar-card-highlights-current-workspace ()
   (hym-workspace-sidebar-test-with-registry

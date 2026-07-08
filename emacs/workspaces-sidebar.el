@@ -1,12 +1,5 @@
 ;; -*- lexical-binding: t -*-
 
-(defvar hym-workspace-sidebar-type-icons
-  '((worktree . "⑂") (project . "▪") (notes . "≡"))
-  "Alist mapping workspace type to a display marker. Swap for nerd-icons later.")
-
-(defun hym-workspace-sidebar--icon (type)
-  (or (alist-get type hym-workspace-sidebar-type-icons) "·"))
-
 (defface hym-workspace-sidebar-current
   '((t :inherit bold))
   "Face for the name of the workspace you are currently in."
@@ -33,9 +26,9 @@ Ef themes override this with their `bg-active' palette color."
   "Face for a workspace name."
   :group 'hym-workspace)
 
-(defface hym-workspace-sidebar-meta
+(defface hym-workspace-sidebar-repo
   '((t :inherit shadow))
-  "Face for a workspace's type/meta line."
+  "Face for a repo listed under a worktree workspace."
   :group 'hym-workspace)
 
 (defvar hym-workspace-sidebar-status-functions nil
@@ -66,37 +59,36 @@ or an agent waiting for input without the sidebar knowing about them.")
          (mapcar (lambda (f) (funcall f ws))
                  hym-workspace-sidebar-status-functions)))
 
-(defun hym-workspace-sidebar--meta (ws)
-  "Return the dimmed type/repo-count line text for WS."
-  (let ((type (hym-workspace-type ws)))
-    (concat (hym-workspace-sidebar--icon type) " " (symbol-name type)
-            (when (eq type 'worktree)
-              (let ((n (length (hym-workspace-repos ws))))
-                (format " · %d repo%s" n (if (= n 1) "" "s")))))))
+(defun hym-workspace-sidebar--repos (ws current)
+  "Return repo detail lines for worktree WS."
+  (when (eq (hym-workspace-type ws) 'worktree)
+    (let ((face (hym-workspace-sidebar--face
+                 'hym-workspace-sidebar-repo current)))
+      (mapcar (lambda (repo) (propertize repo 'face face))
+              (hym-workspace-repos ws)))))
 
 (defun hym-workspace-sidebar--card (ws &optional index)
   "Return a propertized multi-line card block for WS.
 When INDEX is non-nil, show it as the workspace jump number."
   (let* ((name (hym-workspace-name ws))
          (current (equal name (hym/tab-group)))
-         (dot (if (hym-workspace-open-p ws) "●" "○"))
+         (dot (when (eq (hym-workspace-type ws) 'worktree)
+                (if (hym-workspace-open-p ws) "●" "○")))
          (prefix (when index (number-to-string index)))
-         (leader (if prefix
-                     (format "%s %s " prefix dot)
-                   (format "%s " dot)))
+         (leader (cond ((and prefix dot) (format "%s %s " prefix dot))
+                       (prefix (format "%s " prefix))
+                       (dot (format "%s " dot))
+                       (t "")))
          (indent (make-string (string-width leader) ?\s))
          (name-face (if current
                         (hym-workspace-sidebar--face
                          'hym-workspace-sidebar-current current)
                       'hym-workspace-sidebar-name))
-         (meta-face (hym-workspace-sidebar--face
-                     'hym-workspace-sidebar-meta current))
          (lines (append
                  (list (concat leader
                                (propertize name 'face name-face)))
-                 (list (concat indent
-                               (propertize (hym-workspace-sidebar--meta ws)
-                                           'face meta-face)))
+                 (mapcar (lambda (repo) (concat indent repo))
+                         (hym-workspace-sidebar--repos ws current))
                  (mapcar (lambda (b) (concat indent b))
                          (hym-workspace-sidebar--badges ws))))
          (block (concat (mapconcat #'identity

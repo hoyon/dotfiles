@@ -20,9 +20,62 @@
 (defvar hym-workspace--agent-state (make-hash-table :test 'equal)
   "Map workspace slug to agent state: working | waiting | permission.")
 
+(defvar hym-workspace--agent-state-updated-at (make-hash-table :test 'equal)
+  "Map workspace slug to the float time when its agent state last changed.")
+
+(defcustom hym-workspace-agent-working-timeout 300
+  "Seconds after which an unrefreshed `working' agent state is considered stale.
+Waiting and permission states do not expire automatically because they are
+actionable and should stay visible until the agent reports a new state or the
+agent buffer is killed."
+  :type 'number :group 'hym-workspace)
+
+(defcustom hym-workspace-agent-stale-check-interval 30
+  "Seconds between automatic stale-agent checks."
+  :type 'number :group 'hym-workspace)
+
+(defvar hym-workspace--agent-stale-timer nil
+  "Timer used to clear stale `working' agent states.")
+
 (defun hym-workspace--run-refresh ()
   (when (fboundp 'hym-workspace-sidebar-refresh)
     (hym-workspace-sidebar-refresh)))
+
+(defun hym-workspace--agent-clear-state (slug)
+  "Clear tracked agent state for SLUG."
+  (remhash slug hym-workspace--agent-state)
+  (remhash slug hym-workspace--agent-state-updated-at))
+
+(defun hym-workspace--agent-state-stale-p (slug state)
+  "Return non-nil when SLUG's STATE should be discarded as stale."
+  (and (eq state 'working)
+       (let ((updated-at (gethash slug hym-workspace--agent-state-updated-at)))
+         (and updated-at
+              (> (- (float-time) updated-at)
+                 hym-workspace-agent-working-timeout)))))
+
+(defun hym-workspace--agent-sweep-stale-working ()
+  "Clear stale `working' agent states.
+Return non-nil when anything changed."
+  (let (changed)
+    (maphash
+     (lambda (slug state)
+       (when (hym-workspace--agent-state-stale-p slug state)
+         (hym-workspace--agent-clear-state slug)
+         (setq changed t)))
+     hym-workspace--agent-state)
+    changed))
+
+(defun hym-workspace--agent-ensure-stale-timer ()
+  "Start the stale-agent timer if it is not already running."
+  (unless (timerp hym-workspace--agent-stale-timer)
+    (setq hym-workspace--agent-stale-timer
+          (run-at-time
+           hym-workspace-agent-stale-check-interval
+           hym-workspace-agent-stale-check-interval
+           (lambda ()
+             (when (hym-workspace--agent-sweep-stale-working)
+               (hym-workspace--run-refresh)))))))
 
 (defun hym-workspace-agent-signal (slug event)
   "Update SLUG's agent state from a Claude Code hook EVENT, and refresh.
@@ -37,17 +90,29 @@ hook via `emacsclient --eval'."
                ((or "Notification" "PermissionRequest") 'permission)
                ("SessionEnd" nil)
                (_ (gethash slug hym-workspace--agent-state)))))
-    (unless (eq new old)
+    (if (eq new old)
+        (when new
+          (puthash slug (float-time) hym-workspace--agent-state-updated-at)
+          (hym-workspace--agent-ensure-stale-timer))
       (if new
-          (puthash slug new hym-workspace--agent-state)
-        (remhash slug hym-workspace--agent-state))
+          (progn
+            (puthash slug new hym-workspace--agent-state)
+            (puthash slug (float-time) hym-workspace--agent-state-updated-at)
+            (hym-workspace--agent-ensure-stale-timer))
+        (hym-workspace--agent-clear-state slug))
       (hym-workspace--run-refresh))))
 
 (defun hym-workspace--agent-badge (ws)
-  "Status function: a badge line when WS's agent wants attention."
-  (pcase (gethash (hym-workspace--key ws) hym-workspace--agent-state)
-    ('waiting (list (propertize "⏳ agent waiting" 'face 'warning)))
-    ('permission (list (propertize "⛔ needs permission" 'face 'error)))))
+  "Status function: a badge line for WS's tracked agent state."
+  (let* ((key (hym-workspace--key ws))
+         (state (gethash key hym-workspace--agent-state)))
+    (when (hym-workspace--agent-state-stale-p key state)
+      (hym-workspace--agent-clear-state key)
+      (setq state nil))
+    (pcase state
+      ('working (list "- agent running"))
+      ('waiting (list (propertize "~ agent waiting" 'face 'warning)))
+      ('permission (list (propertize "! needs permission" 'face 'error))))))
 
 (defun hym-workspace--server-badge (ws)
   "Status function: a badge line while WS's server process is live."
@@ -160,7 +225,7 @@ real key rather than the literal \"nil\"."
          ;; so a stale waiting/permission badge doesn't stick.
          (add-hook 'kill-buffer-hook
                    (lambda ()
-                     (remhash key hym-workspace--agent-state)
+                     (hym-workspace--agent-clear-state key)
                      (hym-workspace--run-refresh))
                    nil t)
          (ghostel-send-string (concat command "\n")))))))
@@ -185,7 +250,7 @@ real key rather than the literal \"nil\"."
          ;; SessionEnd, matching the Ghostty agent tab behaviour.
          (add-hook 'kill-buffer-hook
                    (lambda ()
-                     (remhash key hym-workspace--agent-state)
+                     (hym-workspace--agent-clear-state key)
                      (hym-workspace--run-refresh))
                    nil t))))))
 

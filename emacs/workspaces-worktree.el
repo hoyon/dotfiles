@@ -116,13 +116,13 @@ Call ON-DONE with t when all succeed, nil on the first failure."
   "Status function: a badge line for WS while it is provisioning."
   (when-let ((st (gethash (hym-workspace-slug ws) hym-workspace--provisioning)))
     (list (pcase (plist-get st :state)
-            ('running (propertize (format "⚙ provisioning %s…" (plist-get st :repo))
+            ('running (propertize (format "~ provisioning %s..." (plist-get st :repo))
                                   'face 'warning))
-            ('failed (propertize (format "⚠ setup failed (%s)" (plist-get st :repo))
+            ('failed (propertize (format "! setup failed (%s)" (plist-get st :repo))
                                  'face 'error))
-            ('archiving (propertize (format "⚙ archiving %s…" (plist-get st :repo))
+            ('archiving (propertize (format "~ archiving %s..." (plist-get st :repo))
                                     'face 'warning))
-            ('archive-failed (propertize (format "⚠ archive failed (%s)" (plist-get st :repo))
+            ('archive-failed (propertize (format "! archive failed (%s)" (plist-get st :repo))
                                          'face 'error))))))
 
 (with-eval-after-load 'hym-workspaces-sidebar
