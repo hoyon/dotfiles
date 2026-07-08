@@ -16,7 +16,7 @@ Ef themes override this with their `bg-active' palette color."
     "Use Ef theme colors for workspace sidebar faces."
     (ef-themes-with-colors
       (set-face-attribute 'hym-workspace-sidebar-current-bg nil
-                          :background bg-active
+                          :background bg-dim
                           :extend t)))
   (add-hook 'ef-themes-post-load-hook #'hym-workspace-sidebar-ef-theme-faces)
   (hym-workspace-sidebar-ef-theme-faces))
