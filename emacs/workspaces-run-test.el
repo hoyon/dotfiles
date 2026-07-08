@@ -89,3 +89,31 @@
 (ert-deftest hym-workspace-pick-agent-single-skips-prompt ()
   (let ((hym-workspace-agents '(("claude" . "claude"))))
     (should (equal (hym-workspace--pick-agent) '("claude" . "claude")))))
+
+(ert-deftest hym-workspace-run-agent-shell-uses-workspace-context ()
+  (let ((hym-workspace--agent-state (make-hash-table :test 'equal))
+        (captured-dir nil)
+        (captured-env nil)
+        (orig-agent-shell (and (fboundp 'agent-shell-new-shell)
+                               (symbol-function 'agent-shell-new-shell)))
+        (orig-current (symbol-function 'hym-workspace-current))
+        (orig-spawn (symbol-function 'hym-workspace-spawn-tab)))
+    (unwind-protect
+        (progn
+          (fset 'agent-shell-new-shell
+                (lambda ()
+                  (setq captured-dir default-directory)
+                  (setq captured-env process-environment)))
+          (fset 'hym-workspace-current
+                (lambda () '(:name "Dot Files" :type project :root "/tmp/dotfiles")))
+          (fset 'hym-workspace-spawn-tab
+                (lambda (_ws _name setup) (funcall setup)))
+          (hym-workspace-run-agent-shell)
+          (should (equal captured-dir "/tmp/dotfiles"))
+          (should (member "HYM_WORKSPACE_SLUG=dot_files" captured-env))
+          (should (member "HYM_WORKSPACE_AGENT=agent-shell" captured-env)))
+      (if orig-agent-shell
+          (fset 'agent-shell-new-shell orig-agent-shell)
+        (fmakunbound 'agent-shell-new-shell))
+      (fset 'hym-workspace-current orig-current)
+      (fset 'hym-workspace-spawn-tab orig-spawn))))

@@ -142,6 +142,7 @@
   "ot" 'hym-workspace-run-shell
   "or" 'hym-workspace-run-server
   "oc" 'hym-workspace-run-agent
+  "oC" 'hym-workspace-run-agent-shell
   "og" 'hym-workspace-git-status
   "od" 'hym-workspace-git-diff
   "ol" 'hym-workspace-git-log

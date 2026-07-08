@@ -55,8 +55,8 @@
 ;;   `hym-workspace-open-hook' / -after-open-hook / -registry-change-hook
 ;;
 ;; Keys (leader `SPC o'): oo sidebar, on new, oa add-repo, ot shell, or server,
-;; oc agent, og/od/ol git status/diff/log, oN notes, os scratch; `SPC t j/k/t'
-;; and `SPC 1-9' switch between workspaces.
+;; oc Ghostty agent, oC agent-shell, og/od/ol git status/diff/log, oN notes,
+;; os scratch; `SPC t j/k/t' and `SPC 1-9' switch between workspaces.
 
 ;;; Code:
 (require 'seq)

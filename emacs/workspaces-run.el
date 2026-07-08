@@ -7,6 +7,8 @@
 ;; defcustom errors with "Defining as dynamic an already lexical var".
 (defvar ghostel-compile-buffer-name)
 (defvar ghostel-environment)
+(defvar agent-shell-buffer-name)
+(declare-function agent-shell-new-shell "agent-shell")
 
 (defcustom hym-workspace-agents '(("claude" . "claude") ("codex" . "codex"))
   "Alist of (NAME . SHELL-COMMAND) for agents launchable in a workspace."
@@ -162,5 +164,29 @@ real key rather than the literal \"nil\"."
                      (hym-workspace--run-refresh))
                    nil t)
          (ghostel-send-string (concat command "\n")))))))
+
+(defun hym-workspace-run-agent-shell ()
+  "Open an `agent-shell' tab at the workspace root."
+  (interactive)
+  (unless (or (fboundp 'agent-shell-new-shell)
+              (require 'agent-shell nil t))
+    (user-error "agent-shell is not available"))
+  (when-let ((ws (hym-workspace-current)))
+    (let ((key (hym-workspace--key ws)))
+      (hym-workspace-spawn-tab
+       ws "agent-shell"
+       (lambda ()
+         (let ((default-directory (hym-workspace-root ws))
+               (process-environment
+                (append (hym-workspace--agent-env ws "agent-shell")
+                        process-environment)))
+           (agent-shell-new-shell))
+         ;; Clear agent state if the shell buffer dies without a clean
+         ;; SessionEnd, matching the Ghostty agent tab behaviour.
+         (add-hook 'kill-buffer-hook
+                   (lambda ()
+                     (remhash key hym-workspace--agent-state)
+                     (hym-workspace--run-refresh))
+                   nil t))))))
 
 (provide 'hym-workspaces-run)
