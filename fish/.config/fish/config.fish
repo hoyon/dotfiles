@@ -40,6 +40,10 @@ abbr -ag rg "rg -S"
 abbr -ag tf "terraform"
 abbr -ag kssh "kitty +kitten ssh"
 
+abbr -ag sm "dotenvx run -f .env.local -f .env -- mix"
+abbr -ag sc "iex --sname shell --remsh server@localhost"
+abbr -ag sr "elixir --sname recompile -e ':rpc.call(:\"server@localhost\", IEx.Helpers, :recompile, [])'"
+abbr -ag sk "kill (elixir --sname pid -e 'IO.puts(:rpc.call(:\"server@localhost\", System, :pid, []))')"
 
 if test -z "$SSH_ENV"
     set -x SSH_ENV $HOME/.ssh/environment
