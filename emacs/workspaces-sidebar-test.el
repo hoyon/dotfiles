@@ -23,7 +23,12 @@
                    :repos ("a" "b")))))
       (should (string-match-p "zippy" card))
       (should (string-match-p "2 repos" card))
-      (should (equal (get-text-property 2 'hym-workspace card) "zippy")))))
+      (should (equal (get-text-property 2 'hym-workspace card) "zippy"))
+      (should (eq (get-text-property 2 'pointer card) 'hand))
+      (let ((line-end (string-match-p "\n" card)))
+        (should (eq (get-text-property (1- line-end) 'pointer card) 'hand))
+        (should (equal (get-text-property (1- line-end) 'display card)
+                       '(space :align-to right-fringe)))))))
 
 (ert-deftest hym-workspace-sidebar-card-shows-status-badges ()
   (hym-workspace-sidebar-test-with-registry
@@ -50,6 +55,16 @@
       (should (search-forward "live" nil t))
       (goto-char (point-min))
       (should-not (search-forward "old" nil t)))))
+
+(ert-deftest hym-workspace-sidebar-render-numbers-active-workspaces ()
+  (hym-workspace-sidebar-test-with-registry
+    (hym-workspace-put '(:name "one" :type project :root "~/1"))
+    (hym-workspace-put '(:name "two" :type project :root "~/2"))
+    (with-temp-buffer
+      (hym-workspace-sidebar--render)
+      (goto-char (point-min))
+      (should (search-forward "1 ○ one" nil t))
+      (should (search-forward "2 ○ two" nil t)))))
 
 (ert-deftest hym-workspace-sidebar-at-point-returns-name ()
   (hym-workspace-sidebar-test-with-registry
@@ -130,7 +145,7 @@
         (should (equal (buffer-substring (line-beginning-position) (line-end-position))
                        meta))))))
 
-(ert-deftest hym-workspace-sidebar-line-marks-current-workspace ()
+(ert-deftest hym-workspace-sidebar-card-highlights-current-workspace ()
   (hym-workspace-sidebar-test-with-registry
     (let ((saved-tabs (frame-parameter nil 'tabs))
           (saved-mode hym-tabs-mode)
@@ -143,8 +158,14 @@
             (tab-bar-change-tab-group "cur")
             (hym-workspace-put '(:name "cur" :type project :root "~"))
             (hym-workspace-put '(:name "other" :type project :root "~"))
-            (should (string-match-p "▸" (hym-workspace-sidebar--card (hym-workspace-get "cur"))))
-            (should-not (string-match-p "▸" (hym-workspace-sidebar--card (hym-workspace-get "other")))))
+            (let ((cur (hym-workspace-sidebar--card (hym-workspace-get "cur")))
+                  (other (hym-workspace-sidebar--card (hym-workspace-get "other"))))
+              (should (memq 'hym-workspace-sidebar-current-bg
+                            (ensure-list (get-text-property 0 'face cur))))
+              (should-not (memq 'hym-workspace-sidebar-current-bg
+                                (ensure-list (get-text-property 0 'face other))))
+              (should-not (string-match-p "▸" cur))
+              (should-not (string-match-p "▸" other))))
         (hym-tabs-mode -1)
         (set-frame-parameter nil 'tabs saved-tabs)
         (when saved-mode (hym-tabs-mode 1))))))

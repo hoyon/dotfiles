@@ -12,6 +12,22 @@
   "Face for the name of the workspace you are currently in."
   :group 'hym-workspace)
 
+(defface hym-workspace-sidebar-current-bg
+  '((t :inherit hl-line :extend t))
+  "Background face for the current workspace card.
+Ef themes override this with their `bg-active' palette color."
+  :group 'hym-workspace)
+
+(with-eval-after-load 'ef-themes
+  (defun hym-workspace-sidebar-ef-theme-faces ()
+    "Use Ef theme colors for workspace sidebar faces."
+    (ef-themes-with-colors
+      (set-face-attribute 'hym-workspace-sidebar-current-bg nil
+                          :background bg-active
+                          :extend t)))
+  (add-hook 'ef-themes-post-load-hook #'hym-workspace-sidebar-ef-theme-faces)
+  (hym-workspace-sidebar-ef-theme-faces))
+
 (defface hym-workspace-sidebar-name
   '((t :inherit default))
   "Face for a workspace name."
@@ -29,8 +45,20 @@ Each is called with a workspace plist and returns a list of strings
 nil.  This is how later features surface state such as a running server
 or an agent waiting for input without the sidebar knowing about them.")
 
-(defvar hym-workspace-sidebar--indent "     "
-  "Indent for a card's meta and status lines, aligning under the name.")
+(defcustom hym-workspace-sidebar-width 28
+  "Width of the workspace sidebar side window."
+  :type 'integer :group 'hym-workspace)
+
+(defun hym-workspace-sidebar--line-target (line)
+  "Append an invisible stretch target to LINE for full-row mouse handling."
+  (concat line
+          (propertize " " 'display '(space :align-to right-fringe))))
+
+(defun hym-workspace-sidebar--face (face current)
+  "Return FACE merged with the current-workspace background when CURRENT."
+  (if current
+      (list face 'hym-workspace-sidebar-current-bg)
+    face))
 
 (defun hym-workspace-sidebar--badges (ws)
   "Collect status lines for WS from `hym-workspace-sidebar-status-functions'."
@@ -46,27 +74,43 @@ or an agent waiting for input without the sidebar knowing about them.")
               (let ((n (length (hym-workspace-repos ws))))
                 (format " · %d repo%s" n (if (= n 1) "" "s")))))))
 
-(defun hym-workspace-sidebar--card (ws)
-  "Return a propertized multi-line card block for WS."
+(defun hym-workspace-sidebar--card (ws &optional index)
+  "Return a propertized multi-line card block for WS.
+When INDEX is non-nil, show it as the workspace jump number."
   (let* ((name (hym-workspace-name ws))
          (current (equal name (hym/tab-group)))
          (dot (if (hym-workspace-open-p ws) "●" "○"))
-         (marker (if current "▸" " "))
+         (prefix (when index (number-to-string index)))
+         (leader (if prefix
+                     (format "%s %s " prefix dot)
+                   (format "%s " dot)))
+         (indent (make-string (string-width leader) ?\s))
          (name-face (if current
-                        'hym-workspace-sidebar-current
+                        (hym-workspace-sidebar--face
+                         'hym-workspace-sidebar-current current)
                       'hym-workspace-sidebar-name))
+         (meta-face (hym-workspace-sidebar--face
+                     'hym-workspace-sidebar-meta current))
          (lines (append
-                 (list (concat " " marker " " dot " "
+                 (list (concat leader
                                (propertize name 'face name-face)))
-                 (list (concat hym-workspace-sidebar--indent
+                 (list (concat indent
                                (propertize (hym-workspace-sidebar--meta ws)
-                                           'face 'hym-workspace-sidebar-meta)))
-                 (mapcar (lambda (b) (concat hym-workspace-sidebar--indent b))
+                                           'face meta-face)))
+                 (mapcar (lambda (b) (concat indent b))
                          (hym-workspace-sidebar--badges ws))))
-         (block (concat (mapconcat #'identity lines "\n") "\n")))
+         (block (concat (mapconcat #'identity
+                                    (mapcar #'hym-workspace-sidebar--line-target
+                                            lines)
+                                    "\n")
+                        "\n")))
+    (when current
+      (add-face-text-property 0 (length block)
+                              'hym-workspace-sidebar-current-bg nil block))
     (add-text-properties 0 (length block)
                          (list 'hym-workspace name
                                'mouse-face 'highlight
+                               'pointer 'hand
                                'help-echo "mouse-1: switch to this workspace")
                          block)
     block))
@@ -112,9 +156,11 @@ point in sync."
         (line hym-workspace-sidebar--point-line))
     (erase-buffer)
     (insert (propertize " WORKSPACES\n\n" 'face 'bold))
-    (dolist (ws (hym-workspace-active))
-      (insert (hym-workspace-sidebar--card ws))
-      (insert "\n"))
+    (let ((i 0))
+      (dolist (ws (hym-workspace-active))
+        (setq i (1+ i))
+        (insert (hym-workspace-sidebar--card ws i))
+        (insert "\n")))
     (let ((archived (and hym-workspace-sidebar--show-archived
                          (hym-workspace-archived))))
       (when archived
@@ -169,7 +215,7 @@ point in sync."
 (defun hym-workspace-sidebar--show ()
   (display-buffer-in-side-window
    (hym-workspace-sidebar--get-buffer)
-   '((side . left) (window-width . 28)
+   `((side . left) (window-width . ,hym-workspace-sidebar-width)
      (dedicated . t)
      (preserve-size . (t . nil))
      (window-parameters . ((no-delete-other-windows . t))))))
