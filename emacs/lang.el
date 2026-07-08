@@ -106,7 +106,10 @@
   :init
   (setq markdown-command "multimarkdown")
   :custom
-  (markdown-gfm-use-electric-backquote nil))
+  (markdown-gfm-use-electric-backquote nil)
+  (markdown-css-paths '("https://cdn.simplecss.org/simple.min.css"))
+  (markdown-xhtml-header-content
+   "<style>body { max-width: 1200px; grid-template-columns: 1fr min(1200px, 90%) 1fr; }</style>"))
 
 (use-package rust-mode
   :init
