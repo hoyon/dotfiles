@@ -17,6 +17,11 @@
   (set-window-dedicated-p (selected-window)
                           (not (window-dedicated-p (selected-window)))))
 
+(defun hym/raise-frame (&optional frame)
+  "Raise FRAME and give it input focus, defaulting to the selected frame."
+  (interactive)
+  (select-frame-set-input-focus (or frame (selected-frame))))
+
 (setq display-buffer-alist
       `(
         (,(rx "*Compilation*")
