@@ -202,14 +202,41 @@
     (error (tab-new)
            (tab-bar-rename-tab name))))
 
-(defun hym/tab-new-in-group ()
-  "Create a new tab in a prompted tab group.
-If the group exists, the tab is added to it. Otherwise a new group is created."
+(defun hym/tab-new-in-group (&optional group)
+  "Create a new tab in tab group GROUP, placing it at the end of the group.
+If the group exists, the tab is added to it. Otherwise a new group is created.
+Called interactively, GROUP is prompted for."
   (interactive)
-  (let ((group (completing-read "Tab group: " (hym/tab-groups) nil nil)))
+  (let ((group (or group (completing-read "Tab group: " (hym/tab-groups) nil nil))))
     (tab-new)
     (tab-bar-change-tab-group group)
     (hym/move-new-tab-to-group-end)))
+
+(defun hym/open-dir-in-tab-group (dir group)
+  "Open DIR in a dired buffer in a new tab placed in tab group GROUP.
+GROUP is created if it does not already exist."
+  (let ((dir (expand-file-name dir)))
+    (hym/tab-new-in-group group)
+    (dired dir)
+    (tab-bar-rename-tab (file-name-nondirectory (directory-file-name dir)))
+    (hym/raise-frame)))
+
+(defun hym/git-delta-diff-refs (rev-a rev-b group &optional dir)
+  "Show a delta diff of REV-A..REV-B in a new tab placed in tab group GROUP.
+DIR selects the repository, defaulting to `default-directory'. GROUP is
+created if it does not already exist."
+  (unless (executable-find "delta")
+    (user-error "delta not found in PATH"))
+  (let* ((default-directory (or dir default-directory))
+         (label (format "%s..%s" rev-a rev-b))
+         (range (format "%s..%s"
+                        (shell-quote-argument rev-a)
+                        (shell-quote-argument rev-b)))
+         (buf (hym/git-delta-diff-buffer range label nil)))
+    (hym/tab-new-in-group group)
+    (switch-to-buffer buf)
+    (tab-bar-rename-tab label)
+    (hym/raise-frame)))
 
 (defun hym/tab-rename-group ()
   "Rename the current tab group."

@@ -27,13 +27,9 @@
     (switch-to-buffer-other-tab buf)
     (tab-bar-rename-tab "delta")))
 
-(defun hym/git-delta-diff (&optional args buf-name command-fn)
-  "Show git diff through delta side-by-side in a buffer.
-ARGS are passed to git diff. BUF-NAME overrides the buffer name.
-COMMAND-FN, if provided, is a function returning the shell command to run."
-  (interactive)
-  (unless (executable-find "delta")
-    (user-error "delta not found in PATH"))
+(defun hym/git-delta-diff-buffer (args buf-name command-fn)
+  "Build and populate a delta diff buffer, returning it.
+ARGS, BUF-NAME and COMMAND-FN are as described in `hym/git-delta-diff'."
   (let* ((dir (magit-toplevel))
          (default-directory dir)
          (diff-type (or buf-name
@@ -52,7 +48,17 @@ COMMAND-FN, if provided, is a function returning the shell command to run."
       (goto-char (point-min))
       (evil-local-set-key 'normal "q" 'tab-close)
       (evil-local-set-key 'normal "gr" 'hym/git-delta-diff-refresh))
-    (hym/git-delta-diff--show-buffer buf)))
+    buf))
+
+(defun hym/git-delta-diff (&optional args buf-name command-fn)
+  "Show git diff through delta side-by-side in a buffer.
+ARGS are passed to git diff. BUF-NAME overrides the buffer name.
+COMMAND-FN, if provided, is a function returning the shell command to run."
+  (interactive)
+  (unless (executable-find "delta")
+    (user-error "delta not found in PATH"))
+  (hym/git-delta-diff--show-buffer
+   (hym/git-delta-diff-buffer args buf-name command-fn)))
 
 (defun hym/git-delta-diff-staged ()
   "Show staged diff through delta side-by-side."
