@@ -15,12 +15,18 @@
     (should (eq 'waiting
                 (plist-get (gethash '("s" "one") hym-workspace--agent-state)
                            :state)))
+    ;; Notification fires for idle_prompt/agent_completed too, so it must not
+    ;; clobber the waiting badge into "needs permission".
+    (hym-workspace-agent-signal "s" "claude" "one" "Notification")
+    (should (eq 'waiting
+                (plist-get (gethash '("s" "one") hym-workspace--agent-state)
+                           :state)))
     (hym-workspace-agent-signal "s" "claude" "one" "PermissionRequest")
     (should (eq 'permission
                 (plist-get (gethash '("s" "one") hym-workspace--agent-state)
                            :state)))
-    (hym-workspace-agent-signal "s" "claude" "one" "Notification")
-    (should (eq 'permission
+    (hym-workspace-agent-signal "s" "claude" "one" "agent_needs_input")
+    (should (eq 'question
                 (plist-get (gethash '("s" "one") hym-workspace--agent-state)
                            :state)))
     (hym-workspace-agent-signal "s" "claude" "one" "SessionEnd")
@@ -90,6 +96,11 @@
                    :state 'waiting :updated-at (float-time))
              hym-workspace--agent-state)
     (should (string-match-p "waiting" (car (hym-workspace--agent-badge ws))))
+    (puthash '("s" "one")
+             (list :slug "s" :agent "codex" :session "one"
+                   :state 'question :updated-at (float-time))
+             hym-workspace--agent-state)
+    (should (string-match-p "needs input" (car (hym-workspace--agent-badge ws))))
     (puthash '("s" "one")
              (list :slug "s" :agent "codex" :session "one"
                    :state 'permission :updated-at (float-time))

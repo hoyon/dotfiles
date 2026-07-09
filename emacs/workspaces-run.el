@@ -123,8 +123,16 @@ Return non-nil when anything changed."
     ((or "UserPromptSubmit" "PreToolUse" "PostToolUse" "SessionStart")
      'working)
     ("Stop" 'waiting)
-    ((or "Notification" "PermissionRequest") 'permission)
+    ("PermissionRequest" 'permission)
+    ("agent_needs_input" 'question)
     ("SessionEnd" nil)
+    ;; The generic Notification event is deliberately unhandled: it fires for
+    ;; many subtypes (idle_prompt after 60s idle, agent_completed, auth_success),
+    ;; not just the actionable ones, so mapping it wholesale to `permission'
+    ;; flipped the waiting badge whenever a finished agent sat idle. We instead
+    ;; cherry-pick the subtypes worth a badge via per-matcher registrations (see
+    ;; install-hooks): permission dialogs arrive as PermissionRequest, and a
+    ;; blocked question as `agent_needs_input' above.
     (_ old)))
 
 (defun hym-workspace-agent-signal (slug &rest args)
@@ -205,6 +213,7 @@ hook via `emacsclient --eval'."
     (pcase (plist-get entry :state)
       ('working (format "- %s running" label))
       ('waiting (propertize (format "~ %s waiting" label) 'face 'warning))
+      ('question (propertize (format "? %s needs input" label) 'face 'warning))
       ('permission (propertize (format "! %s needs permission" label)
                                'face 'error)))))
 

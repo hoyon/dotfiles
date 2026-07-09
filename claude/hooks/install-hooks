@@ -17,26 +17,32 @@ hook="$here/hym-agent-hook"
 
 # Register OUR hook for TOOL's EVENTS in FILE. Removes any prior entry pointing
 # at $hook first, then adds "$hook <Event>" per event, so it reconciles on
-# re-run and leaves other entries alone.
+# re-run and leaves other entries alone. The optional third arg is a list of
+# Notification subtypes: each is registered under the "Notification" event with
+# a `matcher' so only that subtype fires it, invoked as "$hook <subtype>".
 install_into() {
-  file="$1"; events="$2"
+  file="$1"; events="$2"; matchers="${3:-}"
   mkdir -p "$(dirname "$file")"
   [ -f "$file" ] || echo '{}' > "$file"
   tmp=$(mktemp)
-  jq --arg hook "$hook" --arg events "$events" '
+  jq --arg hook "$hook" --arg events "$events" --arg matchers "$matchers" '
     (.hooks //= {})
     | .hooks |= with_entries(
         .value |= map(select(
           ([.hooks[]?.command // ""] | any(contains($hook))) | not)))
-    | reduce ($events | split(" ")[]) as $ev (.;
+    | reduce ($events | split(" ")[] | select(. != "")) as $ev (.;
         .hooks[$ev] = ((.hooks[$ev] // [])
           + [{hooks: [{type: "command", command: ($hook + " " + $ev)}]}]))
+    | reduce ($matchers | split(" ")[] | select(. != "")) as $m (.;
+        .hooks["Notification"] = ((.hooks["Notification"] // [])
+          + [{matcher: $m, hooks: [{type: "command", command: ($hook + " " + $m)}]}]))
     | .hooks |= with_entries(select(.value | length > 0))
   ' "$file" > "$tmp" && mv "$tmp" "$file"
   echo "installed hym-agent-hook -> $file"
 }
 
 install_into "$HOME/.claude/settings.json" \
-  "SessionStart UserPromptSubmit PreToolUse PostToolUse PermissionRequest Notification Stop SessionEnd"
+  "SessionStart UserPromptSubmit PreToolUse PostToolUse PermissionRequest Stop SessionEnd" \
+  "agent_needs_input"
 install_into "$HOME/.codex/hooks.json" \
   "SessionStart UserPromptSubmit PreToolUse PostToolUse PermissionRequest Stop"
