@@ -90,6 +90,15 @@ COMMAND-FN, if provided, is a function returning the shell command to run."
   (interactive)
   (hym/git-delta-diff))
 
+(defun hym/git-delta-diff-unstaged-with-untracked ()
+  "Show unstaged diff, including untracked files, through delta side-by-side."
+  (interactive)
+  (hym/git-delta-diff
+   nil "unstaged+untracked"
+   (lambda ()
+     (format "{ GIT_PAGER=cat git diff --stat; git ls-files --others --exclude-standard | while IFS= read -r f; do GIT_PAGER=cat git diff --stat --no-index /dev/null \"$f\"; done; echo; { GIT_PAGER=cat git diff -U5; git ls-files --others --exclude-standard | while IFS= read -r f; do GIT_PAGER=cat git diff --no-index /dev/null \"$f\"; done; } | delta --side-by-side --width %d; }"
+             (hym/git-delta-diff--width)))))
+
 (defun hym/git-delta-diff-merge-base ()
   "Show delta diff from merge base with default branch."
   (interactive)

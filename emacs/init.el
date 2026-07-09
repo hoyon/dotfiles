@@ -146,6 +146,7 @@
   "oP" 'hym-workspace-new-from-preset
   "og" 'hym-workspace-git-status
   "od" 'hym-workspace-git-diff
+  "oD" 'hym-workspace-git-diff-unstaged-with-untracked
   "ol" 'hym-workspace-git-log
   "oN" 'hym-workspace-notes
   "os" 'hym-workspace-scratch

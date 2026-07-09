@@ -24,6 +24,13 @@ project/notes workspaces `:repos' is (\".\"), so this returns the root."
     (let ((default-directory (hym-workspace--pick-repo ws)))
       (hym/git-delta-diff-merge-base))))
 
+(defun hym-workspace-git-diff-unstaged-with-untracked ()
+  "Show unstaged diff, including untracked files, for a workspace repo."
+  (interactive)
+  (when-let ((ws (hym-workspace-current)))
+    (let ((default-directory (hym-workspace--pick-repo ws)))
+      (hym/git-delta-diff-unstaged-with-untracked))))
+
 (defun hym-workspace-git-log ()
   "Open magit log for a repo in the current workspace.
 Press D on a commit (or over a selected range) for its delta diff."
