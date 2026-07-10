@@ -134,6 +134,7 @@
 (load-config "workspaces-run.el")
 (load-config "workspaces-git.el")
 (load-config "workspaces-notes.el")
+(load-config "ghostel-monitor.el")
 (hym-workspace-mode 1)
 (hym/leader-def
   "oo" 'hym-workspace-sidebar-toggle
