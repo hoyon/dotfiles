@@ -11,7 +11,9 @@
 (defvar agent-shell-buffer-name)
 (declare-function agent-shell-new-shell "agent-shell")
 
-(defcustom hym-workspace-agents '(("claude" . "claude") ("codex" . "codex"))
+(defcustom hym-workspace-agents '(("claude" . "claude")
+                                  ("codex" . "codex")
+                                  ("goose" . "goose"))
   "Alist of (NAME . SHELL-COMMAND) for agents launchable in a workspace."
   :type '(alist :key-type string :value-type string) :group 'hym-workspace)
 
@@ -120,7 +122,8 @@ Return non-nil when anything changed."
 (defun hym-workspace--agent-event-state (event old)
   "Return EVENT's new state, using OLD for unknown events."
   (pcase event
-    ((or "UserPromptSubmit" "PreToolUse" "PostToolUse" "SessionStart")
+    ((or "UserPromptSubmit" "PreToolUse" "PostToolUse" "PostToolUseFailure"
+         "SessionStart")
      'working)
     ("Stop" 'waiting)
     ("PermissionRequest" 'permission)

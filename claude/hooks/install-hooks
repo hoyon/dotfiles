@@ -1,7 +1,8 @@
 #!/bin/sh
-# Install hym-agent-hook into Claude Code (~/.claude/settings.json) and Codex
-# (~/.codex/hooks.json) so agent lifecycle events signal the Emacs workspace
-# harness. Run this once per machine:
+# Install hym-agent-hook into Claude Code (~/.claude/settings.json), Codex
+# (~/.codex/hooks.json), and goose (~/.agents/plugins/hym-agent-hook) so agent
+# lifecycle events signal the Emacs workspace harness. Run this once per
+# machine:
 #
 #     ~/dotfiles/claude/hooks/install-hooks
 #
@@ -17,9 +18,10 @@ hook="$here/hym-agent-hook"
 
 # Register OUR hook for TOOL's EVENTS in FILE. Removes any prior entry pointing
 # at $hook first, then adds "$hook <Event>" per event, so it reconciles on
-# re-run and leaves other entries alone. The optional third arg is a list of
-# Notification subtypes: each is registered under the "Notification" event with
-# a `matcher' so only that subtype fires it, invoked as "$hook <subtype>".
+# re-run and leaves other entries alone. Used by Claude Code and Codex. The
+# optional third arg is a list of Notification subtypes: each is registered
+# under the "Notification" event with a `matcher' so only that subtype fires it,
+# invoked as "$hook <subtype>".
 install_into() {
   file="$1"; events="$2"; matchers="${3:-}"
   mkdir -p "$(dirname "$file")"
@@ -41,8 +43,32 @@ install_into() {
   echo "installed hym-agent-hook -> $file"
 }
 
+# goose discovers hooks from plugin directories under ~/.agents/plugins. Unlike
+# Claude/Codex, goose sends the event in the stdin JSON payload as .event, so the
+# command intentionally omits an event argument.
+install_goose_plugin() {
+  plugin="$HOME/.agents/plugins/hym-agent-hook"
+  mkdir -p "$plugin/hooks"
+  cat > "$plugin/plugin.json" <<'JSON'
+{
+  "name": "hym-agent-hook",
+  "version": "0.1.0",
+  "description": "Signal the Emacs workspace harness from goose lifecycle events"
+}
+JSON
+  tmp=$(mktemp)
+  jq -n --arg hook "$hook" --arg events "$1" '
+    {hooks:
+      (reduce ($events | split(" ")[]) as $ev ({};
+        .[$ev] = [{hooks: [{type: "command", command: $hook}]}]))}
+  ' > "$tmp" && mv "$tmp" "$plugin/hooks/hooks.json"
+  echo "installed hym-agent-hook -> $plugin/hooks/hooks.json"
+}
+
 install_into "$HOME/.claude/settings.json" \
   "SessionStart UserPromptSubmit PreToolUse PostToolUse PermissionRequest Stop SessionEnd" \
   "agent_needs_input"
 install_into "$HOME/.codex/hooks.json" \
   "SessionStart UserPromptSubmit PreToolUse PostToolUse PermissionRequest Stop"
+install_goose_plugin \
+  "SessionStart UserPromptSubmit PreToolUse PostToolUse PostToolUseFailure Stop SessionEnd"

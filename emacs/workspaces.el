@@ -42,8 +42,9 @@
 ;;                          badges; `hym-workspace-agent-signal'.
 ;;   workspaces-git.el      per-repo magit status / delta PR-diff / log.
 ;;   workspaces-notes.el    per-workspace org notes + plain scratch.
-;;   claude/hooks/          hym-agent-hook + install-hooks: agent lifecycle
-;;                          events -> emacsclient -> `hym-workspace-agent-signal'.
+;;   claude/hooks/          hym-agent-hook + install-hooks: Claude/Codex/goose
+;;                          lifecycle events -> emacsclient ->
+;;                          `hym-workspace-agent-signal'.
 ;;                          Run install-hooks once per machine.
 ;;
 ;; Extension seams (how to add things without touching internals)
