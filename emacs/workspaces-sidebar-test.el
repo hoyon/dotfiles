@@ -1,6 +1,7 @@
 ;; -*- lexical-binding: t -*-
 
 (require 'ert)
+(require 'cl-lib)
 (load-file (expand-file-name "workspaces.el" (file-name-directory load-file-name)))
 (load-file (expand-file-name "tabs.el" (file-name-directory load-file-name)))
 (load-file (expand-file-name "workspaces-sidebar.el" (file-name-directory load-file-name)))
@@ -66,8 +67,69 @@
     (with-temp-buffer
       (hym-workspace-sidebar--render)
       (goto-char (point-min))
+      (should (search-forward "0 general" nil t))
       (should (search-forward "1 one" nil t))
       (should (search-forward "2 two" nil t)))))
+
+(ert-deftest hym-workspace-sidebar-general-card-highlights-current-group ()
+  (hym-workspace-sidebar-test-with-registry
+    (let ((saved-tabs (frame-parameter nil 'tabs))
+          (saved-mode hym-tabs-mode)
+          (hym/tab-group-last-tab (make-hash-table :test 'equal)))
+      (unwind-protect
+          (progn
+            (when hym-tabs-mode (hym-tabs-mode -1))
+            (set-frame-parameter nil 'tabs nil)
+            (hym-tabs-mode 1)
+            (tab-bar-change-tab-group hym/default-tab-group)
+            (let ((card (hym-workspace-sidebar--general-card)))
+              (should (string-match-p "0 general" card))
+              (should (memq 'hym-workspace-sidebar-current-bg
+                            (ensure-list (get-text-property 0 'face card))))))
+        (hym-tabs-mode -1)
+        (set-frame-parameter nil 'tabs saved-tabs)
+        (when saved-mode (hym-tabs-mode 1))))))
+
+(ert-deftest hym-workspace-sidebar-general-card-visits-group-zero ()
+  (hym-workspace-sidebar-test-with-registry
+    (with-temp-buffer
+      (hym-workspace-sidebar-mode)
+      (hym-workspace-sidebar--render)
+      (goto-char (point-min))
+      (search-forward "0 general")
+      (let (visited)
+        (cl-letf (((symbol-function 'hym/tab-switch-to-default-group)
+                   (lambda () (setq visited t))))
+          (hym-workspace-sidebar-visit))
+        (should visited)))))
+
+(ert-deftest hym-workspace-sidebar-refreshes-after-tab-group-change ()
+  (hym-workspace-sidebar-test-with-registry
+    (let ((saved-tabs (frame-parameter nil 'tabs))
+          (saved-mode hym-tabs-mode)
+          (hym/tab-group-last-tab (make-hash-table :test 'equal))
+          (buf (get-buffer-create hym-workspace-sidebar-buffer-name)))
+      (unwind-protect
+          (progn
+            (when hym-tabs-mode (hym-tabs-mode -1))
+            (set-frame-parameter nil 'tabs nil)
+            (hym-tabs-mode 1)
+            (tab-bar-change-tab-group "workspace")
+            (with-current-buffer buf
+              (hym-workspace-sidebar-mode)
+              (hym-workspace-sidebar--render))
+            (tab-bar-change-tab-group hym/default-tab-group)
+            (with-current-buffer buf
+              (goto-char (point-min))
+              (search-forward "0 general")
+              (should (memq 'hym-workspace-sidebar-current-bg
+                            (ensure-list
+                             (get-text-property (line-beginning-position)
+                                                'face))))))
+        (kill-buffer buf)
+        (hym-tabs-mode -1)
+        (set-frame-parameter nil 'tabs saved-tabs)
+        (when saved-mode (hym-tabs-mode 1))))))
 
 (ert-deftest hym-workspace-sidebar-at-point-returns-name ()
   (hym-workspace-sidebar-test-with-registry

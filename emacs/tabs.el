@@ -2,8 +2,8 @@
 (require 'seq)
 (require 'tab-bar)
 
-(defvar hym/default-tab-group "emacs"
-  "Tab group used when a tab has no group assigned.")
+(defvar hym/default-tab-group "general"
+  "Catch-all tab group used when a tab has no group assigned.")
 
 (defun hym-tabs--apply-settings ()
   "Apply tab-bar settings used by `hym-tabs-mode'."
@@ -121,6 +121,18 @@
     (let ((hym/tab-restore-group-selection nil))
       (tab-bar-select-tab position))))
 
+(defun hym/tab-new-in-default-group ()
+  "Create a new tab in the catch-all tab group."
+  (interactive)
+  (hym/tab-new-in-group hym/default-tab-group))
+
+(defun hym/tab-switch-to-default-group ()
+  "Switch to the catch-all tab group, creating it when necessary."
+  (interactive)
+  (if (member hym/default-tab-group (hym/tab-groups))
+      (hym/tab-group-switch-to hym/default-tab-group)
+    (hym/tab-new-in-default-group)))
+
 (defun hym/tab-switch-to-group ()
   "Prompt for a tab group and switch to it."
   (interactive)
@@ -212,19 +224,27 @@ Called interactively, GROUP is prompted for."
     (tab-bar-change-tab-group group)
     (hym/move-new-tab-to-group-end)))
 
-(defun hym/open-dir-in-tab-group (dir group)
-  "Open DIR in a dired buffer in a new tab placed in tab group GROUP.
-GROUP is created if it does not already exist."
+(defun hym/open-dir-in-group (dir group)
+  "Open DIR in a new Dired tab placed in tab group GROUP."
   (let ((dir (expand-file-name dir)))
     (hym/tab-new-in-group group)
     (dired dir)
     (tab-bar-rename-tab (file-name-nondirectory (directory-file-name dir)))
     (hym/raise-frame)))
 
-(defun hym/git-delta-diff-refs (rev-a rev-b group &optional dir)
-  "Show a delta diff of REV-A..REV-B in a new tab placed in tab group GROUP.
-DIR selects the repository, defaulting to `default-directory'. GROUP is
-created if it does not already exist."
+(defun hym/open-dir-in-default-tab-group (dir)
+  "Open DIR in a new Dired tab in the catch-all tab group."
+  (hym/open-dir-in-group dir hym/default-tab-group))
+
+(defun hym/open-dir-in-tab-group (dir &optional _group)
+  "Open DIR in a new Dired tab in the catch-all tab group.
+The obsolete GROUP argument is accepted so existing external callers keep
+working, but ad-hoc directory opens now always target the catch-all group."
+  (hym/open-dir-in-default-tab-group dir))
+
+(defun hym/git-delta-diff-refs-in-group (rev-a rev-b group &optional dir)
+  "Show a delta diff of REV-A..REV-B in a new tab in GROUP.
+DIR selects the repository, defaulting to `default-directory'."
   (unless (executable-find "delta")
     (user-error "delta not found in PATH"))
   (let* ((default-directory (or dir default-directory))
@@ -238,6 +258,18 @@ created if it does not already exist."
     (hym/git-delta-diff-refresh)
     (tab-bar-rename-tab label)
     (hym/raise-frame)))
+
+(defun hym/git-delta-diff-refs-in-default-tab-group (rev-a rev-b &optional dir)
+  "Show a delta diff of REV-A..REV-B in a catch-all tab.
+DIR selects the repository, defaulting to `default-directory'."
+  (hym/git-delta-diff-refs-in-group
+   rev-a rev-b hym/default-tab-group dir))
+
+(defun hym/git-delta-diff-refs (rev-a rev-b &optional _group dir)
+  "Show a delta diff of REV-A..REV-B in a catch-all tab.
+The obsolete GROUP argument is accepted so existing external callers keep
+working.  DIR selects the repository, defaulting to `default-directory'."
+  (hym/git-delta-diff-refs-in-default-tab-group rev-a rev-b dir))
 
 (defun hym/tab-rename-group ()
   "Rename the current tab group."
@@ -386,8 +418,12 @@ was supplied explicitly, or when the current tab is the last in its group."
 
 (defun tab-bar-tab-group-format-default (tab _i &optional current-p)
   (let* ((group (hym/tab-group tab))
-         (groups (hym/tab-groups))
-         (group-n (1+ (seq-position groups group #'string=))))
+         (groups (seq-remove
+                  (lambda (name) (equal name hym/default-tab-group))
+                  (hym/tab-groups)))
+         (group-n (if (equal group hym/default-tab-group)
+                      0
+                    (1+ (seq-position groups group #'string=)))))
     (propertize
      (format "┃%d %s┃" group-n group)
      'face (if current-p 'tab-bar-tab-group-current 'tab-bar-tab-group-inactive)

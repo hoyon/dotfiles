@@ -152,6 +152,7 @@
   "tj" 'hym-workspace-prev
   "tk" 'hym-workspace-next
   "tt" 'hym-workspace-switch
+  "0" 'hym/tab-switch-to-default-group
   "1" (lambda () (interactive) (hym-workspace-select-index 1))
   "2" (lambda () (interactive) (hym-workspace-select-index 2))
   "3" (lambda () (interactive) (hym-workspace-select-index 3))

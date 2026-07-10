@@ -107,6 +107,29 @@ When INDEX is non-nil, show it as the workspace jump number."
                          block)
     block))
 
+(defun hym-workspace-sidebar--general-card ()
+  "Return the non-registry group-zero card for the catch-all space."
+  (let* ((name hym/default-tab-group)
+         (current (equal name (hym/tab-group)))
+         (name-face (if current
+                        (hym-workspace-sidebar--face
+                         'hym-workspace-sidebar-current current)
+                      'hym-workspace-sidebar-name))
+         (block (concat
+                 (hym-workspace-sidebar--line-target
+                  (concat "0 " (propertize name 'face name-face)))
+                 "\n")))
+    (when current
+      (add-face-text-property 0 (length block)
+                              'hym-workspace-sidebar-current-bg nil block))
+    (add-text-properties 0 (length block)
+                         (list 'hym-workspace name
+                               'mouse-face 'highlight
+                               'pointer 'hand
+                               'help-echo "mouse-1: switch to general")
+                         block)
+    block))
+
 (defvar hym-workspace-sidebar--point-name nil
   "Workspace the sidebar cursor should rest on across re-renders.
 Tracked explicitly because switching a workspace restores a per-tab
@@ -148,6 +171,8 @@ point in sync."
         (line hym-workspace-sidebar--point-line))
     (erase-buffer)
     (insert (propertize " WORKSPACES\n\n" 'face 'bold))
+    (insert (hym-workspace-sidebar--general-card))
+    (insert "\n")
     (let ((i 0))
       (dolist (ws (hym-workspace-active))
         (setq i (1+ i))
@@ -238,17 +263,20 @@ restores a layout without the side window; this puts it back."
 
 (add-hook 'tab-bar-tab-post-open-functions #'hym-workspace-sidebar--sync)
 (add-hook 'tab-bar-tab-post-select-functions #'hym-workspace-sidebar--sync)
+(advice-add 'tab-bar-change-tab-group :after #'hym-workspace-sidebar--sync)
 (add-hook 'hym-workspace-after-open-hook #'hym-workspace-sidebar--sync)
 (add-hook 'hym-workspace-registry-change-hook #'hym-workspace-sidebar-refresh)
 
 (defun hym-workspace-sidebar-visit ()
   "Open or switch to the workspace on the current line."
   (interactive)
-  (when-let* ((name (hym-workspace-sidebar--at-point))
-              (ws (hym-workspace-get name)))
+  (when-let ((name (hym-workspace-sidebar--at-point)))
     (setq hym-workspace-sidebar--point-name name
           hym-workspace-sidebar--point-line (line-number-at-pos))
-    (hym-workspace-open ws)
+    (if (equal name hym/default-tab-group)
+        (hym/tab-switch-to-default-group)
+      (when-let ((ws (hym-workspace-get name)))
+        (hym-workspace-open ws)))
     (hym-workspace-sidebar-refresh)))
 
 (defun hym-workspace-sidebar-close-ws ()

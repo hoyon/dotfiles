@@ -16,6 +16,9 @@ function ec --description="Open in emacs"
         set line_flag "+$line"
     end
 
+    command emacsclient --eval '(hym/tab-new-in-default-group)' >/dev/null
+    or return $status
+
     command emacsclient --no-wait $line_flag $file >/dev/null
     if test "$status" -eq 0
         if type -fq wmctrl
