@@ -38,7 +38,7 @@ Each is called with a workspace plist and returns a list of strings
 nil.  This is how later features surface state such as a running server
 or an agent waiting for input without the sidebar knowing about them.")
 
-(defcustom hym-workspace-sidebar-width 28
+(defcustom hym-workspace-sidebar-width 30
   "Width of the workspace sidebar side window."
   :type 'integer :group 'hym-workspace)
 
@@ -248,13 +248,26 @@ point in sync."
       (setq hym-workspace-sidebar--visible t)
       (hym-workspace-sidebar--show))))
 
+(defun hym-workspace-sidebar--fix-width (&rest _)
+  "Re-enforce the configured sidebar width after window changes.
+Normal Emacs operations (splits, `enlarge-window', `balance-windows', etc.)
+can resize the side window away from `hym-workspace-sidebar-width'; this
+puts it back."
+  (when-let ((win (get-buffer-window hym-workspace-sidebar-buffer-name)))
+    (unless (= (window-width win) hym-workspace-sidebar-width)
+      (condition-case nil
+          (window-resize win (- hym-workspace-sidebar-width (window-width win))
+                         t)
+        (error nil)))))
+
 (defun hym-workspace-sidebar--ensure-window (&rest _)
   "Re-display the sidebar in its side window when it should be visible.
 A tab is a saved window configuration, so opening or switching tabs
 restores a layout without the side window; this puts it back."
   (when (and hym-workspace-sidebar--visible
              (not (get-buffer-window hym-workspace-sidebar-buffer-name)))
-    (hym-workspace-sidebar--show)))
+    (hym-workspace-sidebar--show))
+  (hym-workspace-sidebar--fix-width))
 
 (defun hym-workspace-sidebar--sync (&rest _)
   "Keep the sidebar present and its open/closed marks current."
@@ -266,6 +279,7 @@ restores a layout without the side window; this puts it back."
 (advice-add 'tab-bar-change-tab-group :after #'hym-workspace-sidebar--sync)
 (add-hook 'hym-workspace-after-open-hook #'hym-workspace-sidebar--sync)
 (add-hook 'hym-workspace-registry-change-hook #'hym-workspace-sidebar-refresh)
+(add-hook 'window-configuration-change-hook #'hym-workspace-sidebar--fix-width)
 
 (defun hym-workspace-sidebar-visit ()
   "Open or switch to the workspace on the current line."
