@@ -4,6 +4,7 @@
 (load-file (expand-file-name "workspaces.el" (file-name-directory load-file-name)))
 (load-file (expand-file-name "workspaces-worktree.el" (file-name-directory load-file-name)))
 (load-file (expand-file-name "workspaces-run.el" (file-name-directory load-file-name)))
+(defvar ghostel-environment nil)
 
 (ert-deftest hym-workspace-agent-signal-maps-events ()
   (let ((hym-workspace--agent-state (make-hash-table :test 'equal)))
@@ -198,6 +199,16 @@
   (let ((hym-workspace-agents '(("claude" . "claude"))))
     (should (equal (hym-workspace--pick-agent) '("claude" . "claude")))))
 
+(ert-deftest hym-workspace-shell-quote-is-fish-safe ()
+  (should (equal (hym-workspace--shell-quote "hello world") "'hello world'"))
+  (should (equal (hym-workspace--shell-quote "it's big") "'it'\\''s big'")))
+
+(ert-deftest hym-workspace-agent-launch-string-seeds-prompt ()
+  (should (equal (hym-workspace--agent-launch-string "claude" nil) "claude"))
+  (should (equal (hym-workspace--agent-launch-string "claude" "   ") "claude"))
+  (should (equal (hym-workspace--agent-launch-string "claude" "fix it")
+                 "claude 'fix it'")))
+
 (ert-deftest hym-workspace-run-agent-shell-uses-workspace-context ()
   (let ((hym-workspace--agent-state (make-hash-table :test 'equal))
         (captured-dir nil)
@@ -230,3 +241,68 @@
         (fmakunbound 'agent-shell-new-shell))
       (fset 'hym-workspace-current orig-current)
       (fset 'hym-workspace-spawn-tab orig-spawn))))
+
+(ert-deftest hym-workspace-start-agent-seeds-prompt ()
+  (let ((hym-workspace--agent-state (make-hash-table :test 'equal))
+        (sent nil)
+        (captured-dir nil)
+        (orig-spawn (symbol-function 'hym-workspace-spawn-tab)))
+    (unwind-protect
+        (progn
+          (fset 'hym-workspace-spawn-tab (lambda (_ws _name setup) (funcall setup)))
+          (fset 'ghostel (lambda (&optional _fresh) (setq captured-dir default-directory)))
+          (fset 'ghostel-send-string (lambda (s) (setq sent s)))
+          (hym-workspace--start-agent
+           '(:name "w" :slug "s" :type worktree :root "/tmp/w")
+           "claude" "claude" "sess-1" "it's big")
+          (should (equal captured-dir "/tmp/w"))
+          (should (equal sent "claude 'it'\\''s big'\n")))
+      (fset 'hym-workspace-spawn-tab orig-spawn)
+      (fmakunbound 'ghostel)
+      (fmakunbound 'ghostel-send-string))))
+
+(ert-deftest hym-workspace-new-from-preset-starts-agent-on-success ()
+  (let* ((tmp (make-temp-file "hym-preset" t))
+         (ws (list :name "fix it" :slug "fix_it" :type 'worktree
+                   :root tmp :repos '("ploy-client") :base-branch "main"))
+         (started nil)
+         (provision-ok t)
+         (err-shown nil)
+         (hym-workspace--loaded t)
+         (hym-workspace--registry nil)
+         (orig-reg (symbol-function 'hym-workspace--register-worktree))
+         (orig-open (symbol-function 'hym-workspace-open))
+         (orig-prov (symbol-function 'hym-workspace--provision))
+         (orig-start (symbol-function 'hym-workspace--start-agent))
+         (orig-err (symbol-function 'hym-workspace--show-setup-error)))
+    (unwind-protect
+        (progn
+          (fset 'hym-workspace--register-worktree (lambda (&rest _) ws))
+          (fset 'hym-workspace-open (lambda (&rest _) ws))
+          (fset 'hym-workspace--provision
+                (lambda (_ws _repos _reuse cb) (funcall cb provision-ok)))
+          (fset 'hym-workspace--start-agent
+                (lambda (_ws name command &optional _session prompt)
+                  (setq started (list name command prompt))))
+          (fset 'hym-workspace--show-setup-error
+                (lambda (&rest _) (setq err-shown t)))
+          (let ((hym-workspace-agents '(("claude" . "claude"))))
+            (hym-workspace-new-from-preset
+             '(:name "frontend" :repos ("ploy-client") :agent "claude")
+             "make the button smaller"))
+          (should (equal started '("claude" "claude" "make the button smaller")))
+          (should (null err-shown))
+
+          (setq started nil provision-ok nil)
+          (let ((hym-workspace-agents '(("claude" . "claude"))))
+            (hym-workspace-new-from-preset
+             '(:name "frontend" :repos ("ploy-client") :agent "claude")
+             "make the button smaller"))
+          (should (null started))
+          (should err-shown))
+      (fset 'hym-workspace--register-worktree orig-reg)
+      (fset 'hym-workspace-open orig-open)
+      (fset 'hym-workspace--provision orig-prov)
+      (fset 'hym-workspace--start-agent orig-start)
+      (fset 'hym-workspace--show-setup-error orig-err)
+      (delete-directory tmp t))))

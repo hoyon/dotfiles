@@ -320,33 +320,84 @@ real key rather than the literal \"nil\"."
                            (lambda (&rest _) (hym-workspace--run-refresh))))
            (hym-workspace--run-refresh)))))))
 
+(defun hym-workspace--shell-quote (s)
+  "Single-quote S for the login shell (fish), which the agent terminal runs.
+Wrapping in single quotes with each embedded quote rendered as '\\'' is
+literal in both fish and POSIX sh; `shell-quote-argument's backslash form
+is unsafe against fish globbing/history expansion."
+  (concat "'" (replace-regexp-in-string "'" "'\\''" s nil t) "'"))
+
+(defun hym-workspace--agent-launch-string (command prompt)
+  "Return the shell line launching COMMAND, seeded with PROMPT when non-blank."
+  (if (and prompt (not (string-empty-p (string-trim prompt))))
+      (format "%s %s" command (hym-workspace--shell-quote prompt))
+    command))
+
+(defun hym-workspace--start-agent (ws name command &optional session prompt)
+  "Open an agent tab in WS at its root and start NAME's COMMAND.
+Reuse SESSION when given, else mint one. Seed PROMPT as a shell-quoted
+argument when non-blank."
+  (let ((key (hym-workspace--key ws))
+        (session (or session (hym-workspace--agent-session-id name))))
+    (hym-workspace-spawn-tab
+     ws "agent"
+     (lambda ()
+       ;; t forces a fresh terminal so the process actually spawns and the
+       ;; injected env (HYM_WORKSPACE_SLUG) takes effect.
+       (let ((default-directory (hym-workspace-root ws))
+             (ghostel-environment
+              (append (hym-workspace--agent-env ws name session)
+                      ghostel-environment)))
+         (ghostel t))
+       ;; Clear agent state if the terminal dies without a clean SessionEnd,
+       ;; so a stale waiting/permission badge doesn't stick.
+       (add-hook 'kill-buffer-hook
+                 (lambda ()
+                   (hym-workspace--agent-clear-state key session)
+                   (hym-workspace--run-refresh))
+                 nil t)
+       (ghostel-send-string
+        (concat (hym-workspace--agent-launch-string command prompt) "\n"))))))
+
+(defun hym-workspace--preset-agent-command (preset)
+  "Return (NAME . COMMAND) for PRESET's agent, defaulting to the first agent."
+  (let ((name (hym-workspace-preset-agent preset)))
+    (or (and name (assoc name hym-workspace-agents))
+        (car hym-workspace-agents)
+        (user-error "No agents configured (see `hym-workspace-agents')"))))
+
+(defun hym-workspace-new-from-preset (preset prompt)
+  "Create a worktree workspace from PRESET and start its agent seeded with PROMPT."
+  (interactive
+   (let ((presets (hym-workspace-presets)))
+     (unless presets
+       (user-error "No presets defined; create %s" hym-workspace-presets-file))
+     (let* ((name (completing-read
+                   "Preset: " (mapcar #'hym-workspace-preset-name presets) nil t))
+            (preset (seq-find
+                     (lambda (p) (equal (hym-workspace-preset-name p) name))
+                     presets)))
+       (list preset (read-string "Prompt: ")))))
+  (let* ((agent (hym-workspace--preset-agent-command preset))
+         (name (hym-workspace--name-from-prompt prompt))
+         (repos (hym-workspace-preset-repos preset))
+         (ws (hym-workspace--register-worktree
+              name (hym-workspace-preset-base-branch preset) repos)))
+    (make-directory (hym-workspace-root ws) t)
+    (hym-workspace-open ws)
+    (hym-workspace--provision
+     ws repos nil
+     (lambda (ok)
+       (if ok
+           (hym-workspace--start-agent ws (car agent) (cdr agent) nil prompt)
+         (hym-workspace--show-setup-error ws))))))
+
 (defun hym-workspace-run-agent ()
   "Open an agent tab at the workspace root and start the chosen agent."
   (interactive)
   (when-let ((ws (hym-workspace-current)))
-    (let* ((agent (hym-workspace--pick-agent))
-           (name (car agent))
-           (command (cdr agent))
-           (key (hym-workspace--key ws))
-           (session (hym-workspace--agent-session-id name)))
-      (hym-workspace-spawn-tab
-       ws "agent"
-       (lambda ()
-         ;; t forces a fresh terminal so the process actually spawns and the
-         ;; injected env (HYM_WORKSPACE_SLUG) takes effect.
-         (let ((default-directory (hym-workspace-root ws))
-               (ghostel-environment
-                (append (hym-workspace--agent-env ws name session)
-                        ghostel-environment)))
-           (ghostel t))
-         ;; Clear agent state if the terminal dies without a clean SessionEnd,
-         ;; so a stale waiting/permission badge doesn't stick.
-         (add-hook 'kill-buffer-hook
-                   (lambda ()
-                     (hym-workspace--agent-clear-state key session)
-                     (hym-workspace--run-refresh))
-                   nil t)
-         (ghostel-send-string (concat command "\n")))))))
+    (let ((agent (hym-workspace--pick-agent)))
+      (hym-workspace--start-agent ws (car agent) (cdr agent)))))
 
 (defun hym-workspace-run-agent-shell ()
   "Open an `agent-shell' tab at the workspace root."

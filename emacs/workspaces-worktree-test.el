@@ -5,6 +5,25 @@
 (load-file (expand-file-name "tabs.el" (file-name-directory load-file-name)))
 (load-file (expand-file-name "workspaces-worktree.el" (file-name-directory load-file-name)))
 
+(ert-deftest hym-workspace-presets-reads-file ()
+  (let ((f (make-temp-file "hym-presets")))
+    (unwind-protect
+        (progn
+          (with-temp-file f
+            (insert "((:name \"frontend\" :repos (\"ploy-client\") :agent \"claude\"))"))
+          (let ((hym-workspace-presets-file f))
+            (let ((ps (hym-workspace-presets)))
+              (should (= 1 (length ps)))
+              (should (equal (hym-workspace-preset-name (car ps)) "frontend"))
+              (should (equal (hym-workspace-preset-repos (car ps)) '("ploy-client")))
+              (should (equal (hym-workspace-preset-base-branch (car ps)) "main"))
+              (should (equal (hym-workspace-preset-agent (car ps)) "claude")))))
+      (delete-file f))))
+
+(ert-deftest hym-workspace-presets-missing-file-is-nil ()
+  (let ((hym-workspace-presets-file "/nonexistent/hym-presets.eld"))
+    (should (null (hym-workspace-presets)))))
+
 (ert-deftest hym-workspace-slugify-sanitises ()
   (should (equal (hym-workspace--slugify "Auth Refactor") "auth_refactor"))
   (should (equal (hym-workspace--slugify "  foo-bar!  ") "foo_bar"))
@@ -195,6 +214,28 @@
       (should-not (hym-workspace-archived-p (hym-workspace-get "auth")))
       (should (eq 'archive-failed
                   (plist-get (gethash "auth" hym-workspace--provisioning) :state))))))
+
+(ert-deftest hym-workspace-name-from-prompt-dedupes ()
+  (let ((hym-workspace--loaded t)
+        (hym-workspace--registry
+         (list '(:name "make the button" :slug "make_the_button"))))
+    (should (equal (hym-workspace--name-from-prompt
+                    "Fix the login flow please now urgently")
+                   "fix the login flow please"))
+    (should (equal (hym-workspace--name-from-prompt "Make the button")
+                   "make the button 2"))))
+
+(ert-deftest hym-workspace-name-from-prompt-dedupes-on-slug-collision ()
+  (let ((hym-workspace--loaded t)
+        (hym-workspace--registry
+         (list '(:name "Auth Service!" :slug "auth_service"))))
+    (should (equal (hym-workspace--name-from-prompt "Auth service")
+                   "auth service 2"))))
+
+(ert-deftest hym-workspace-name-from-prompt-handles-empty ()
+  (let ((hym-workspace--loaded t)
+        (hym-workspace--registry nil))
+    (should (equal (hym-workspace--name-from-prompt "!!!") "workspace"))))
 
 (ert-deftest hym-workspace-provision-retry-reprovisions-only-missing ()
   (hym-workspace-worktree-test-with-registry

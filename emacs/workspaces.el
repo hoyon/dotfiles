@@ -17,9 +17,9 @@
 ;;
 ;;   (:name "auth refactor"   ; display name = the tab-group name; renamable
 ;;    :slug "auth_refactor"   ; frozen id for worktree types: dir/branch/DB name
-;;    :type worktree          ; worktree | project | notes
+;;    :type worktree          ; worktree | directory
 ;;    :root "~/workspaces/auth_refactor"
-;;    :repos ("ploy-server" "ploy-client")  ; ("." ) for project/notes
+;;    :repos ("ploy-server" "ploy-client")  ; (".") for directory
 ;;    :base-branch "main" :archived nil)
 ;;
 ;; `hym-workspace-home' (~/workspaces) is the one home: the registry plus a dir
@@ -234,15 +234,29 @@ This is the seam every later feature (notes, scratch, git, server) uses."
               '(hym-workspace-format-current-group-tabs tab-bar-separator)))
     (setq tab-bar-format hym-workspace--saved-tab-bar-format)))
 
+(defun hym-workspace--read-directory ()
+  "Read a workspace directory, starting the picker in the home directory."
+  (abbreviate-file-name
+   (read-directory-name "Directory: " (expand-file-name "~/") nil t)))
+
+(defun hym-workspace--directory-name (directory)
+  "Return the final path component of DIRECTORY."
+  (file-name-nondirectory
+   (directory-file-name (expand-file-name directory))))
+
 (defun hym-workspace-create (name type root &optional base-branch)
   "Create and persist a bare workspace NAME of TYPE at ROOT.
 No provisioning happens here; that is Layer 1. Returns the workspace."
   (interactive
-   (let ((name (read-string "Workspace name: "))
-         (type (intern (completing-read "Type: " '("worktree" "project" "notes") nil t)))
-         (root (read-directory-name "Root dir: ")))
-     (list name type (abbreviate-file-name root)
-           (when (eq type 'worktree) (read-string "Base branch: " "main")))))
+   (let ((type (intern (completing-read "Type: "
+                                        '("worktree" "directory") nil t))))
+     (if (eq type 'directory)
+         (let ((root (hym-workspace--read-directory)))
+           (list (hym-workspace--directory-name root) type root))
+       (list (read-string "Workspace name: ")
+             type
+             (hym-workspace--read-directory)
+             (read-string "Base branch: " "main")))))
   (hym-workspace-put
    (list :name name :type type :root root
          :repos (if (eq type 'worktree) '() '("."))
@@ -316,12 +330,15 @@ that command instead of creating a bare entry.")
   "Create a workspace, prompting for type and delegating provisioning."
   (interactive)
   (let ((type (intern (completing-read "Type: "
-                                       '("worktree" "project" "notes") nil t))))
+                                       '("worktree" "directory") nil t))))
     (if-let ((creator (alist-get type hym-workspace-type-creators)))
         (call-interactively creator)
-      (let ((name (read-string "Workspace name: "))
-            (root (read-directory-name "Root dir: ")))
-        (hym-workspace-create name type (abbreviate-file-name root))))))
+      (if (eq type 'directory)
+          (let ((root (hym-workspace--read-directory)))
+            (hym-workspace-create (hym-workspace--directory-name root) type root))
+        (let ((name (read-string "Workspace name: "))
+              (root (hym-workspace--read-directory)))
+          (hym-workspace-create name type root))))))
 
 (defun hym-workspace-rename (ws new-name)
   "Rename WS's display name to NEW-NAME, keeping its registry position.

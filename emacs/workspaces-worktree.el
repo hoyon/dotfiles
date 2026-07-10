@@ -5,6 +5,54 @@
   "Directory holding canonical repositories to make worktrees from."
   :type 'directory :group 'hym-workspace)
 
+(defcustom hym-workspace-presets-file
+  (expand-file-name "presets.eld" hym-workspace-home)
+  "File defining worktree presets, kept outside the dotfiles repo.
+A list of plists, e.g. (:name \"frontend\" :repos (\"ploy-client\")
+:base-branch \"main\" :agent \"claude\")."
+  :type 'file :group 'hym-workspace)
+
+(defun hym-workspace-presets ()
+  "Return the preset list from `hym-workspace-presets-file'.
+A missing file yields nil; a present-but-unparseable file signals."
+  (when (file-exists-p hym-workspace-presets-file)
+    (condition-case err
+        (with-temp-buffer
+          (insert-file-contents hym-workspace-presets-file)
+          (goto-char (point-min))
+          (read (current-buffer)))
+      (error
+       (error "Corrupt presets file %s: %s"
+              hym-workspace-presets-file (error-message-string err))))))
+
+(defun hym-workspace-preset-name (preset) (plist-get preset :name))
+(defun hym-workspace-preset-repos (preset) (plist-get preset :repos))
+(defun hym-workspace-preset-base-branch (preset)
+  (or (plist-get preset :base-branch) "main"))
+(defun hym-workspace-preset-agent (preset) (plist-get preset :agent))
+
+(defun hym-workspace--name-taken-p (name)
+  "Return non-nil when NAME or its derived slug already exists in the registry."
+  (let ((slug (hym-workspace--slugify name)))
+    (or (hym-workspace-get name)
+        (seq-find (lambda (w) (equal (hym-workspace-slug w) slug))
+                  (hym-workspace-registry)))))
+
+(defun hym-workspace--unique-name (base)
+  "Return BASE, or BASE with a numeric suffix, free of name/slug clashes."
+  (if (not (hym-workspace--name-taken-p base))
+      base
+    (let ((n 2))
+      (while (hym-workspace--name-taken-p (format "%s %d" base n))
+        (setq n (1+ n)))
+      (format "%s %d" base n))))
+
+(defun hym-workspace--name-from-prompt (prompt)
+  "Derive a unique workspace name from PROMPT's first few words."
+  (let* ((words (seq-take (split-string (downcase prompt) "[^a-z0-9]+" t) 5))
+         (base (string-join words " ")))
+    (hym-workspace--unique-name (if (string-empty-p base) "workspace" base))))
+
 (defun hym-workspace--repo-conductor (repo-dir)
   "Return the `scripts' alist from REPO-DIR's conductor.json, or nil."
   (let ((file (expand-file-name "conductor.json" repo-dir)))
