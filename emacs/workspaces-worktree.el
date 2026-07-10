@@ -75,33 +75,44 @@ worktree add and skips the setup/archive steps."
        (seq-remove (lambda (n) (string-prefix-p "." n))
                    (directory-files root nil))))))
 
-(defun hym-workspace--provision-command (ws repo reuse-branch)
-  "Return the shell command that provisions REPO for WS.
-Adds the worktree (creating branch `:slug' unless REUSE-BRANCH) and, when
-the repo has a conductor.json `setup', runs it with the conductor env vars."
+(defun hym-workspace--worktree-command (ws repo reuse-branch)
+  "Return the shell command that adds REPO's worktree for WS.
+Create branch `:slug' unless REUSE-BRANCH is non-nil."
   (let* ((slug (hym-workspace-slug ws))
          (code (expand-file-name repo (expand-file-name hym-workspace-code-root)))
          (dest (expand-file-name repo (hym-workspace-root ws)))
-         (base (hym-workspace-base-branch ws))
-         (setup (alist-get 'setup (hym-workspace--repo-conductor code)))
-         (add (if reuse-branch
-                  (format "git -C %s worktree add %s %s"
-                          (shell-quote-argument code)
-                          (shell-quote-argument dest)
-                          (shell-quote-argument slug))
-                (format "git -C %s worktree add -b %s %s %s"
-                        (shell-quote-argument code)
-                        (shell-quote-argument slug)
-                        (shell-quote-argument dest)
-                        (shell-quote-argument base)))))
-    (if setup
-        (format "%s && cd %s && CONDUCTOR_ROOT_PATH=%s CONDUCTOR_WORKSPACE_NAME=%s sh -c %s"
-                add
-                (shell-quote-argument dest)
+         (base (hym-workspace-base-branch ws)))
+    (if reuse-branch
+        (format "git -C %s worktree add %s %s"
                 (shell-quote-argument code)
-                (shell-quote-argument slug)
-                (shell-quote-argument setup))
-      add)))
+                (shell-quote-argument dest)
+                (shell-quote-argument slug))
+      (format "git -C %s worktree add -b %s %s %s"
+              (shell-quote-argument code)
+              (shell-quote-argument slug)
+              (shell-quote-argument dest)
+              (shell-quote-argument base)))))
+
+(defun hym-workspace--setup-command (ws repo)
+  "Return REPO's setup command for WS, or nil when none is configured."
+  (let* ((slug (hym-workspace-slug ws))
+         (code (expand-file-name repo (expand-file-name hym-workspace-code-root)))
+         (dest (expand-file-name repo (hym-workspace-root ws)))
+         (setup (alist-get 'setup (hym-workspace--repo-conductor code))))
+    (when setup
+      (format "cd %s && CONDUCTOR_ROOT_PATH=%s CONDUCTOR_WORKSPACE_NAME=%s sh -c %s"
+              (shell-quote-argument dest)
+              (shell-quote-argument code)
+              (shell-quote-argument slug)
+              (shell-quote-argument setup)))))
+
+(defun hym-workspace--provision-command (ws repo reuse-branch)
+  "Return a command that adds REPO's worktree and runs its setup for WS.
+Kept as a command-building helper; multi-repo provisioning runs these as
+separate phases so all worktrees exist before any setup begins."
+  (let ((add (hym-workspace--worktree-command ws repo reuse-branch))
+        (setup (hym-workspace--setup-command ws repo)))
+    (if setup (format "%s && %s" add setup) add)))
 
 (defun hym-workspace--default-run-async (name command buffer callback)
   "Run COMMAND (a shell string) async, streaming to BUFFER.
@@ -132,33 +143,46 @@ Runtime only; never persisted.")
   (get-buffer-create (format " *ws-setup: %s*" (hym-workspace-slug ws))))
 
 (defun hym-workspace--provision (ws repos reuse-branch &optional on-done)
-  "Provision REPOS for WS sequentially through `hym-workspace--run-async'.
+  "Provision REPOS for WS through `hym-workspace--run-async'.
+Add every worktree sequentially before running any configured setup scripts.
 Call ON-DONE with t when all succeed, nil on the first failure."
   (let ((slug (hym-workspace-slug ws))
         (buffer (hym-workspace--setup-buffer ws)))
-    (letrec ((step
-              (lambda (remaining)
+    (letrec ((finish
+              (lambda (ok repo)
+                (if ok
+                    (remhash slug hym-workspace--provisioning)
+                  (puthash slug (list :repo repo :state 'failed)
+                           hym-workspace--provisioning))
+                (hym-workspace--refresh-sidebar)
+                (when on-done (funcall on-done ok))))
+             (run-phase
+              (lambda (remaining command-fn next)
                 (if (null remaining)
-                    (progn
-                      (remhash slug hym-workspace--provisioning)
+                    (funcall next)
+                  (let* ((repo (car remaining))
+                         (command (funcall command-fn repo)))
+                    (if (null command)
+                        (funcall run-phase (cdr remaining) command-fn next)
+                      (puthash slug (list :repo repo :state 'running)
+                               hym-workspace--provisioning)
                       (hym-workspace--refresh-sidebar)
-                      (when on-done (funcall on-done t)))
-                  (let ((repo (car remaining)))
-                    (puthash slug (list :repo repo :state 'running)
-                             hym-workspace--provisioning)
-                    (hym-workspace--refresh-sidebar)
-                    (funcall hym-workspace--run-async
-                             (format "ws-setup-%s-%s" slug repo)
-                             (hym-workspace--provision-command ws repo reuse-branch)
-                             buffer
-                             (lambda (ok)
-                               (if ok
-                                   (funcall step (cdr remaining))
-                                 (puthash slug (list :repo repo :state 'failed)
-                                          hym-workspace--provisioning)
-                                 (hym-workspace--refresh-sidebar)
-                                 (when on-done (funcall on-done nil))))))))))
-      (funcall step repos))))
+                      (funcall hym-workspace--run-async
+                               (format "ws-setup-%s-%s" slug repo)
+                               command buffer
+                               (lambda (ok)
+                                 (if ok
+                                     (funcall run-phase (cdr remaining)
+                                              command-fn next)
+                                   (funcall finish nil repo))))))))))
+      (funcall run-phase repos
+               (lambda (repo)
+                 (hym-workspace--worktree-command ws repo reuse-branch))
+               (lambda ()
+                 (funcall run-phase repos
+                          (lambda (repo)
+                            (hym-workspace--setup-command ws repo))
+                          (lambda () (funcall finish t nil))))))))
 
 (defun hym-workspace--provisioning-badge (ws)
   "Status function: a badge line for WS while it is provisioning."

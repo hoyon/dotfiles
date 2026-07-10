@@ -88,7 +88,7 @@
         (should (string-match-p "worktree add auth\\| auth \\|/auth " cmd))
         (should-not (string-match-p "worktree add -b" cmd))))))
 
-(ert-deftest hym-workspace-provision-chains-all-repos-on-success ()
+(ert-deftest hym-workspace-provision-runs-worktree-and-setup-on-success ()
   (hym-workspace-worktree-test-with-code
     (let* ((ran nil)
            (done nil)
@@ -100,8 +100,39 @@
                  :repos ("ploy-server") :base-branch "main")))
       (hym-workspace--provision ws '("ploy-server") nil (lambda (ok) (setq done ok)))
       (should (eq done t))
-      (should (= 1 (length ran)))
+      (should (= 2 (length ran)))
       (should (null (gethash "auth" hym-workspace--provisioning))))))
+
+(ert-deftest hym-workspace-provision-adds-all-worktrees-before-any-setup ()
+  (hym-workspace-worktree-test-with-code
+    (make-directory (expand-file-name "ploy-client" hym-workspace-code-root))
+    (with-temp-file (expand-file-name "ploy-client/conductor.json"
+                                      hym-workspace-code-root)
+      (insert "{\"scripts\":{\"setup\":\"npm install\"}}"))
+    (let* ((ran nil)
+           (done nil)
+           (hym-workspace--provisioning (make-hash-table :test 'equal))
+           (hym-workspace--run-async
+            (lambda (_name command _buffer callback)
+              (setq ran (append ran (list command)))
+              (funcall callback t)))
+           (ws '(:name "auth" :slug "auth" :type worktree
+                 :root "~/orca/workspaces/auth"
+                 :repos ("ploy-server" "ploy-client") :base-branch "main")))
+      (hym-workspace--provision
+       ws '("ploy-server" "ploy-client") nil (lambda (ok) (setq done ok)))
+      (should (eq done t))
+      (should (= 4 (length ran)))
+      (should (seq-every-p (lambda (command)
+                             (string-match-p "worktree add" command))
+                           (seq-take ran 2)))
+      (should (seq-every-p (lambda (command)
+                             (not (string-match-p "worktree add" command)))
+                           (seq-drop ran 2)))
+      (should (string-match-p
+               (regexp-quote (shell-quote-argument "mix setup")) (nth 2 ran)))
+      (should (string-match-p
+               (regexp-quote (shell-quote-argument "npm install")) (nth 3 ran))))))
 
 (ert-deftest hym-workspace-provision-stops-and-marks-failed ()
   (hym-workspace-worktree-test-with-code
