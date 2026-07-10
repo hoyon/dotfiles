@@ -230,6 +230,12 @@
   "hi" 'info
   "hm" 'man)
 
+(general-define-key
+ :states 'visual
+ :prefix "SPC"
+ :keymaps 'override
+ ":" 'execute-extended-command)
+
 (use-package helpful
   :bind
   (("C-h f" . helpful-callable)
