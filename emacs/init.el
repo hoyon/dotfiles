@@ -141,6 +141,9 @@
   "oa" 'hym-workspace-add-repo
   "ot" 'hym-workspace-run-shell
   "or" 'hym-workspace-run-server
+  "oR" 'hym-workspace-run-all-servers
+  "oX" 'hym-workspace-restart-running-servers
+  "ok" 'hym-workspace-kill-server
   "oc" 'hym-workspace-run-agent
   "oC" 'hym-workspace-run-agent-shell
   "oP" 'hym-workspace-new-from-preset

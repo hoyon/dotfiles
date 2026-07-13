@@ -83,7 +83,10 @@
 (use-package ghostel
   :hook (ghostel-mode . hym/ghostel-disable-nobreak-highlighting)
   :config
-  (setq ghostel-shell (executable-find "fish")))
+  (setq ghostel-shell (executable-find "fish")
+        ;; Server tabs can be very chatty; keep useful history without making
+        ;; every Ghostel buffer unreasonably expensive.
+        ghostel-max-scrollback (* 25 1024 1024)))
 
 (defun hym/evil-ghostel-toggle-escape ()
   "Toggle ESC between the terminal and Evil in this Ghostel buffer.
