@@ -85,12 +85,23 @@
               (string-join parts " ")
             (propertize "✓" 'face 'success))))))
 
+  (telephone-line-defsegment* hym/telephone-line-ghostel-escape-segment ()
+    "Show where ESC is routed in an Evil Ghostel buffer."
+    (when (and (derived-mode-p 'ghostel-mode)
+               (bound-and-true-p evil-ghostel-mode))
+      (pcase (and (boundp 'evil-ghostel--escape-mode)
+                  evil-ghostel--escape-mode)
+        ('terminal "ESC→term")
+        ('evil "ESC→evil")
+        (_ "ESC→auto"))))
+
   (with-eval-after-load 'flymake
     (setq flymake-mode-line-format nil))
 
   (setq telephone-line-lhs
       '((evil   . (telephone-line-evil-tag-segment))
         (accent . (telephone-line-process-segment
+                   hym/telephone-line-ghostel-escape-segment
                    telephone-line-minor-mode-segment))
         (nil    . (telephone-line-buffer-segment))))
 

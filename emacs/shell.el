@@ -76,10 +76,34 @@
    :keymaps 'vterm-mode-map
    "p" 'vterm-yank))
 
+(defun hym/ghostel-disable-nobreak-highlighting ()
+  "Display terminal non-breaking spaces like ordinary spaces."
+  (setq-local nobreak-char-display nil))
+
 (use-package ghostel
+  :hook (ghostel-mode . hym/ghostel-disable-nobreak-highlighting)
   :config
   (setq ghostel-shell (executable-find "fish")))
 
+(defun hym/evil-ghostel-toggle-escape ()
+  "Toggle ESC between the terminal and Evil in this Ghostel buffer.
+From the default `auto' setting, the first toggle selects the terminal."
+  (interactive)
+  (unless (and (derived-mode-p 'ghostel-mode)
+               (bound-and-true-p evil-ghostel-mode))
+    (user-error "This is not an Evil Ghostel buffer"))
+  (evil-ghostel-toggle-send-escape
+   (if (eq evil-ghostel--escape-mode 'terminal) 3 2))
+  (force-mode-line-update))
+
 (use-package evil-ghostel
   :after (ghostel evil)
-  :hook (ghostel-mode . evil-ghostel-mode))
+  :hook (ghostel-mode . evil-ghostel-mode)
+  :config
+  ;; Evil normally forwards insert-state C-y to the subprocess.  Route paste
+  ;; gestures through Ghostel so multiline prompts use bracketed paste.
+  (evil-define-key 'insert evil-ghostel-mode-map
+    (kbd "C-y") #'ghostel-yank
+    (kbd "s-v") #'ghostel-yank)
+  (define-key ghostel-mode-map (kbd "C-c C-g")
+              #'hym/evil-ghostel-toggle-escape))
