@@ -360,16 +360,23 @@
   (let ((hym-workspace--agent-state (make-hash-table :test 'equal))
         (sent nil)
         (captured-dir nil)
+        (captured-env nil)
         (orig-spawn (symbol-function 'hym-workspace-spawn-tab)))
     (unwind-protect
         (progn
           (fset 'hym-workspace-spawn-tab (lambda (_ws _name setup) (funcall setup)))
-          (fset 'ghostel (lambda (&optional _fresh) (setq captured-dir default-directory)))
+          (makunbound 'ghostel-environment)
+          (fset 'ghostel (lambda (&optional _fresh)
+                           (setq captured-dir default-directory
+                                 captured-env ghostel-environment)))
           (fset 'ghostel-send-string (lambda (s) (setq sent s)))
           (hym-workspace--start-agent
            '(:name "w" :slug "s" :type worktree :root "/tmp/w")
            "claude" "claude" "sess-1" "it's big")
           (should (equal captured-dir "/tmp/w"))
+          (should (member "HYM_WORKSPACE_SLUG=s" captured-env))
+          (should (member "HYM_WORKSPACE_AGENT=claude" captured-env))
+          (should (member "HYM_WORKSPACE_AGENT_SESSION=sess-1" captured-env))
           (should (equal sent "claude 'it'\\''s big'\n")))
       (fset 'hym-workspace-spawn-tab orig-spawn)
       (fmakunbound 'ghostel)

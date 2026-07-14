@@ -38,6 +38,10 @@ agent buffer is killed."
 (defvar hym-workspace--agent-stale-timer nil
   "Timer used to clear stale `working' agent states.")
 
+(defun hym-workspace--ghostel-environment ()
+  "Return the current Ghostel environment list, or nil before Ghostel loads."
+  (and (boundp 'ghostel-environment) ghostel-environment))
+
 (defun hym-workspace--run-refresh ()
   (when (fboundp 'hym-workspace-sidebar-refresh)
     (hym-workspace-sidebar-refresh)))
@@ -444,7 +448,7 @@ argument when non-blank."
        (let ((default-directory (hym-workspace-root ws))
              (ghostel-environment
               (append (hym-workspace--agent-env ws name session)
-                      ghostel-environment)))
+                      (hym-workspace--ghostel-environment))))
          (ghostel t))
        ;; Clear agent state if the terminal dies without a clean SessionEnd,
        ;; so a stale waiting/permission badge doesn't stick.
