@@ -1,6 +1,7 @@
 ;; -*- lexical-binding: t -*-
 (require 'cl-lib)
 (require 'seq)
+(require 'subr-x)
 
 ;; Declared special so our `let' binds them dynamically even before
 ;; ghostel-compile.el (autoloaded) defines `ghostel-compile-buffer-name';
@@ -19,6 +20,14 @@
 
 (defvar hym-workspace--servers (make-hash-table :test 'equal)
   "Map (WORKSPACE-KEY REPO) to its server (`ghostel-compile') buffer name.")
+
+(defcustom hym-workspace-old-server-tab-prefix "old:"
+  "Prefix added to server tabs after their process is retired."
+  :type 'string :group 'hym-workspace)
+
+(defcustom hym-workspace-restart-server-delay 0.05
+  "Seconds to wait between starting servers during a bulk restart."
+  :type 'number :group 'hym-workspace)
 
 (defvar hym-workspace--agent-state (make-hash-table :test 'equal)
   "Map (SLUG SESSION) to agent state plists.
@@ -307,16 +316,61 @@ real key rather than the literal \"nil\"."
          (buf (and name (get-buffer name))))
     (and buf (process-live-p (get-buffer-process buf)))))
 
-(defun hym-workspace--kill-server (workspace-key repo)
-  "Kill REPO's tracked server in WORKSPACE-KEY and refresh its status."
+(defun hym-workspace--rename-server-tab (buf)
+  "Mark every tab containing BUF as an old server tab."
+  (when (and (buffer-live-p buf) (fboundp 'tab-bar-get-buffer-tab))
+    (let ((server-tabs (tab-bar-get-buffer-tab buf nil nil t))
+          (tabs (funcall tab-bar-tabs-function))
+          renamed)
+      (dolist (tab server-tabs)
+        (let* ((name (alist-get 'name tab))
+               (pos (and name
+                         (cl-position name tabs
+                                      :key (lambda (candidate)
+                                             (alist-get 'name candidate))
+                                      :test #'equal))))
+          (when (and pos
+                     (not (member pos renamed))
+                     (stringp name)
+                     (not (string-prefix-p hym-workspace-old-server-tab-prefix
+                                           name)))
+            (push pos renamed)
+            (tab-bar-rename-tab
+             (concat hym-workspace-old-server-tab-prefix name)
+             (1+ pos))))))))
+
+(defun hym-workspace--old-server-buffer-name (name)
+  "Return an old-server buffer name derived from NAME."
+  (if (string-prefix-p "*" name)
+      (concat "*" hym-workspace-old-server-tab-prefix (substring name 1))
+    (concat hym-workspace-old-server-tab-prefix name)))
+
+(defun hym-workspace--rename-server-buffer (buf)
+  "Mark BUF as an old server buffer."
+  (when (buffer-live-p buf)
+    (with-current-buffer buf
+      (unless (string-prefix-p hym-workspace-old-server-tab-prefix
+                               (string-remove-prefix "*" (buffer-name)))
+        (rename-buffer
+         (generate-new-buffer-name
+          (hym-workspace--old-server-buffer-name (buffer-name)))
+         t)))))
+
+(defun hym-workspace--kill-server (workspace-key repo &optional defer-refresh)
+  "Kill REPO's tracked server in WORKSPACE-KEY and refresh its status.
+When DEFER-REFRESH is non-nil, leave sidebar refresh to the caller."
   (let* ((server-key (list workspace-key repo))
          (name (gethash server-key hym-workspace--servers))
          (buf (and name (get-buffer name)))
          (proc (and buf (get-buffer-process buf))))
+    (when buf
+      (hym-workspace--rename-server-tab buf)
+      (hym-workspace--rename-server-buffer buf))
     (when (process-live-p proc)
       (delete-process proc))
     (remhash server-key hym-workspace--servers)
-    (hym-workspace--run-refresh)))
+    (unless defer-refresh
+      (hym-workspace--run-refresh))))
 
 (defun hym-workspace--running-server-choices ()
   "Return (DISPLAY . SERVER-KEY) choices for every live tracked server."
@@ -416,9 +470,12 @@ Servers that are not currently running are left stopped."
       (unless repos
         (user-error "No servers are running in this workspace"))
       (dolist (repo repos)
-        (hym-workspace--kill-server key repo)
-        (hym-workspace--start-server ws repo))
-      (message "Restarted %d server%s" (length repos)
+        (hym-workspace--kill-server key repo t))
+      (hym-workspace--run-refresh)
+      (cl-loop for repo in repos
+               for delay from 0 by hym-workspace-restart-server-delay
+               do (run-at-time delay nil #'hym-workspace--start-server ws repo))
+      (message "Restarting %d server%s" (length repos)
                (if (= (length repos) 1) "" "s")))))
 
 (defun hym-workspace--shell-quote (s)

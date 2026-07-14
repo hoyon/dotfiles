@@ -231,6 +231,59 @@
       (kill-buffer api-buf)
       (kill-buffer web-buf))))
 
+(ert-deftest hym-workspace-rename-server-tab-marks-old-tab ()
+  (let* ((buf (generate-new-buffer " *api-tab-rename-test*"))
+         (tab '((name . "server:api")))
+         (renamed nil)
+         (tab-bar-tabs-function (lambda () (list tab)))
+         (orig-get-tab (symbol-function 'tab-bar-get-buffer-tab))
+         (orig-rename (symbol-function 'tab-bar-rename-tab)))
+    (unwind-protect
+        (progn
+          (fset 'tab-bar-get-buffer-tab
+                (lambda (_buf &rest _args) (list tab)))
+          (fset 'tab-bar-rename-tab
+                (lambda (name &optional tab-number)
+                  (setq renamed (list name tab-number))))
+          (hym-workspace--rename-server-tab buf)
+          (should (equal renamed '("old:server:api" 1))))
+      (fset 'tab-bar-get-buffer-tab orig-get-tab)
+      (fset 'tab-bar-rename-tab orig-rename)
+      (kill-buffer buf))))
+
+(ert-deftest hym-workspace-rename-server-tab-marks-every-containing-tab ()
+  (let* ((buf (generate-new-buffer " *api-tab-rename-test*"))
+         (api-tab '((name . "server:api")))
+         (web-tab '((name . "server:web")))
+         (file-tab '((name . "files")))
+         (renamed nil)
+         (tab-bar-tabs-function (lambda () (list file-tab api-tab web-tab)))
+         (orig-get-tab (symbol-function 'tab-bar-get-buffer-tab))
+         (orig-rename (symbol-function 'tab-bar-rename-tab)))
+    (unwind-protect
+        (progn
+          (fset 'tab-bar-get-buffer-tab
+                (lambda (_buf &rest _args) (list api-tab web-tab)))
+          (fset 'tab-bar-rename-tab
+                (lambda (name &optional tab-number)
+                  (push (list name tab-number) renamed)))
+          (hym-workspace--rename-server-tab buf)
+          (should (equal (sort renamed (lambda (a b) (< (cadr a) (cadr b))))
+                         '(("old:server:api" 2)
+                           ("old:server:web" 3)))))
+      (fset 'tab-bar-get-buffer-tab orig-get-tab)
+      (fset 'tab-bar-rename-tab orig-rename)
+      (kill-buffer buf))))
+
+(ert-deftest hym-workspace-rename-server-buffer-frees-active-name ()
+  (let ((buf (generate-new-buffer "*ws-server: s/api*")))
+    (unwind-protect
+        (progn
+          (hym-workspace--rename-server-buffer buf)
+          (should (string-prefix-p "*old:ws-server: s/api"
+                                   (buffer-name buf))))
+      (kill-buffer buf))))
+
 (ert-deftest hym-workspace-run-all-servers-starts-only-stopped-repos ()
   (let ((started nil)
         (ws '(:name "w" :slug "s" :type worktree :root "~"))
@@ -256,12 +309,13 @@
 
 (ert-deftest hym-workspace-restart-running-servers-preserves-stopped-set ()
   (let ((killed nil)
-        (started nil)
+        (scheduled nil)
         (ws '(:name "w" :slug "s" :type worktree :root "~"))
         (orig-current (symbol-function 'hym-workspace-current))
         (orig-live (symbol-function 'hym-workspace--live-servers))
         (orig-kill (symbol-function 'hym-workspace--kill-server))
-        (orig-start (symbol-function 'hym-workspace--start-server)))
+        (orig-start (symbol-function 'hym-workspace--start-server))
+        (orig-run-at-time (symbol-function 'run-at-time)))
     (unwind-protect
         (progn
           (fset 'hym-workspace-current (lambda () ws))
@@ -269,16 +323,28 @@
                 (lambda (_key) '(("api" . "api-buffer")
                                  ("worker" . "worker-buffer"))))
           (fset 'hym-workspace--kill-server
-                (lambda (_key repo) (push repo killed)))
+                (lambda (_key repo &optional _defer-refresh) (push repo killed)))
           (fset 'hym-workspace--start-server
-                (lambda (_ws repo) (push repo started)))
+                (lambda (_ws _repo)))
+          (fset 'run-at-time
+                (lambda (delay _repeat function ws repo)
+                  (push (list delay function ws repo) scheduled)))
           (hym-workspace-restart-running-servers)
           (should (equal '("api" "worker") (sort killed #'string<)))
-          (should (equal '("api" "worker") (sort started #'string<))))
+          (should (equal '("api" "worker")
+                         (sort (mapcar (lambda (entry) (nth 3 entry))
+                                       scheduled)
+                               #'string<)))
+          (should (seq-every-p
+                   (lambda (entry)
+                     (and (eq (nth 1 entry) #'hym-workspace--start-server)
+                          (eq (nth 2 entry) ws)))
+                   scheduled)))
       (fset 'hym-workspace-current orig-current)
       (fset 'hym-workspace--live-servers orig-live)
       (fset 'hym-workspace--kill-server orig-kill)
-      (fset 'hym-workspace--start-server orig-start))))
+      (fset 'hym-workspace--start-server orig-start)
+      (fset 'run-at-time orig-run-at-time))))
 
 (ert-deftest hym-workspace-repos-with-run-filters ()
   (let ((root (make-temp-file "hym-code" t)))
