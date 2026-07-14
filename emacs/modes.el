@@ -4,6 +4,7 @@
 
 (setq
  dired-listing-switches "-alh" ;; Show human sizes in dired mode
+ dired-use-ls-dired (eq system-type 'gnu/linux) ;; GNU ls supports --dired.
  dired-dwim-target t ;; Guess target directory when copying and renaming files
  )
 
