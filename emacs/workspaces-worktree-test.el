@@ -1,6 +1,7 @@
 ;; -*- lexical-binding: t -*-
 
 (require 'ert)
+(require 'cl-lib)
 (load-file (expand-file-name "workspaces.el" (file-name-directory load-file-name)))
 (load-file (expand-file-name "tabs.el" (file-name-directory load-file-name)))
 (load-file (expand-file-name "workspaces-worktree.el" (file-name-directory load-file-name)))
@@ -233,7 +234,25 @@
   (hym-workspace-worktree-test-with-registry
     (let ((hym-workspace--run-async (lambda (_n _c _b cb) (funcall cb t)))
           (ws (hym-workspace--register-worktree "auth" "main" '("ploy-server"))))
-      (hym-workspace-archive-worktree ws)
+      (make-directory (expand-file-name "ploy-server/.git" (hym-workspace-root ws)) t)
+      (cl-letf (((symbol-function 'hym-workspace--repo-worktree-registered-p)
+                 (lambda (_ws _repo) t)))
+        (hym-workspace-archive-worktree ws))
+      (should (hym-workspace-archived-p (hym-workspace-get "auth")))
+      (should (null (gethash "auth" hym-workspace--provisioning))))))
+
+(ert-deftest hym-workspace-archive-worktree-skips-already-removed-repos ()
+  (hym-workspace-worktree-test-with-registry
+    (let* ((ran nil)
+           (hym-workspace--run-async
+            (lambda (_n cmd _b cb) (push cmd ran) (funcall cb t)))
+           (ws (hym-workspace--register-worktree "auth" "main" '("gone" "left"))))
+      (make-directory (expand-file-name "left/.git" (hym-workspace-root ws)) t)
+      (cl-letf (((symbol-function 'hym-workspace--repo-worktree-registered-p)
+                 (lambda (_ws repo) (equal repo "left"))))
+        (hym-workspace-archive-worktree ws))
+      (should (= 1 (length ran)))
+      (should-not (string-match-p "/gone" (car ran)))
       (should (hym-workspace-archived-p (hym-workspace-get "auth")))
       (should (null (gethash "auth" hym-workspace--provisioning))))))
 
@@ -241,7 +260,10 @@
   (hym-workspace-worktree-test-with-registry
     (let ((hym-workspace--run-async (lambda (_n _c _b cb) (funcall cb nil)))
           (ws (hym-workspace--register-worktree "auth" "main" '("ploy-server"))))
-      (hym-workspace-archive-worktree ws)
+      (make-directory (expand-file-name "ploy-server/.git" (hym-workspace-root ws)) t)
+      (cl-letf (((symbol-function 'hym-workspace--repo-worktree-registered-p)
+                 (lambda (_ws _repo) t)))
+        (hym-workspace-archive-worktree ws))
       (should-not (hym-workspace-archived-p (hym-workspace-get "auth")))
       (should (eq 'archive-failed
                   (plist-get (gethash "auth" hym-workspace--provisioning) :state))))))

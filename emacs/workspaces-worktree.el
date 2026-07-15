@@ -1,5 +1,7 @@
 ;; -*- lexical-binding: t -*-
+(require 'cl-lib)
 (require 'seq)
+(require 'subr-x)
 
 (defcustom hym-workspace-code-root "~/code"
   "Directory holding canonical repositories to make worktrees from."
@@ -298,38 +300,67 @@ only if it fails."
                 remove)
       remove)))
 
+(defun hym-workspace--git-string (directory &rest args)
+  "Run git with ARGS in DIRECTORY, returning trimmed stdout on success."
+  (with-temp-buffer
+    (let ((default-directory directory))
+      (when (= 0 (apply #'call-process "git" nil (list t nil) nil args))
+        (string-trim (buffer-string))))))
+
+(defun hym-workspace--repo-worktree-registered-p (ws repo)
+  "Non-nil when REPO is still registered as a git worktree for WS."
+  (let* ((code (expand-file-name repo (expand-file-name hym-workspace-code-root)))
+         (dest (expand-file-name repo (hym-workspace-root ws)))
+         (output (hym-workspace--git-string code "worktree" "list" "--porcelain")))
+    (and output
+         (seq-some
+          (lambda (line)
+            (and (string-prefix-p "worktree " line)
+                 (string= (expand-file-name (substring line 9)) dest)))
+          (split-string output "\n" t)))))
+
+(defun hym-workspace--repo-worktree-archived-p (ws repo)
+  "Non-nil when REPO's worktree for WS is already gone."
+  (or (not (hym-workspace--repo-worktree-p ws repo))
+      (not (hym-workspace--repo-worktree-registered-p ws repo))))
+
 (defun hym-workspace-archive-worktree (ws)
   "Tear WS down to just its branch, marking it archived only when teardown
 of every repo succeeds; surface failure via the provisioning badge."
   (hym-workspace-close ws)
   (let ((slug (hym-workspace-slug ws))
         (buffer (hym-workspace--setup-buffer ws)))
-    (letrec ((step
-              (lambda (remaining)
-                (if (null remaining)
-                    (progn
-                      (remhash slug hym-workspace--provisioning)
-                      (when-let ((cur (hym-workspace-get (hym-workspace-name ws))))
-                        (hym-workspace-put (plist-put (copy-sequence cur) :archived t)))
-                      (hym-workspace--refresh-sidebar))
-                  (let ((repo (car remaining)))
-                    (puthash slug (list :repo repo :state 'archiving)
-                             hym-workspace--provisioning)
-                    (hym-workspace--refresh-sidebar)
-                    (funcall hym-workspace--run-async
-                             (format "ws-archive-%s-%s" slug repo)
-                             (hym-workspace--archive-command ws repo)
-                             buffer
-                             (lambda (ok)
-                               (if ok
-                                   (funcall step (cdr remaining))
-                                 (puthash slug (list :repo repo :state 'archive-failed)
-                                          hym-workspace--provisioning)
-                                 (hym-workspace--refresh-sidebar)
-                                 (hym-workspace--show-setup-error ws)
-                                 (message "Archive failed for %s in %s"
-                                          repo (hym-workspace-name ws))))))))))
-      (funcall step (hym-workspace-repos ws)))))
+    (cl-labels
+        ((finish-success ()
+           (remhash slug hym-workspace--provisioning)
+           (when-let ((cur (hym-workspace-get (hym-workspace-name ws))))
+             (hym-workspace-put (plist-put (copy-sequence cur) :archived t)))
+           (hym-workspace--refresh-sidebar))
+         (finish-failure (repo)
+           (puthash slug (list :repo repo :state 'archive-failed)
+                    hym-workspace--provisioning)
+           (hym-workspace--refresh-sidebar)
+           (hym-workspace--show-setup-error ws)
+           (message "Archive failed for %s in %s"
+                    repo (hym-workspace-name ws)))
+         (step (remaining)
+           (if (null remaining)
+               (finish-success)
+             (let ((repo (car remaining)))
+               (if (hym-workspace--repo-worktree-archived-p ws repo)
+                   (step (cdr remaining))
+                 (puthash slug (list :repo repo :state 'archiving)
+                          hym-workspace--provisioning)
+                 (hym-workspace--refresh-sidebar)
+                 (funcall hym-workspace--run-async
+                          (format "ws-archive-%s-%s" slug repo)
+                          (hym-workspace--archive-command ws repo)
+                          buffer
+                          (lambda (ok)
+                            (if ok
+                                (step (cdr remaining))
+                              (finish-failure repo)))))))))
+      (step (hym-workspace-repos ws)))))
 
 (defun hym-workspace-unarchive (ws)
   "Un-archive WS and re-provision its repos onto the existing branch."
