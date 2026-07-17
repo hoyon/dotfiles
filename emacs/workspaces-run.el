@@ -363,11 +363,10 @@ When DEFER-REFRESH is non-nil, leave sidebar refresh to the caller."
          (name (gethash server-key hym-workspace--servers))
          (buf (and name (get-buffer name)))
          (proc (and buf (get-buffer-process buf))))
-    (when buf
-      (hym-workspace--rename-server-tab buf)
-      (hym-workspace--rename-server-buffer buf))
     (when (process-live-p proc)
       (delete-process proc))
+    (when (buffer-live-p buf)
+      (kill-buffer buf))
     (remhash server-key hym-workspace--servers)
     (unless defer-refresh
       (hym-workspace--run-refresh))))
