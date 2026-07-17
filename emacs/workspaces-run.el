@@ -372,6 +372,17 @@ When DEFER-REFRESH is non-nil, leave sidebar refresh to the caller."
     (unless defer-refresh
       (hym-workspace--run-refresh))))
 
+(defun hym-workspace-kill-workspace-servers (ws &optional defer-refresh)
+  "Kill every tracked server for WS.
+When DEFER-REFRESH is non-nil, leave sidebar refresh to the caller."
+  (let* ((key (hym-workspace--key ws))
+         (repos (mapcar #'car (hym-workspace--live-servers key))))
+    (dolist (repo repos)
+      (hym-workspace--kill-server key repo t))
+    (unless defer-refresh
+      (hym-workspace--run-refresh))
+    repos))
+
 (defun hym-workspace--running-server-choices ()
   "Return (DISPLAY . SERVER-KEY) choices for every live tracked server."
   (let (choices dead)

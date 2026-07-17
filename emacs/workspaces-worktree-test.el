@@ -191,6 +191,8 @@
        (delete-directory hym-workspace-home t)
        (when (file-exists-p temp) (delete-file temp)))))
 
+(defvar hym-workspace-worktree-test--events nil)
+
 (ert-deftest hym-workspace-register-worktree-validates-and-stores ()
   (hym-workspace-worktree-test-with-registry
     (let ((ws (hym-workspace--register-worktree "Auth Refactor" "main"
@@ -273,6 +275,26 @@
       (should-not (hym-workspace-archived-p (hym-workspace-get "auth")))
       (should (eq 'archive-failed
                   (plist-get (gethash "auth" hym-workspace--provisioning) :state))))))
+
+(ert-deftest hym-workspace-archive-worktree-stops-servers-before-closing ()
+  (hym-workspace-worktree-test-with-registry
+    (let ((hym-workspace-worktree-test--events nil)
+          (hym-workspace--run-async
+           (lambda (_n _c _b cb)
+             (push 'archive hym-workspace-worktree-test--events)
+             (funcall cb t)))
+          (ws (hym-workspace--register-worktree "auth" "main" '("ploy-server"))))
+      (make-directory (expand-file-name "ploy-server/.git" (hym-workspace-root ws)) t)
+      (cl-letf (((symbol-function 'hym-workspace-kill-workspace-servers)
+                 (lambda (_ws &optional _defer-refresh)
+                   (push 'kill hym-workspace-worktree-test--events)))
+                ((symbol-function 'hym-workspace-close)
+                 (lambda (_ws) (push 'close hym-workspace-worktree-test--events)))
+                ((symbol-function 'hym-workspace--repo-worktree-registered-p)
+                 (lambda (_ws _repo) t)))
+        (hym-workspace-archive-worktree ws))
+      (should (equal '(archive close kill)
+                     hym-workspace-worktree-test--events)))))
 
 (ert-deftest hym-workspace-name-from-prompt-dedupes ()
   (let ((hym-workspace--loaded t)

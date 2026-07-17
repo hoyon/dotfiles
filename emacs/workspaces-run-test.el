@@ -207,6 +207,33 @@
       (kill-buffer api-buf)
       (kill-buffer web-buf))))
 
+(ert-deftest hym-workspace-kill-workspace-servers-kills-all-live-for-workspace ()
+  (let ((killed nil)
+        (refreshed nil)
+        (ws '(:name "w" :slug "s" :type worktree :root "~"))
+        (orig-live (symbol-function 'hym-workspace--live-servers))
+        (orig-kill (symbol-function 'hym-workspace--kill-server))
+        (orig-refresh (symbol-function 'hym-workspace--run-refresh)))
+    (unwind-protect
+        (progn
+          (fset 'hym-workspace--live-servers
+                (lambda (_key) '(("api" . "api-buffer")
+                                 ("worker" . "worker-buffer"))))
+          (fset 'hym-workspace--kill-server
+                (lambda (_key repo &optional defer-refresh)
+                  (push (list repo defer-refresh) killed)))
+          (fset 'hym-workspace--run-refresh
+                (lambda () (setq refreshed t)))
+          (should (equal '("api" "worker")
+                         (hym-workspace-kill-workspace-servers ws)))
+          (should (equal '(("api" t) ("worker" t))
+                         (sort killed
+                               (lambda (a b) (string< (car a) (car b))))))
+          (should refreshed))
+      (fset 'hym-workspace--live-servers orig-live)
+      (fset 'hym-workspace--kill-server orig-kill)
+      (fset 'hym-workspace--run-refresh orig-refresh))))
+
 (ert-deftest hym-workspace-kill-server-picker-includes-all-workspaces ()
   (let ((hym-workspace--servers (make-hash-table :test 'equal))
         (api-buf (generate-new-buffer " *api-picker-test*"))

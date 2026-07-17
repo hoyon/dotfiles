@@ -331,6 +331,8 @@ only if it fails."
 (defun hym-workspace-archive-worktree (ws)
   "Tear WS down to just its branch, marking it archived only when teardown
 of every repo succeeds; surface failure via the provisioning badge."
+  (when (fboundp 'hym-workspace-kill-workspace-servers)
+    (hym-workspace-kill-workspace-servers ws t))
   (hym-workspace-close ws)
   (let ((slug (hym-workspace-slug ws))
         (buffer (hym-workspace--setup-buffer ws)))
