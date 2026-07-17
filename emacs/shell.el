@@ -99,6 +99,11 @@ From the default `auto' setting, the first toggle selects the terminal."
    (if (eq evil-ghostel--escape-mode 'terminal) 3 2))
   (force-mode-line-update))
 
+(defun hym/ghostel-send-escape ()
+  "Send one ESC keypress to the Ghostel terminal."
+  (interactive)
+  (ghostel-send-key "escape"))
+
 (use-package evil-ghostel
   :after (ghostel evil)
   :hook (ghostel-mode . evil-ghostel-mode)
@@ -107,6 +112,9 @@ From the default `auto' setting, the first toggle selects the terminal."
   ;; gestures through Ghostel so multiline prompts use bracketed paste.
   (evil-define-key 'insert evil-ghostel-mode-map
     (kbd "C-y") #'ghostel-yank
-    (kbd "s-v") #'ghostel-yank)
+    (kbd "s-v") #'ghostel-yank
+    (kbd "C-c C-e") #'hym/ghostel-send-escape)
+  (define-key ghostel-mode-map (kbd "C-c C-e")
+              #'hym/ghostel-send-escape)
   (define-key ghostel-mode-map (kbd "C-c C-g")
               #'hym/evil-ghostel-toggle-escape))
