@@ -74,8 +74,13 @@
                 :root "~/orca/workspaces/auth" :repos ("ploy-server")
                 :base-branch "main")))
       (let ((cmd (hym-workspace--provision-command ws "ploy-server" nil)))
+        (should (string-match-p "fetch origin" cmd))
+        (should (string-match-p
+                 (regexp-quote (shell-quote-argument
+                                "main:refs/remotes/origin/main"))
+                 cmd))
         (should (string-match-p "worktree add -b auth " cmd))
-        (should (string-match-p "main" cmd))
+        (should (string-match-p "origin/main" cmd))
         (should (string-match-p "CONDUCTOR_WORKSPACE_NAME=auth" cmd))
         (should (string-match-p "CONDUCTOR_ROOT_PATH=" cmd))
         (should (string-match-p (regexp-quote (shell-quote-argument "mix setup")) cmd))))))
@@ -87,7 +92,8 @@
                 :base-branch "main")))
       (let ((cmd (hym-workspace--provision-command ws "ploy-server" t)))
         (should (string-match-p "worktree add auth\\| auth \\|/auth " cmd))
-        (should-not (string-match-p "worktree add -b" cmd))))))
+        (should-not (string-match-p "worktree add -b" cmd))
+        (should-not (string-match-p "fetch origin" cmd))))))
 
 (ert-deftest hym-workspace-provision-runs-worktree-and-setup-on-success ()
   (hym-workspace-worktree-test-with-code

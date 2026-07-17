@@ -83,17 +83,21 @@ Create branch `:slug' unless REUSE-BRANCH is non-nil."
   (let* ((slug (hym-workspace-slug ws))
          (code (expand-file-name repo (expand-file-name hym-workspace-code-root)))
          (dest (expand-file-name repo (hym-workspace-root ws)))
-         (base (hym-workspace-base-branch ws)))
+         (base (hym-workspace-base-branch ws))
+         (remote-base (format "origin/%s" base))
+         (fetch-refspec (format "%s:refs/remotes/%s" base remote-base)))
     (if reuse-branch
         (format "git -C %s worktree add %s %s"
                 (shell-quote-argument code)
                 (shell-quote-argument dest)
                 (shell-quote-argument slug))
-      (format "git -C %s worktree add -b %s %s %s"
+      (format "git -C %s fetch origin %s && git -C %s worktree add -b %s %s %s"
+              (shell-quote-argument code)
+              (shell-quote-argument fetch-refspec)
               (shell-quote-argument code)
               (shell-quote-argument slug)
               (shell-quote-argument dest)
-              (shell-quote-argument base)))))
+              (shell-quote-argument remote-base)))))
 
 (defun hym-workspace--setup-command (ws repo)
   "Return REPO's setup command for WS, or nil when none is configured."
