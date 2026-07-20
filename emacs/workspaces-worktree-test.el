@@ -77,7 +77,7 @@
         (should (string-match-p "fetch origin" cmd))
         (should (string-match-p
                  (regexp-quote (shell-quote-argument
-                                "main:refs/remotes/origin/main"))
+                                "refs/heads/main:refs/remotes/origin/main"))
                  cmd))
         (should (string-match-p "worktree add -b auth " cmd))
         (should (string-match-p "origin/main" cmd))

@@ -85,7 +85,12 @@ Create branch `:slug' unless REUSE-BRANCH is non-nil."
          (dest (expand-file-name repo (hym-workspace-root ws)))
          (base (hym-workspace-base-branch ws))
          (remote-base (format "origin/%s" base))
-         (fetch-refspec (format "%s:refs/remotes/%s" base remote-base)))
+         ;; Keep the source fully qualified.  With fetch.prune enabled, a
+         ;; short source such as "main" is not matched against
+         ;; "refs/heads/main" during pruning, so Git deletes origin/main
+         ;; immediately before trying to update it.
+         (fetch-refspec (format "refs/heads/%s:refs/remotes/%s"
+                                base remote-base)))
     (if reuse-branch
         (format "git -C %s worktree add %s %s"
                 (shell-quote-argument code)
