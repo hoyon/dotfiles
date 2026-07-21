@@ -142,6 +142,11 @@ workspace as `hym-workspace-sidebar--point-name'.  Captured at the time
 of the user's action, before a workspace switch clobbers the point, so
 the cursor stays exactly where it was rather than snapping to the card.")
 
+(defun hym-workspace-sidebar--reset-hscroll ()
+  "Keep every window showing the sidebar pinned to its left edge."
+  (dolist (win (get-buffer-window-list (current-buffer) nil t))
+    (set-window-hscroll win 0)))
+
 (defun hym-workspace-sidebar--at-point ()
   "Return the workspace name on the current line, or nil."
   (get-text-property (line-beginning-position) 'hym-workspace))
@@ -194,7 +199,8 @@ point in sync."
                           name)))
       (hym-workspace-sidebar--goto-workspace name))
     (when-let ((win (get-buffer-window (current-buffer) t)))
-      (set-window-point win (point)))))
+      (set-window-point win (point)))
+    (hym-workspace-sidebar--reset-hscroll)))
 
 (defun hym-workspace-sidebar--remember-point ()
   "Record the workspace and line at point so re-renders can restore them."
@@ -207,8 +213,11 @@ point in sync."
 (define-derived-mode hym-workspace-sidebar-mode special-mode "Workspaces"
   "Major mode for the workspace sidebar."
   (setq-local cursor-type nil)
+  (setq-local truncate-lines t)
+  (setq-local auto-hscroll-mode nil)
   (setq buffer-read-only t)
-  (add-hook 'post-command-hook #'hym-workspace-sidebar--remember-point nil t))
+  (add-hook 'post-command-hook #'hym-workspace-sidebar--remember-point nil t)
+  (add-hook 'post-command-hook #'hym-workspace-sidebar--reset-hscroll nil t))
 
 (defun hym-workspace-sidebar-refresh ()
   "Re-render the sidebar buffer if it exists."
