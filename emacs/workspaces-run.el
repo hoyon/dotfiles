@@ -29,6 +29,10 @@
   "Seconds to wait between starting servers during a bulk restart."
   :type 'number :group 'hym-workspace)
 
+(defcustom hym-workspace-server-shutdown-timeout 3
+  "Seconds to let a server exit after SIGTERM before sending SIGKILL."
+  :type 'number :group 'hym-workspace)
+
 (defvar hym-workspace--agent-state (make-hash-table :test 'equal)
   "Map (SLUG SESSION) to agent state plists.
 Each value has keys :slug, :agent, :session, :state, and :updated-at.")
@@ -356,17 +360,49 @@ real key rather than the literal \"nil\"."
           (hym-workspace--old-server-buffer-name (buffer-name)))
          t)))))
 
-(defun hym-workspace--kill-server (workspace-key repo &optional defer-refresh)
-  "Kill REPO's tracked server in WORKSPACE-KEY and refresh its status.
-When DEFER-REFRESH is non-nil, leave sidebar refresh to the caller."
+(defun hym-workspace--finish-killing-server (proc buf &optional after-kill)
+  "Force-kill PROC if necessary, clean up BUF, then call AFTER-KILL."
+  (when (process-live-p proc)
+    (ignore-errors (kill-process proc)))
+  (when (buffer-live-p buf)
+    (kill-buffer buf))
+  (when after-kill
+    (funcall after-kill)))
+
+(defun hym-workspace--kill-server (workspace-key repo
+                                                &optional defer-refresh after-kill)
+  "Asynchronously kill REPO's tracked server in WORKSPACE-KEY.
+Send SIGTERM first, then SIGKILL after
+`hym-workspace-server-shutdown-timeout' seconds if it is still alive.
+The retired buffer is cleaned up after that timeout.
+When DEFER-REFRESH is non-nil, leave sidebar refresh to the caller.
+Call AFTER-KILL only once the old process has been killed and cleaned up."
   (let* ((server-key (list workspace-key repo))
          (name (gethash server-key hym-workspace--servers))
          (buf (and name (get-buffer name)))
          (proc (and buf (get-buffer-process buf))))
-    (when (process-live-p proc)
-      (delete-process proc))
-    (when (buffer-live-p buf)
-      (kill-buffer buf))
+    (if (process-live-p proc)
+        (progn
+          (hym-workspace--rename-server-tab buf)
+          (hym-workspace--rename-server-buffer buf)
+          (set-process-query-on-exit-flag proc nil)
+          ;; Ghostel's normal process filter renders every shutdown message,
+          ;; and its compile sentinel synchronously redraws and parses the
+          ;; whole buffer on exit.  Detach both before signalling so a noisy
+          ;; or large server shutdown cannot monopolize Emacs.
+          (set-process-filter proc #'ignore)
+          (set-process-sentinel proc #'ignore)
+          (set-process-buffer proc nil)
+          (ignore-errors (signal-process proc 'SIGTERM))
+          (when (buffer-live-p buf)
+            (kill-buffer buf))
+          (run-at-time hym-workspace-server-shutdown-timeout nil
+                       #'hym-workspace--finish-killing-server
+                       proc buf after-kill))
+      (when (buffer-live-p buf)
+        (kill-buffer buf))
+      (when after-kill
+        (funcall after-kill)))
     (remhash server-key hym-workspace--servers)
     (unless defer-refresh
       (hym-workspace--run-refresh))))
@@ -443,13 +479,15 @@ When DEFER-REFRESH is non-nil, leave sidebar refresh to the caller."
              (repo (cond ((null repos) (user-error "No repo has a run script"))
                          ((null (cdr repos)) (car repos))
                          (t (completing-read "Server repo: " repos nil t)))))
-        (when (hym-workspace--server-live-p key repo)
-          (if (yes-or-no-p
-               (format "The %s server is already running; kill and restart it? "
-                       repo))
-              (hym-workspace--kill-server key repo)
-            (user-error "The %s server is still running" repo)))
-        (hym-workspace--start-server ws repo)))))
+        (if (hym-workspace--server-live-p key repo)
+            (if (yes-or-no-p
+                 (format "The %s server is already running; kill and restart it? "
+                         repo))
+                (hym-workspace--kill-server
+                 key repo nil
+                 (lambda () (hym-workspace--start-server ws repo)))
+              (user-error "The %s server is still running" repo))
+          (hym-workspace--start-server ws repo))))))
 
 (defun hym-workspace-run-all-servers ()
   "Run every configured server in the current workspace.
@@ -479,12 +517,16 @@ Servers that are not currently running are left stopped."
            (repos (mapcar #'car (hym-workspace--live-servers key))))
       (unless repos
         (user-error "No servers are running in this workspace"))
-      (dolist (repo repos)
-        (hym-workspace--kill-server key repo t))
-      (hym-workspace--run-refresh)
       (cl-loop for repo in repos
                for delay from 0 by hym-workspace-restart-server-delay
-               do (run-at-time delay nil #'hym-workspace--start-server ws repo))
+               do (let ((repo repo)
+                        (delay delay))
+                    (hym-workspace--kill-server
+                     key repo t
+                     (lambda ()
+                       (run-at-time delay nil
+                                    #'hym-workspace--start-server ws repo)))))
+      (hym-workspace--run-refresh)
       (message "Restarting %d server%s" (length repos)
                (if (= (length repos) 1) "" "s")))))
 
