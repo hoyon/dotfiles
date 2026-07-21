@@ -2,17 +2,15 @@
 
 ;;; Commentary:
 ;;
-;; Ghostel terminals (and vterm buffers) can be left running in the background
-;; when you switch tabs or hide buffers — consuming RAM with no visible trace.
+;; Ghostel terminals (and vterm buffers) can be left running in the background,
+;; consuming RAM with no visible trace.
 ;; This module:
 ;;
-;;   1. Adds a sidebar badge per workspace showing terminal count, total memory,
-;;      and how many are hidden.
+;;   1. Adds a sidebar badge per workspace showing terminal count and total
+;;      memory.
 ;;   2. Provides a detail buffer (`hym-ghostel-monitor') listing every terminal
-;;      with PID, memory, uptime, state, child process, buffer name, tab/window
-;;      reachability,
-;;      and workspace — with keys to kill individual terminals or sweep up all
-;;      hidden ones.
+;;      with PID, memory, uptime, state, child process, buffer name, and
+;;      workspace — with keys to kill individual terminals.
 ;;
 ;; Cross-platform (Linux + macOS): uses `ps` for RSS, `pgrep` for child
 ;; detection, and `process-attributes` for state/uptime.  No /proc parsing.
@@ -90,20 +88,11 @@ Tagged when the terminal is created inside a workspace tab.")
      (equal (buffer-local-value 'hym-ghostel-monitor--workspace buf) key))
    (hym-ghostel-monitor--terminal-buffers)))
 
-(defun hym-ghostel-monitor--reachable-p (buf)
-  "Return non-nil when BUF is displayed or owned by any tab."
-  (or (and (get-buffer-window buf 'all-frames) t)
-      (and (fboundp 'tab-bar-get-buffer-tab)
-           (tab-bar-get-buffer-tab buf t nil t)
-           t)))
-
 (defun hym-ghostel-monitor--buffer-summary (buf)
   "Return cheap terminal summary data for BUF.
 This avoids process inspection and is safe for sidebar rendering."
   (list :buffer buf
         :buffer-name (ignore-errors (buffer-name buf))
-        :reachable (and (buffer-live-p buf)
-                        (hym-ghostel-monitor--reachable-p buf))
         :workspace (or (and (buffer-live-p buf)
                             (buffer-local-value 'hym-ghostel-monitor--workspace
                                                 buf))
@@ -113,8 +102,15 @@ This avoids process inspection and is safe for sidebar rendering."
 
 (defun hym-ghostel-monitor--buffer-pid (buf)
   "Return the PID of the process in BUF, or nil."
-  (when-let ((proc (get-buffer-process buf)))
-    (ignore-errors (process-id proc))))
+  (or (when-let ((proc (get-buffer-process buf)))
+        (ignore-errors (process-id proc)))
+      ;; On macOS Ghostel uses a network process as its Emacs process
+      ;; object, for which `process-id' is nil.  The native terminal's
+      ;; shell PID is stored separately in this buffer-local variable.
+      (when (and (buffer-live-p buf)
+                 (local-variable-p 'ghostel--pid buf))
+        (let ((pid (buffer-local-value 'ghostel--pid buf)))
+          (and (integerp pid) (> pid 0) pid)))))
 
 (defun hym-ghostel-monitor--process-rss-kb (pid)
   "Return the RSS in KB for PID, or 0 on failure.
@@ -166,10 +162,10 @@ Returns the command name of the first interesting child found, or nil."
                     (throw 'found found)))))))))))
 
 (defun hym-ghostel-monitor--buffer-info (buf)
-  "Return a plist of information for terminal buffer BUF.
+"Return a plist of information for terminal buffer BUF.
 Keys: :buffer, :buffer-name, :pid, :rss-kb, :uptime, :state, :what,
-:reachable, :workspace.  Never returns nil — falls back to a sane default
-on any error so the reduction in the badge can always sum :rss-kb."
+:workspace.  Never returns nil — falls back to a sane default on any error so
+the reduction in the badge can always sum :rss-kb."
   (or (ignore-errors
         (when (buffer-live-p buf)
           (let* ((summary (hym-ghostel-monitor--buffer-summary buf))
@@ -241,10 +237,7 @@ Handles both the `float' and `(HIGH LOW MICRO PSEC)' formats returned by
       (concat
        "▸ " (number-to-string count) " term" (if (> count 1) "s" "")
        " · " (hym-ghostel-monitor--format-memory
-              (or (plist-get summary :rss-kb) 0))
-       (when-let ((hidden (plist-get summary :hidden)))
-         (when (> hidden 0)
-           (concat " · " (number-to-string hidden) " hidden")))))))
+              (or (plist-get summary :rss-kb) 0))))))
 
 (defun hym-ghostel-monitor--summaries-from-infos (infos)
   "Return a hash table of workspace summaries built from terminal INFOS."
@@ -259,10 +252,7 @@ Handles both the `float' and `(HIGH LOW MICRO PSEC)' formats returned by
                       :rss-kb (cl-reduce #'+ ws-infos
                                          :key (lambda (info)
                                                 (or (plist-get info :rss-kb) 0))
-                                         :initial-value 0)
-                      :hidden (cl-count-if-not
-                               (lambda (info) (plist-get info :reachable))
-                               ws-infos))
+                                         :initial-value 0))
                 summaries))
      groups)
     summaries))
@@ -296,8 +286,7 @@ Handles both the `float' and `(HIGH LOW MICRO PSEC)' formats returned by
          (count (length bufs)))
     (when (> count 0)
       (list :count count
-            :rss-kb 0
-            :hidden (cl-count-if-not #'hym-ghostel-monitor--reachable-p bufs)))))
+            :rss-kb 0))))
 
 (defun hym-ghostel-monitor--badge (ws)
   "Status function: show terminal summary for workspace WS in the sidebar.
@@ -325,7 +314,6 @@ killed buffer mid-iteration) never breaks the sidebar."
   "Return a `tabulated-list-entries' entry for INFO."
   (let* ((buf (plist-get info :buffer))
          (rss-kb (plist-get info :rss-kb))
-         (reachable (plist-get info :reachable))
          (marked (and (boundp 'hym-ghostel-monitor--marked)
                       (memq buf hym-ghostel-monitor--marked))))
     (list buf
@@ -340,8 +328,6 @@ killed buffer mid-iteration) never breaks the sidebar."
            (plist-get info :state)
            (plist-get info :what)
            (plist-get info :buffer-name)
-           (propertize (if reachable "open" "hidden")
-                       'face (if reachable 'success 'warning))
            (plist-get info :workspace)))))
 
 (defun hym-ghostel-monitor--refresh-entries ()
@@ -445,26 +431,6 @@ killed buffer mid-iteration) never breaks the sidebar."
           (hym-ghostel-monitor--sidebar-refresh)
           (message "Killed %d terminal%s" count (if (> count 1) "s" "")))))))
 
-(defun hym-ghostel-monitor-kill-all-hidden ()
-  "Kill all hidden terminal buffers.
-Hidden means the buffer is neither displayed in a window nor owned by any tab."
-  (interactive)
-  (hym-ghostel-monitor--refresh-entries)
-  (let ((hidden (seq-filter
-                 (lambda (info) (not (plist-get info :reachable)))
-                 hym-ghostel-monitor--entries)))
-    (if (null hidden)
-        (message "No hidden terminals found")
-      (when (yes-or-no-p
-             (format "Kill %d hidden terminal%s? "
-                     (length hidden) (if (> (length hidden) 1) "s" "")))
-        (dolist (info hidden)
-          (hym-ghostel-monitor--kill-entry info))
-        (hym-ghostel-monitor-refresh)
-        (hym-ghostel-monitor--sidebar-refresh)
-        (message "Killed %d hidden terminal%s"
-                 (length hidden) (if (> (length hidden) 1) "s" ""))))))
-
 (defun hym-ghostel-monitor-kill-all ()
   "Kill all terminal buffers."
   (interactive)
@@ -532,7 +498,6 @@ Hidden means the buffer is neither displayed in a window nor owned by any tab."
     (define-key map (kbd "u")     #'hym-ghostel-monitor-unmark)
     (define-key map (kbd "U")     #'hym-ghostel-monitor-unmark-all)
     (define-key map (kbd "x")     #'hym-ghostel-monitor-execute)
-    (define-key map (kbd "K")     #'hym-ghostel-monitor-kill-all-hidden)
     (define-key map (kbd "a")     #'hym-ghostel-monitor-kill-all)
     (define-key map (kbd "g")     #'hym-ghostel-monitor-refresh)
     (define-key map (kbd "q")     #'quit-window)
@@ -548,7 +513,6 @@ Dired-style marking workflow:
   u     unmark current line
   U     unmark all
   x     kill all marked (with confirmation)
-  K     kill all hidden terminals
   a     kill all terminals
   g     refresh
   RET   visit terminal buffer
@@ -562,7 +526,6 @@ Dired-style marking workflow:
          ("State"    5  nil)
          ("Running"  10 nil)
          ("Buffer"   25 nil)
-         ("Open"     8  nil)
          ("Workspace" 15 nil)])
   (setq tabulated-list-padding 2)
   (setq truncate-lines t)
@@ -579,7 +542,6 @@ Dired-style marking workflow:
     (evil-local-set-key 'normal (kbd "u")   #'hym-ghostel-monitor-unmark)
     (evil-local-set-key 'normal (kbd "U")   #'hym-ghostel-monitor-unmark-all)
     (evil-local-set-key 'normal (kbd "x")   #'hym-ghostel-monitor-execute)
-    (evil-local-set-key 'normal (kbd "K")   #'hym-ghostel-monitor-kill-all-hidden)
     (evil-local-set-key 'normal (kbd "a")   #'hym-ghostel-monitor-kill-all)
     (evil-local-set-key 'normal (kbd "g")   #'hym-ghostel-monitor-refresh)
     (evil-local-set-key 'normal (kbd "q")   #'quit-window)
@@ -589,14 +551,13 @@ Dired-style marking workflow:
 (defun hym-ghostel-monitor ()
   "Open the ghostel terminal monitor buffer.
 Lists every ghostel (and optionally vterm) terminal across all
-workspaces with memory, uptime, child process, and visibility.
+workspaces with memory, uptime, and child process.
 
 Dired-style marking:
   d     mark/unmark for deletion
   u     unmark current
   U     unmark all
   x     kill all marked (with confirmation)
-  K     kill all hidden terminals
   a     kill all terminals
   g     refresh
   RET   visit terminal buffer

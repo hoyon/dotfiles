@@ -30,20 +30,6 @@
        (when-let ((buf (get-buffer hym-ghostel-monitor-buffer-name)))
          (kill-buffer buf)))))
 
-(ert-deftest hym-ghostel-monitor-hidden-means-not-reachable-from-window-or-tab ()
-  (hym-ghostel-monitor-test-with-buffers (term)
-    (cl-letf (((symbol-function 'tab-bar-get-buffer-tab)
-               (lambda (&rest _) nil)))
-      (should-not (plist-get (hym-ghostel-monitor--buffer-info term) :reachable))
-      (let ((win (display-buffer term)))
-        (unwind-protect
-            (should (plist-get (hym-ghostel-monitor--buffer-info term) :reachable))
-          (when (window-live-p win)
-            (delete-window win)))))
-    (cl-letf (((symbol-function 'tab-bar-get-buffer-tab)
-               (lambda (&rest _) 'tab)))
-      (should (plist-get (hym-ghostel-monitor--buffer-info term) :reachable)))))
-
 (ert-deftest hym-ghostel-monitor-refresh-preserves-monitor-point ()
   (hym-ghostel-monitor-test-with-buffers (one two)
     (with-current-buffer (get-buffer-create hym-ghostel-monitor-buffer-name)
@@ -76,7 +62,7 @@
                 ((symbol-function 'hym-ghostel-monitor--buffer-info)
                  (lambda (_) (error "expensive scan during badge render"))))
         (should (equal (hym-ghostel-monitor--badge '(:name "ws"))
-                       '("▸ 1 term · 0 KB · 1 hidden")))))))
+                       '("▸ 1 term · 0 KB")))))))
 
 (ert-deftest hym-ghostel-monitor-process-tree-rss-guards-cycles ()
   (cl-letf (((symbol-function 'hym-ghostel-monitor--process-rss-kb)
@@ -88,3 +74,11 @@
                  (2 '(1))
                  (_ nil)))))
     (should (= (hym-ghostel-monitor--process-tree-rss 1) 2))))
+
+(ert-deftest hym-ghostel-monitor-buffer-pid-falls-back-to-ghostel-pid ()
+  (hym-ghostel-monitor-test-with-buffers (term)
+    (with-current-buffer term
+      (setq-local ghostel--pid 12345))
+    (cl-letf (((symbol-function 'get-buffer-process)
+               (lambda (_) nil)))
+      (should (= (hym-ghostel-monitor--buffer-pid term) 12345)))))
