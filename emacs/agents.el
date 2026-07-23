@@ -52,10 +52,9 @@
 
   (setq
    agent-shell-session-strategy 'new
-
-   agent-shell-anthropic-claude-environment (agent-shell-make-environment-variables
-                                             "CLAUDE_CODE_EXECUTABLE" (executable-find "claude"))
-   )
+   agent-shell-preferred-agent-config '(preselect . codex)
+   agent-shell-openai-authentication (agent-shell-openai-make-authentication :login t)
+   agent-shell-anthropic-claude-environment (agent-shell-make-environment-variables "CLAUDE_CODE_EXECUTABLE" (executable-find "claude")))
 
   (general-define-key
    :states 'normal
