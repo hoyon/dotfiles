@@ -43,6 +43,44 @@
       (with-current-buffer hym-ghostel-monitor-buffer-name
         (should (= (point) saved-point))))))
 
+(ert-deftest hym-ghostel-monitor-detail-filters-by-workspace ()
+  (hym-ghostel-monitor-test-with-buffers (one two)
+    (with-current-buffer one
+      (setq hym-ghostel-monitor--workspace "one"))
+    (with-current-buffer two
+      (setq hym-ghostel-monitor--workspace "two"))
+    (let ((hym-ghostel-monitor--initial-workspace-filter "one")
+          (hym-ghostel-monitor--sidebar-cache
+           (make-hash-table :test 'equal)))
+      (cl-letf (((symbol-function 'hym-ghostel-monitor--capture-process-table)
+                 (lambda () (make-hash-table :test 'eql))))
+        (with-current-buffer
+            (get-buffer-create hym-ghostel-monitor-buffer-name)
+          (hym-ghostel-monitor-mode)
+          (should (equal hym-ghostel-monitor--workspace-filter "one"))
+          (should (equal hym-ghostel-monitor--entries
+                         (list (hym-ghostel-monitor--buffer-info
+                                one (make-hash-table :test 'eql)))))
+          ;; Filtering the detail view must not truncate the global cache.
+          (should (gethash "one" hym-ghostel-monitor--sidebar-cache))
+          (should (gethash "two" hym-ghostel-monitor--sidebar-cache)))))))
+
+(ert-deftest hym-ghostel-monitor-sidebar-workspace-uses-workspace-key ()
+  (let (opened-with)
+    (cl-letf (((symbol-function 'derived-mode-p)
+               (lambda (&rest _) t))
+              ((symbol-function 'hym-workspace-sidebar--at-point)
+               (lambda () "action gate"))
+              ((symbol-function 'hym-workspace-get)
+               (lambda (name)
+                 (and (equal name "action gate")
+                      '(:name "action gate" :slug "action_gate"))))
+              ((symbol-function 'hym-ghostel-monitor)
+               (lambda (workspace)
+                 (setq opened-with workspace))))
+      (hym-ghostel-monitor-sidebar-workspace)
+      (should (equal opened-with "action_gate")))))
+
 (ert-deftest hym-ghostel-monitor-live-marked-prunes-dead-buffers ()
   (hym-ghostel-monitor-test-with-buffers (live dead)
     (with-current-buffer (get-buffer-create hym-ghostel-monitor-buffer-name)

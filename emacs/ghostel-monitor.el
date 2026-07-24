@@ -26,6 +26,8 @@
 (defvar hym-workspace-sidebar-status-functions)
 (declare-function hym-workspace--key "workspaces")
 (declare-function hym-workspace-current "workspaces")
+(declare-function hym-workspace-get "workspaces")
+(declare-function hym-workspace-sidebar--at-point "workspaces-sidebar")
 (declare-function hym-workspace-sidebar-refresh "workspaces-sidebar")
 
 ;; ── Customisation ───────────────────────────────────────────────────────────
@@ -439,6 +441,20 @@ killed buffer mid-iteration) never breaks the sidebar."
 (defvar hym-ghostel-monitor--entries nil
   "Current list of terminal info plists for the detail buffer.")
 
+(defvar-local hym-ghostel-monitor--workspace-filter nil
+  "Workspace key whose terminals are shown, or nil to show all terminals.")
+
+(defvar hym-ghostel-monitor--initial-workspace-filter nil
+  "Dynamically bound workspace filter used while creating the detail buffer.")
+
+(defun hym-ghostel-monitor--set-workspace-filter (workspace)
+  "Restrict the current detail buffer to WORKSPACE.
+When WORKSPACE is nil, show terminals from every workspace."
+  (setq-local hym-ghostel-monitor--workspace-filter workspace)
+  (setq-local header-line-format
+              (when workspace
+                (format " Terminals for workspace: %s" workspace))))
+
 (defun hym-ghostel-monitor--make-entry (info)
   "Return a `tabulated-list-entries' entry for INFO."
   (let* ((buf (plist-get info :buffer))
@@ -461,16 +477,27 @@ killed buffer mid-iteration) never breaks the sidebar."
 
 (defun hym-ghostel-monitor--refresh-entries ()
   "Rebuild the entry list from live buffers."
-  (let ((table (or (hym-ghostel-monitor--capture-process-table)
-                   (make-hash-table :test 'eql))))
+  (let* ((table (or (hym-ghostel-monitor--capture-process-table)
+                    (make-hash-table :test 'eql)))
+         (infos
+          (mapcar
+           (lambda (buf)
+             (hym-ghostel-monitor--buffer-info buf table))
+           (hym-ghostel-monitor--terminal-buffers)))
+         (visible-infos
+          (if hym-ghostel-monitor--workspace-filter
+              (seq-filter
+               (lambda (info)
+                 (equal (plist-get info :workspace)
+                        hym-ghostel-monitor--workspace-filter))
+               infos)
+            infos)))
     (setq tabulated-list-entries
           (mapcar #'hym-ghostel-monitor--make-entry
-                  (setq hym-ghostel-monitor--entries
-                        (mapcar
-                         (lambda (buf)
-                           (hym-ghostel-monitor--buffer-info buf table))
-                         (hym-ghostel-monitor--terminal-buffers))))))
-  (hym-ghostel-monitor--cache-sidebar-infos hym-ghostel-monitor--entries))
+                  (setq hym-ghostel-monitor--entries visible-infos)))
+    ;; Keep the global sidebar cache complete even when the detail buffer is
+    ;; displaying just one workspace.
+    (hym-ghostel-monitor--cache-sidebar-infos infos)))
 
 (defun hym-ghostel-monitor--entry-at-point ()
   "Return the info plist for the entry at point, or nil."
@@ -663,6 +690,8 @@ Dired-style marking workflow:
   (setq tabulated-list-padding 2)
   (setq truncate-lines t)
   (setq tabulated-list-sort-key '("Memory" . nil))
+  (hym-ghostel-monitor--set-workspace-filter
+   hym-ghostel-monitor--initial-workspace-filter)
   (hym-ghostel-monitor--refresh-entries)
   (tabulated-list-init-header)
   (tabulated-list-print t)
@@ -681,10 +710,11 @@ Dired-style marking workflow:
     (evil-local-set-key 'normal (kbd "RET") #'hym-ghostel-monitor-visit)))
 
 ;;;###autoload
-(defun hym-ghostel-monitor ()
+(defun hym-ghostel-monitor (&optional workspace)
   "Open the ghostel terminal monitor buffer.
 Lists every ghostel (and optionally vterm) terminal across all
 workspaces with memory, uptime, and child process.
+When WORKSPACE is non-nil, show only terminals tagged with that workspace key.
 
 Dired-style marking:
   d     mark/unmark for deletion
@@ -698,11 +728,24 @@ Dired-style marking:
   (interactive)
   (if-let ((buf (get-buffer hym-ghostel-monitor-buffer-name)))
       (progn
+        (with-current-buffer buf
+          (hym-ghostel-monitor--set-workspace-filter workspace))
         (pop-to-buffer buf)
         (hym-ghostel-monitor-refresh))
-    (with-current-buffer (get-buffer-create hym-ghostel-monitor-buffer-name)
-      (hym-ghostel-monitor-mode))
+    (let ((hym-ghostel-monitor--initial-workspace-filter workspace))
+      (with-current-buffer (get-buffer-create hym-ghostel-monitor-buffer-name)
+        (hym-ghostel-monitor-mode)))
     (pop-to-buffer hym-ghostel-monitor-buffer-name)))
+
+(defun hym-ghostel-monitor-sidebar-workspace ()
+  "Open the terminal monitor for the workspace at point in the sidebar."
+  (interactive)
+  (unless (derived-mode-p 'hym-workspace-sidebar-mode)
+    (user-error "This command must be used from the workspace sidebar"))
+  (if-let* ((name (hym-workspace-sidebar--at-point))
+            (workspace (hym-workspace-get name)))
+      (hym-ghostel-monitor (hym-workspace--key workspace))
+    (user-error "No registered workspace at point")))
 
 ;; ── Initialisation ──────────────────────────────────────────────────────────
 
@@ -725,10 +768,10 @@ Dired-style marking:
                        #'hym-ghostel-monitor--badge)
           (when (bound-and-true-p hym-workspace-sidebar-mode-map)
             (define-key hym-workspace-sidebar-mode-map
-                        (kbd "t") #'hym-ghostel-monitor)
+                        (kbd "t") #'hym-ghostel-monitor-sidebar-workspace)
             (when (fboundp 'evil-define-key)
               (evil-define-key 'normal hym-workspace-sidebar-mode-map
-                (kbd "t") #'hym-ghostel-monitor)))))
+                (kbd "t") #'hym-ghostel-monitor-sidebar-workspace)))))
     (error
      (message "ghostel-monitor install error: %s" (error-message-string err)))))
 
