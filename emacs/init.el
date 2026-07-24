@@ -107,7 +107,6 @@
   :keymaps 'local)
 
 (load-config "evil.el")
-(load-config "worktree.el")
 (load-config "theme.el")
 (load-config "vertico.el")
 (load-config "shell.el")
