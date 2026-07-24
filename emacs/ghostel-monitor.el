@@ -12,8 +12,9 @@
 ;;      with PID, memory, uptime, state, child process, buffer name, and
 ;;      workspace — with keys to kill individual terminals.
 ;;
-;; Cross-platform (Linux + macOS): uses `ps` for RSS, `pgrep` for child
-;; detection, and `process-attributes` for state/uptime.  No /proc parsing.
+;; Cross-platform (Linux + macOS): captures one portable `ps` snapshot for
+;; RSS, parent/child relationships, state, uptime, and command names.  Sidebar
+;; snapshots run asynchronously, and no /proc parsing or `pgrep` is required.
 
 ;;; Code:
 (require 'cl-lib)
@@ -48,9 +49,9 @@ shell itself."
   :group 'hym-ghostel-monitor)
 
 (defcustom hym-ghostel-monitor-sidebar-refresh-interval 5
-  "Minimum seconds between expensive sidebar memory refreshes.
-Workspace switches should render from cached process data; the expensive
-`ps'/`pgrep' scan is deferred to an idle timer."
+  "Minimum seconds between sidebar memory refreshes.
+Workspace switches render from cached process data; a single asynchronous
+`ps' snapshot is deferred to an idle timer."
   :type 'number
   :group 'hym-ghostel-monitor)
 
@@ -112,73 +113,143 @@ This avoids process inspection and is safe for sidebar rendering."
         (let ((pid (buffer-local-value 'ghostel--pid buf)))
           (and (integerp pid) (> pid 0) pid)))))
 
-(defun hym-ghostel-monitor--process-rss-kb (pid)
-  "Return the RSS in KB for PID, or 0 on failure.
-Uses `ps' which works identically on Linux and macOS."
-  (or (ignore-errors
-        (string-to-number
-         (string-trim
-          (car (process-lines "ps" "-o" "rss=" "-p"
-                              (number-to-string pid))))))
-      0))
+(defconst hym-ghostel-monitor--ps-fields
+  "pid=,ppid=,rss=,state=,etime=,comm="
+  "Portable process fields requested from macOS/BSD and Linux procps `ps'.")
 
-(defun hym-ghostel-monitor--process-children (pid)
-  "Return a list of immediate child PIDs for PID.
-Returns nil when `pgrep' is unavailable or PID has no children."
-  (when (executable-find "pgrep")
-    (ignore-errors
-      (mapcar #'string-to-number
-              (process-lines "pgrep" "-P" (number-to-string pid))))))
+(defun hym-ghostel-monitor--ps-command ()
+  "Return the command used to capture one portable process-table snapshot."
+  (list (or (executable-find "ps") "ps")
+        "-axo" hym-ghostel-monitor--ps-fields))
 
-(defun hym-ghostel-monitor--process-tree-rss (pid &optional seen)
-  "Sum the RSS (KB) of PID and all its descendants."
+(defun hym-ghostel-monitor--make-process (&rest args)
+  "Call `make-process' with ARGS.
+Kept as a wrapper so asynchronous refresh behavior can be tested without
+starting an operating-system process."
+  (apply #'make-process args))
+
+(defun hym-ghostel-monitor--parse-elapsed (value)
+  "Convert a portable `ps' elapsed-time VALUE to seconds.
+VALUE may have the form MM:SS, HH:MM:SS, or DD-HH:MM:SS."
+  (when (string-match
+         "\\`\\(?:\\([0-9]+\\)-\\)?\\(?:\\([0-9]+\\):\\)?\\([0-9]+\\):\\([0-9]+\\)\\'"
+         value)
+    (+ (* (string-to-number (or (match-string 1 value) "0")) 86400)
+       (* (string-to-number (or (match-string 2 value) "0")) 3600)
+       (* (string-to-number (match-string 3 value)) 60)
+       (string-to-number (match-string 4 value)))))
+
+(defun hym-ghostel-monitor--parse-process-table (text)
+  "Parse a macOS/BSD or Linux procps process snapshot from TEXT.
+Return a hash table keyed by PID.  Each value is a plist containing
+`:ppid', `:rss-kb', `:state', `:etime', `:comm', and `:children'."
+  (let ((table (make-hash-table :test 'eql)))
+    (dolist (line (split-string text "\n" t))
+      (when (string-match
+             (concat
+              "\\`[[:space:]]*\\([0-9]+\\)[[:space:]]+"
+              "\\([0-9]+\\)[[:space:]]+"
+              "\\([0-9]+\\)[[:space:]]+"
+              "\\([^[:space:]]+\\)[[:space:]]+"
+              "\\([^[:space:]]+\\)[[:space:]]+"
+              "\\(.+\\)\\'")
+             line)
+        (let* ((pid (string-to-number (match-string 1 line)))
+               (ppid (string-to-number (match-string 2 line)))
+               (comm (string-trim (match-string 6 line))))
+          (puthash pid
+                   (list :ppid ppid
+                         :rss-kb (string-to-number (match-string 3 line))
+                         :state (match-string 4 line)
+                         :etime (hym-ghostel-monitor--parse-elapsed
+                                 (match-string 5 line))
+                         ;; macOS may emit a full path; Linux usually emits a
+                         ;; basename.  Normalize both for labels and matching.
+                         :comm (file-name-nondirectory comm)
+                         :children nil)
+                   table))))
+    (maphash
+     (lambda (pid info)
+       (when-let ((parent (gethash (plist-get info :ppid) table)))
+         (puthash (plist-get info :ppid)
+                  (plist-put parent :children
+                             (cons pid (plist-get parent :children)))
+                  table)))
+     table)
+    table))
+
+(defun hym-ghostel-monitor--capture-process-table ()
+  "Synchronously capture and parse one process-table snapshot.
+This is used only by an explicitly opened detail monitor.  Sidebar refreshes
+use `make-process' through `hym-ghostel-monitor--refresh-sidebar-cache'."
+  (condition-case nil
+      (with-temp-buffer
+        (let* ((command (hym-ghostel-monitor--ps-command))
+               (program (car command))
+               (args (cdr command))
+               (process-environment
+                (cons "LC_ALL=C" process-environment)))
+          (when (zerop (apply #'process-file program nil t nil args))
+            (hym-ghostel-monitor--parse-process-table (buffer-string)))))
+    (error nil)))
+
+(defun hym-ghostel-monitor--snapshot-tree-rss (pid table &optional seen)
+  "Sum PID and all descendants' RSS in TABLE, guarding against cycles."
   (let ((seen (or seen (make-hash-table :test 'eql))))
     (if (gethash pid seen)
         0
       (puthash pid t seen)
-      (let ((total (hym-ghostel-monitor--process-rss-kb pid)))
-        (dolist (child (hym-ghostel-monitor--process-children pid) total)
+      (let* ((info (gethash pid table))
+             (total (or (plist-get info :rss-kb) 0)))
+        (dolist (child (plist-get info :children) total)
           (cl-incf total
-                   (hym-ghostel-monitor--process-tree-rss child seen)))))))
+                   (hym-ghostel-monitor--snapshot-tree-rss
+                    child table seen)))))))
 
-(defun hym-ghostel-monitor--find-interesting-child (pid &optional depth seen)
-  "Walk PID's descendants up to DEPTH looking for a known agent process.
-Returns the command name of the first interesting child found, or nil."
-  (when (and (or (null depth) (< depth 4))
-             (executable-find "pgrep")
-             (not (gethash pid (or seen (make-hash-table :test 'eql)))))
+(defun hym-ghostel-monitor--snapshot-interesting-child
+    (pid table &optional depth seen)
+  "Find a known agent below PID in TABLE, searching at most four levels."
+  (when (or (null depth) (< depth 4))
     (let ((seen (or seen (make-hash-table :test 'eql))))
-      (puthash pid t seen)
-      (catch 'found
-        (dolist (child (hym-ghostel-monitor--process-children pid))
-          (unless (gethash child seen)
-            (let* ((attrs (ignore-errors (process-attributes child)))
-                   (comm (cdr (assq 'comm attrs))))
-              (when comm
+      (unless (gethash pid seen)
+        (puthash pid t seen)
+        (catch 'found
+          (dolist (child (plist-get (gethash pid table) :children))
+            (unless (gethash child seen)
+              (let ((comm (plist-get (gethash child table) :comm)))
                 (if (member comm hym-ghostel-monitor-known-agents)
                     (throw 'found comm)
-                  (when-let ((found (hym-ghostel-monitor--find-interesting-child
-                                     child (1+ (or depth 0)) seen)))
+                  (when-let ((found
+                              (hym-ghostel-monitor--snapshot-interesting-child
+                               child table (1+ (or depth 0)) seen)))
                     (throw 'found found)))))))))))
 
-(defun hym-ghostel-monitor--buffer-info (buf)
-"Return a plist of information for terminal buffer BUF.
+(defun hym-ghostel-monitor--buffer-info (buf &optional process-table)
+  "Return a plist of information for terminal buffer BUF.
 Keys: :buffer, :buffer-name, :pid, :rss-kb, :uptime, :state, :what,
 :workspace.  Never returns nil — falls back to a sane default on any error so
-the reduction in the badge can always sum :rss-kb."
+the reduction in the badge can always sum :rss-kb.
+PROCESS-TABLE is a parsed `ps' snapshot.  When omitted, capture one snapshot
+for this explicit detail refresh."
   (or (ignore-errors
         (when (buffer-live-p buf)
-          (let* ((summary (hym-ghostel-monitor--buffer-summary buf))
+          (let* ((table (or process-table
+                            (hym-ghostel-monitor--capture-process-table)
+                            (make-hash-table :test 'eql)))
+                 (summary (hym-ghostel-monitor--buffer-summary buf))
                  (pid  (hym-ghostel-monitor--buffer-pid buf))
-                 (attrs (and pid (process-attributes pid)))
-                 (rss  (if pid (hym-ghostel-monitor--process-tree-rss pid) 0))
+                 (attrs (and pid (gethash pid table)))
+                 (rss  (if pid
+                           (hym-ghostel-monitor--snapshot-tree-rss pid table)
+                         0))
                  (what (if pid
-                           (or (hym-ghostel-monitor--find-interesting-child pid)
-                               (cdr (assq 'comm attrs))
+                           (or (hym-ghostel-monitor--snapshot-interesting-child
+                                pid table)
+                               (plist-get attrs :comm)
                                "?")
                          "-"))
-                 (state (or (cdr (assq 'state attrs)) "?"))
-                 (etime (cdr (assq 'etime attrs)))
+                 (state (or (plist-get attrs :state) "?"))
+                 (etime (plist-get attrs :etime))
                  (uptime (if etime (hym-ghostel-monitor--format-uptime etime) "?")))
             (append summary
                     (list
@@ -199,9 +270,8 @@ the reduction in the badge can always sum :rss-kb."
 ;; ── Formatting ──────────────────────────────────────────────────────────────
 
 (defun hym-ghostel-monitor--format-uptime (etime)
-  "Convert an Emacs `etime' (seconds as a float) to a human string.
-Handles both the `float' and `(HIGH LOW MICRO PSEC)' formats returned by
-`process-attributes' across different platforms."
+  "Convert ETIME to a human-readable uptime string.
+ETIME may be seconds or an Emacs time value."
   (let* ((s (floor (if (numberp etime)
                        etime
                      (float-time etime))))
@@ -229,6 +299,9 @@ Handles both the `float' and `(HIGH LOW MICRO PSEC)' formats returned by
 
 (defvar hym-ghostel-monitor--sidebar-cache-timer nil
   "Idle timer used to refresh sidebar process summaries.")
+
+(defvar hym-ghostel-monitor--sidebar-cache-process nil
+  "Asynchronous `ps' process currently refreshing the sidebar cache.")
 
 (defun hym-ghostel-monitor--summary-line (summary)
   "Return a sidebar line for SUMMARY, or nil."
@@ -264,16 +337,72 @@ Handles both the `float' and `(HIGH LOW MICRO PSEC)' formats returned by
   (setq hym-ghostel-monitor--sidebar-cache-time (float-time)))
 
 (defun hym-ghostel-monitor--refresh-sidebar-cache ()
-  "Refresh sidebar summary cache with a full process scan."
+  "Start an asynchronous process snapshot for the sidebar cache."
   (setq hym-ghostel-monitor--sidebar-cache-timer nil)
-  (hym-ghostel-monitor--cache-sidebar-infos
-   (mapcar #'hym-ghostel-monitor--buffer-info
-           (hym-ghostel-monitor--terminal-buffers)))
-  (hym-ghostel-monitor--sidebar-refresh))
+  (unless (process-live-p hym-ghostel-monitor--sidebar-cache-process)
+    (let ((stdout (generate-new-buffer " *ghostel-monitor-ps*"))
+          (stderr (generate-new-buffer " *ghostel-monitor-ps-stderr*"))
+          (buffers (hym-ghostel-monitor--terminal-buffers)))
+      (condition-case err
+          (let* ((command (hym-ghostel-monitor--ps-command))
+                 (process-environment
+                  (cons "LC_ALL=C" process-environment))
+                 (process
+                  (hym-ghostel-monitor--make-process
+                   :name "ghostel-monitor-ps"
+                   :buffer stdout
+                   :stderr stderr
+                   :command command
+                   :coding 'utf-8-unix
+                   :connection-type 'pipe
+                   :noquery t
+                   :sentinel #'hym-ghostel-monitor--process-snapshot-sentinel)))
+            (process-put process 'hym-ghostel-monitor-buffers buffers)
+            (process-put process 'hym-ghostel-monitor-stderr stderr)
+            (setq hym-ghostel-monitor--sidebar-cache-process process))
+        (error
+         (when (buffer-live-p stdout) (kill-buffer stdout))
+         (when (buffer-live-p stderr) (kill-buffer stderr))
+         (message "ghostel-monitor process scan failed to start: %s"
+                  (error-message-string err)))))))
+
+(defun hym-ghostel-monitor--process-snapshot-sentinel (process _event)
+  "Finish an asynchronous sidebar snapshot when PROCESS exits."
+  (when (memq (process-status process) '(exit signal))
+    (let ((stdout (process-buffer process))
+          (stderr (process-get process 'hym-ghostel-monitor-stderr))
+          (buffers (process-get process 'hym-ghostel-monitor-buffers)))
+      (unwind-protect
+          (when (eq process hym-ghostel-monitor--sidebar-cache-process)
+            (setq hym-ghostel-monitor--sidebar-cache-process nil)
+            (if (and (eq (process-status process) 'exit)
+                     (zerop (process-exit-status process))
+                     (buffer-live-p stdout))
+                (let ((table
+                       (with-current-buffer stdout
+                         (hym-ghostel-monitor--parse-process-table
+                          (buffer-string)))))
+                  (hym-ghostel-monitor--cache-sidebar-infos
+                   (mapcar (lambda (buf)
+                             (hym-ghostel-monitor--buffer-info buf table))
+                           (seq-filter #'buffer-live-p buffers)))
+                  (hym-ghostel-monitor--sidebar-refresh))
+              (message
+               "ghostel-monitor process scan failed%s"
+               (if (and (buffer-live-p stderr)
+                        (> (buffer-size stderr) 0))
+                   (format ": %s"
+                           (with-current-buffer stderr
+                             (string-trim (buffer-string))))
+                 ""))))
+        (when (buffer-live-p stdout) (kill-buffer stdout))
+        (when (buffer-live-p stderr) (kill-buffer stderr))))))
 
 (defun hym-ghostel-monitor--schedule-sidebar-cache-refresh ()
   "Schedule an idle refresh of cached sidebar process data when stale."
   (when (and (not (timerp hym-ghostel-monitor--sidebar-cache-timer))
+             (not (process-live-p
+                   hym-ghostel-monitor--sidebar-cache-process))
              (> (- (float-time) hym-ghostel-monitor--sidebar-cache-time)
                 hym-ghostel-monitor-sidebar-refresh-interval))
     (setq hym-ghostel-monitor--sidebar-cache-timer
@@ -332,11 +461,15 @@ killed buffer mid-iteration) never breaks the sidebar."
 
 (defun hym-ghostel-monitor--refresh-entries ()
   "Rebuild the entry list from live buffers."
-  (setq tabulated-list-entries
-        (mapcar #'hym-ghostel-monitor--make-entry
-                (setq hym-ghostel-monitor--entries
-                      (mapcar #'hym-ghostel-monitor--buffer-info
-                              (hym-ghostel-monitor--terminal-buffers)))))
+  (let ((table (or (hym-ghostel-monitor--capture-process-table)
+                   (make-hash-table :test 'eql))))
+    (setq tabulated-list-entries
+          (mapcar #'hym-ghostel-monitor--make-entry
+                  (setq hym-ghostel-monitor--entries
+                        (mapcar
+                         (lambda (buf)
+                           (hym-ghostel-monitor--buffer-info buf table))
+                         (hym-ghostel-monitor--terminal-buffers))))))
   (hym-ghostel-monitor--cache-sidebar-infos hym-ghostel-monitor--entries))
 
 (defun hym-ghostel-monitor--entry-at-point ()

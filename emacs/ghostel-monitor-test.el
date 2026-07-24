@@ -64,21 +64,98 @@
         (should (equal (hym-ghostel-monitor--badge '(:name "ws"))
                        '("▸ 1 term · 0 KB")))))))
 
+(ert-deftest hym-ghostel-monitor-parses-macos-process-snapshot ()
+  (let* ((text (concat
+                "    1     0  13744 Ss   10-00:19:44 /sbin/launchd\n"
+                "  100     1   2048 S       01:02:03 /opt/homebrew/bin/fish\n"
+                "  101   100   4096 R          00:05 /usr/local/bin/claude\n"))
+         (table (hym-ghostel-monitor--parse-process-table text))
+         (root (gethash 1 table))
+         (shell (gethash 100 table)))
+    (should (= (hash-table-count table) 3))
+    (should (equal (plist-get root :comm) "launchd"))
+    (should (equal (plist-get shell :comm) "fish"))
+    (should (= (plist-get root :etime) 865184))
+    (should (= (plist-get shell :etime) 3723))
+    (should (equal (plist-get shell :children) '(101)))
+    (should (= (hym-ghostel-monitor--snapshot-tree-rss 100 table) 6144))
+    (should (equal
+             (hym-ghostel-monitor--snapshot-interesting-child 100 table)
+             "claude"))))
+
+(ert-deftest hym-ghostel-monitor-parses-linux-process-snapshot ()
+  (let* ((text (concat
+                "      1       0  12300 Ss   2-03:04:05 systemd\n"
+                "   2000       1   1500 S          09:08 bash\n"
+                "   2001    2000  25000 Sl+        01:07 node\n"))
+         (table (hym-ghostel-monitor--parse-process-table text))
+         (root (gethash 1 table))
+         (node (gethash 2001 table)))
+    (should (= (hash-table-count table) 3))
+    (should (equal (plist-get root :comm) "systemd"))
+    (should (= (plist-get root :etime) 183845))
+    (should (equal (plist-get node :state) "Sl+"))
+    (should (= (plist-get node :etime) 67))
+    (should (= (hym-ghostel-monitor--snapshot-tree-rss 2000 table) 26500))
+    (should (equal
+             (hym-ghostel-monitor--snapshot-interesting-child 2000 table)
+             "node"))))
+
 (ert-deftest hym-ghostel-monitor-process-tree-rss-guards-cycles ()
-  (cl-letf (((symbol-function 'hym-ghostel-monitor--process-rss-kb)
-             (lambda (_) 1))
-            ((symbol-function 'hym-ghostel-monitor--process-children)
-             (lambda (pid)
-               (pcase pid
-                 (1 '(2))
-                 (2 '(1))
-                 (_ nil)))))
-    (should (= (hym-ghostel-monitor--process-tree-rss 1) 2))))
+  (let ((table (make-hash-table :test 'eql)))
+    (puthash 1 '(:rss-kb 1 :children (2)) table)
+    (puthash 2 '(:rss-kb 1 :children (1)) table)
+    (should (= (hym-ghostel-monitor--snapshot-tree-rss 1 table) 2))))
+
+(ert-deftest hym-ghostel-monitor-buffer-info-reuses-process-snapshot ()
+  (hym-ghostel-monitor-test-with-buffers (term)
+    (with-current-buffer term
+      (setq-local ghostel--pid 100))
+    (let ((table (hym-ghostel-monitor--parse-process-table
+                  (concat
+                   "  100     1   2048 S       01:02:03 /bin/fish\n"
+                   "  101   100   4096 R          00:05 /usr/bin/claude\n"))))
+      (cl-letf (((symbol-function 'hym-ghostel-monitor--capture-process-table)
+                 (lambda () (error "captured a second process snapshot"))))
+        (let ((info (hym-ghostel-monitor--buffer-info term table)))
+          (should (= (plist-get info :rss-kb) 6144))
+          (should (equal (plist-get info :what) "claude"))
+          (should (equal (plist-get info :uptime) "1h 2m")))))))
+
+(ert-deftest hym-ghostel-monitor-sidebar-refresh-starts-one-async-scan ()
+  (let ((hym-ghostel-monitor--sidebar-cache-process nil)
+        (hym-ghostel-monitor--sidebar-cache-timer 'stale-timer)
+        (starts 0)
+        process)
+    (unwind-protect
+        (cl-letf (((symbol-function 'hym-ghostel-monitor--terminal-buffers)
+                   (lambda () nil))
+                  ((symbol-function 'hym-ghostel-monitor--make-process)
+                   (lambda (&rest args)
+                     (setq starts (1+ starts))
+                     (setq process
+                           (make-pipe-process
+                            :name "ghostel-monitor-test-ps"
+                            :buffer (plist-get args :buffer)
+                            :noquery t)))))
+          (hym-ghostel-monitor--refresh-sidebar-cache)
+          (should (eq hym-ghostel-monitor--sidebar-cache-timer nil))
+          (should (process-live-p
+                   hym-ghostel-monitor--sidebar-cache-process))
+          ;; A live scan suppresses overlapping refresh processes.
+          (hym-ghostel-monitor--refresh-sidebar-cache)
+          (should (= starts 1)))
+      (when (process-live-p process)
+        (delete-process process))
+      (when process
+        (when-let ((stdout (process-buffer process)))
+          (when (buffer-live-p stdout) (kill-buffer stdout)))
+        (when-let ((stderr
+                    (process-get process 'hym-ghostel-monitor-stderr)))
+          (when (buffer-live-p stderr) (kill-buffer stderr)))))))
 
 (ert-deftest hym-ghostel-monitor-buffer-pid-falls-back-to-ghostel-pid ()
   (hym-ghostel-monitor-test-with-buffers (term)
     (with-current-buffer term
       (setq-local ghostel--pid 12345))
-    (cl-letf (((symbol-function 'get-buffer-process)
-               (lambda (_) nil)))
-      (should (= (hym-ghostel-monitor--buffer-pid term) 12345)))))
+    (should (= (hym-ghostel-monitor--buffer-pid term) 12345))))
