@@ -31,13 +31,34 @@ frame width when the buffer is not displayed yet."
     (goto-char (min pos (point-max)))))
 
 (defun hym/git-delta-diff--show-buffer (buf)
-  "Display BUF in a tab, reusing existing tab if present."
-  (if-let ((tab (tab-bar-get-buffer-tab buf t t)))
+  "Display BUF in a tab in the current tab group.
+Reuse an existing tab only when it belongs to the current group."
+  (let* ((group (and (fboundp 'hym/tab-group) (hym/tab-group)))
+         (tabs (tab-bar-get-buffer-tab buf nil nil t))
+         (tab (seq-find
+               (lambda (candidate)
+                 (or (null group)
+                     (equal (hym/tab-group candidate) group)))
+               tabs))
+         (index (and tab
+                     (seq-position
+                      (funcall tab-bar-tabs-function) tab #'equal)))
+         (position (and index (1+ index))))
+    (if position
       (progn
-        (tab-bar-switch-to-tab (alist-get 'name tab))
+        (tab-bar-select-tab position)
         (switch-to-buffer buf))
-    (switch-to-buffer-other-tab buf)
-    (tab-bar-rename-tab "delta")))
+      (switch-to-buffer-other-tab buf)
+      (tab-bar-rename-tab "delta"))))
+
+(defun hym/git-delta-diff--workspace-name ()
+  "Return the current workspace name, or the current tab group as a fallback."
+  (if-let ((ws (and (fboundp 'hym-workspace-current)
+                    (hym-workspace-current))))
+      (hym-workspace-name ws)
+    (if (fboundp 'hym/tab-group)
+        (hym/tab-group)
+      "global")))
 
 (defun hym/git-delta-diff-buffer (args buf-name command-fn)
   "Set up a delta diff buffer and return it, WITHOUT running delta.
@@ -49,7 +70,11 @@ frame's. ARGS, BUF-NAME and COMMAND-FN are as described in
          (default-directory dir)
          (diff-type (or buf-name
                         (if (string= args "--cached") "staged" "unstaged")))
-         (buf (get-buffer-create (format "*delta-diff[%s]: %s*" diff-type (project-name (project-current))))))
+         (buf (get-buffer-create
+               (format "*delta-diff[%s]: %s/%s*"
+                       diff-type
+                       (hym/git-delta-diff--workspace-name)
+                       (project-name (project-current))))))
     (with-current-buffer buf
       (special-mode)
       (setq-local hym/git-delta-diff--directory dir)
