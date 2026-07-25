@@ -34,6 +34,10 @@
   :program "pg_format"
   :args '("--no-space-function"))
 
+(reformatter-define hym/odin-format
+  :program "odinfmt"
+  :args '("-stdin" "-w"))
+
 (defun hym/format-buffer ()
   (interactive)
   (let* ((formatters
@@ -47,7 +51,8 @@
             (c . hym/clang-format-buffer)
             (mhtml . hym/html-format-buffer)
             (go . hym/go-format-buffer)
-            (sql . hym/sql-format-buffer)))
+            (sql . hym/sql-format-buffer)
+            (odin . hym/odin-format-buffer)))
          (base-mode (intern (replace-regexp-in-string "-ts-mode$\\|-mode$" "" (symbol-name major-mode))))
          (formatter (alist-get base-mode formatters)))
     (funcall (or formatter
@@ -161,6 +166,9 @@
          ("\\.sl\\'" . slang-mode)
          ("\\.slangh\\'" . slang-mode)))
 
+(use-package odin-ts-mode
+    :straight (odin-ts-mode :host github :repo "Sampie159/odin-ts-mode")
+    :mode (("\\.odin\\'" . odin-ts-mode)))
 
 (setq go-ts-mode-indent-offset 8)
 
@@ -233,7 +241,8 @@
               (typescript "https://github.com/tree-sitter/tree-sitter-typescript" "master" "typescript/src")
               (glsl "https://github.com/tree-sitter-grammars/tree-sitter-glsl")
               (lua "https://github.com/tree-sitter-grammars/tree-sitter-lua")
-              (yaml "https://github.com/ikatyang/tree-sitter-yaml")))
+              (yaml "https://github.com/ikatyang/tree-sitter-yaml")
+              (odin "https://github.com/tree-sitter-grammars/tree-sitter-odin")))
 
       ;; Install all grammars if not yet available
       (pcase-dolist (`(,lang . ,_) treesit-language-source-alist)
