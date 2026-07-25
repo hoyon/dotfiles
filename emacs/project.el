@@ -26,8 +26,8 @@
          (or project-compilation-buffer-name-function
              compilation-buffer-name-function)))
     (if (not (string= "" hym/project-compile-command))
-        (compile hym/project-compile-command)
-      (call-interactively #'compile))))
+        (ghostel-compile hym/project-compile-command)
+      (call-interactively #'ghostel-compile))))
 
 (defun hym/project-run ()
   "Run project in the project root."
@@ -38,7 +38,7 @@
             (compilation-buffer-name-function
              (or project-compilation-buffer-name-function
                  compilation-buffer-name-function)))
-        (compile hym/project-run-command))
+        (ghostel-compile hym/project-run-command))
     (message "hym/project-run-command not set!")))
 
 (defun hym/project-test ()
@@ -50,7 +50,7 @@
             (compilation-buffer-name-function
              (or project-compilation-buffer-name-function
                  compilation-buffer-name-function)))
-        (compile hym/project-test-command))
+        (ghostel-compile hym/project-test-command))
     (message "hym/project-test-command not set!")))
 
 (defun hym/project-find-file-all ()
