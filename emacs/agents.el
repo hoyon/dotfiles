@@ -36,17 +36,6 @@
   (interactive)
   (hym/agent-shell--invoke-permission-key "v" "No pending permission diff"))
 
-(defun hym/agent-shell-restart ()
-  "Kill the current agent shell and start a fresh one."
-  (interactive)
-  (unless (derived-mode-p 'agent-shell-mode)
-    (user-error "Not in an agent shell buffer"))
-  (let ((window (selected-window)))
-    (kill-buffer (current-buffer))
-    (agent-shell-new-shell)
-    (when (window-live-p window)
-      (select-window window))))
-
 (use-package agent-shell
   :config
 
@@ -69,7 +58,7 @@
    "r" #'hym/agent-shell-reject
    "v" #'hym/agent-shell-view-diff
    "j" #'agent-shell-jump-to-latest-permission-button-row
-   "R" #'hym/agent-shell-restart)
+   "R" 'agent-shell-restart)
 
   (general-define-key
    :states 'insert
