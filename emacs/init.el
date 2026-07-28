@@ -8,12 +8,26 @@
             (setq gc-cons-threshold 16777216
                   gc-cons-percentage 0.1)))
 
-(add-hook 'focus-out-hook 'garbage-collect)
+(defun hym/gc-when-unfocused ()
+  "Collect garbage once no frame has focus, so the pause is not noticed."
+  (unless (seq-some #'frame-focus-state (frame-list))
+    (garbage-collect)))
+
+(add-function :after after-focus-change-function #'hym/gc-when-unfocused)
 
 (setq comp-async-report-warning-errors nil
       native-comp-deferred-compilation t
       native-compile-prune-cache t
       load-prefer-newer t)
+
+;; Redisplay does bidirectional paragraph analysis on every line and GC
+;; compacts font caches; neither earns its cost without right-to-left text.
+(setq bidi-inhibit-bpa t
+      inhibit-compacting-font-caches t
+      jit-lock-defer-time 0.05)
+
+;; Skips scanning each paragraph for its first strong directional character.
+(setq-default bidi-paragraph-direction 'left-to-right)
 
 (defvar bootstrap-version)
 (setq straight-use-package-by-default 't
@@ -259,6 +273,7 @@
 
 (setq global-auto-revert-non-file-buffers t
       auto-revert-verbose nil
+      auto-revert-avoid-polling t
       save-interprogram-paste-before-kill t)
 
 ;; Unset default full screen shortcut
