@@ -20,6 +20,13 @@ frame width when the buffer is not displayed yet."
   "Refresh the current delta diff buffer."
   (interactive)
   (let ((inhibit-read-only t)
+        ;; Delta colours nearly every token, and the default face function
+        ;; makes one overlay per run — hundreds of thousands on a large diff,
+        ;; which cripples redisplay and GC. Text properties cost far less.
+        (ansi-color-apply-face-function #'ansi-color-apply-text-property-face)
+        ;; Nothing here is editable, and each refresh rewrites the whole
+        ;; buffer, so undo would just accumulate copies of the old diff.
+        (buffer-undo-list t)
         (default-directory hym/git-delta-diff--directory)
         (pos (point)))
     (erase-buffer)
@@ -84,7 +91,8 @@ frame's. ARGS, BUF-NAME and COMMAND-FN are as described in
                         (format "{ GIT_PAGER=cat git diff --stat %1$s; echo; GIT_PAGER=cat git diff -U5 %1$s | delta --side-by-side --width %2$d; }"
                                 (or args "")
                                 (hym/git-delta-diff--width)))))
-      (let ((inhibit-read-only t))
+      (let ((inhibit-read-only t)
+            (buffer-undo-list t))
         (erase-buffer)
         (insert "Loading diff…")
         (goto-char (point-min)))
