@@ -67,8 +67,26 @@
    vc-git-diff-switches '("-U0")
    diff-hl-draw-borders nil)
 
-  ;; Live update instead of only on save
-  (diff-hl-flydiff-mode)
+  (defvar hym/diff-hl--refresh-timer nil)
+
+  (defun hym/diff-hl-refresh-selected-buffer (&rest _)
+    "Refresh `diff-hl' in the selected window's buffer, after a short idle.
+Updates otherwise only happen on save and revert, so a commit or branch
+switch made outside Emacs would leave the markers stale until the next
+save.  Rescheduling rather than stacking timers keeps rapid buffer
+switching down to a single refresh of wherever you land."
+    (let ((buf (window-buffer (selected-window))))
+      (when (buffer-local-value 'diff-hl-mode buf)
+        (when (timerp hym/diff-hl--refresh-timer)
+          (cancel-timer hym/diff-hl--refresh-timer))
+        (setq hym/diff-hl--refresh-timer
+              (run-with-idle-timer 0.5 nil #'diff-hl--update-buffer buf)))))
+
+  (add-hook 'window-buffer-change-functions
+            #'hym/diff-hl-refresh-selected-buffer)
+  (add-hook 'window-selection-change-functions
+            #'hym/diff-hl-refresh-selected-buffer)
+
   (advice-add 'diff-hl-update :before #'hym/diff-hl-set-branch-reference)
 
   ;; Make the fringe narrower
