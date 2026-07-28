@@ -59,8 +59,8 @@ Use an Eglot hover snapshot when LSP is live, otherwise fall back to Helpful."
 (add-hook 'eglot-managed-mode-hook (lambda () (eglot-inlay-hints-mode -1)))
 
 (add-hook 'elixir-ts-mode-hook #'eglot-ensure)
-(add-hook 'go-ts-mode-hook #'eglot-ensure)
-(add-hook 'rust-mode-hook #'eglot-ensure)
+;; (add-hook 'go-ts-mode-hook #'eglot-ensure)
+;; (add-hook 'rust-mode-hook #'eglot-ensure)
 
 (defun hym/eglot-code-actions-buffer ()
   "Offer Eglot fixes for every diagnostic, previewing their locations."
