@@ -333,11 +333,38 @@ only if it fails."
   (or (not (hym-workspace--repo-worktree-p ws repo))
       (not (hym-workspace--repo-worktree-registered-p ws repo))))
 
+(defun hym-workspace--kill-buffers (ws)
+  "Kill WS's buffers so their processes are reaped before its worktree goes.
+Agent terminals are never registered as servers, and closing a tab group
+only discards the window configuration, so nothing else here triggers the
+`kill-buffer-hook' that terminals use to reap their subprocesses.  A
+buffer visiting a file with unsaved changes is left open, since the
+worktree is about to be removed and the buffer holds the only copy."
+  (let ((root (file-name-as-directory (hym-workspace-root ws)))
+        (kept 0))
+    (dolist (buf (buffer-list))
+      (when (buffer-live-p buf)
+        (let ((dir (buffer-local-value 'default-directory buf)))
+          ;; The minibuffer inherits `default-directory' from wherever it was
+          ;; last summoned, so it matches the root without belonging to WS.
+          (when (and dir
+                     (not (minibufferp buf))
+                     (string-prefix-p root (expand-file-name dir)))
+            (if (and (buffer-file-name buf) (buffer-modified-p buf))
+                (setq kept (1+ kept))
+              (when-let ((proc (get-buffer-process buf)))
+                (set-process-query-on-exit-flag proc nil))
+              (kill-buffer buf))))))
+    (when (> kept 0)
+      (message "%s: left %d modified buffer(s) open"
+               (hym-workspace-name ws) kept))))
+
 (defun hym-workspace-archive-worktree (ws)
   "Tear WS down to just its branch, marking it archived only when teardown
 of every repo succeeds; surface failure via the provisioning badge."
   (when (fboundp 'hym-workspace-kill-workspace-servers)
     (hym-workspace-kill-workspace-servers ws t))
+  (hym-workspace--kill-buffers ws)
   (hym-workspace-close ws)
   (let ((slug (hym-workspace-slug ws))
         (buffer (hym-workspace--setup-buffer ws)))
