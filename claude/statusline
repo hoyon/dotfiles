@@ -1,8 +1,6 @@
 #!/bin/bash
 # Claude Code status line. Reads the session JSON on stdin (schema:
-# https://code.claude.com/docs/en/statusline) and prints, e.g.
-#
-#     Ctx: 312.9k | ⎇ master | cwd: ~/dotfiles
+# https://code.claude.com/docs/en/statusline)
 
 input=$(cat)
 
@@ -17,10 +15,10 @@ input=$(cat)
 )
 : "${dir:=$PWD}" "${ktokens:=0}"
 
-line=$(printf 'Ctx: %.1fk' "$ktokens")
+line=$(printf '%.1fk' "$ktokens")
 
 # The payload only carries a branch inside worktree sessions, so ask git.
 branch=$(git -C "$dir" branch --show-current 2>/dev/null)
-[ -n "$branch" ] && line="$line | ⎇ $branch"
+[ -n "$branch" ] && line="$line | $branch"
 
-printf '%s | cwd: %s\n' "$line" "${dir/#$HOME/~}"
+printf '%s | %s\n' "$line" "${dir/#$HOME/~}"
