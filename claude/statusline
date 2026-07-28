@@ -1,0 +1,26 @@
+#!/bin/bash
+# Claude Code status line. Reads the session JSON on stdin (schema:
+# https://code.claude.com/docs/en/statusline) and prints, e.g.
+#
+#     Ctx: 312.9k | ⎇ master | cwd: ~/dotfiles
+
+input=$(cat)
+
+# One value per line, not tab-separated: tab is IFS whitespace, so `read` would
+# collapse an empty directory field into the token count. Bad JSON leaves both
+# unset and the defaults below take over rather than leaking jq's error.
+{ IFS= read -r dir; IFS= read -r ktokens; } < <(
+  jq -r '
+    (.workspace.current_dir // .cwd // ""),
+    ((.context_window.total_input_tokens // 0) / 1000)
+  ' <<<"$input" 2>/dev/null
+)
+: "${dir:=$PWD}" "${ktokens:=0}"
+
+line=$(printf 'Ctx: %.1fk' "$ktokens")
+
+# The payload only carries a branch inside worktree sessions, so ask git.
+branch=$(git -C "$dir" branch --show-current 2>/dev/null)
+[ -n "$branch" ] && line="$line | ⎇ $branch"
+
+printf '%s | cwd: %s\n' "$line" "${dir/#$HOME/~}"
