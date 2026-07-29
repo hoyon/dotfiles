@@ -15,8 +15,8 @@
 
 (add-function :after after-focus-change-function #'hym/gc-when-unfocused)
 
-(setq comp-async-report-warning-errors nil
-      native-comp-deferred-compilation t
+(setq native-comp-async-report-warnings-errors nil
+      native-comp-jit-compilation t
       native-compile-prune-cache t
       load-prefer-newer t)
 
