@@ -6,9 +6,9 @@
 
 (ert-deftest hym-workspace-pick-repo-single-and-project ()
   (should (equal (hym-workspace--pick-repo
-                  '(:name "w" :type worktree :root "~/orca/w" :repos ("only")))
+                  '(:name "w" :type worktree :root "~/workspaces/w" :repos ("only")))
                  (file-name-as-directory
-                  (expand-file-name "only" (expand-file-name "~/orca/w")))))
+                  (expand-file-name "only" (expand-file-name "~/workspaces/w")))))
   (should (equal (hym-workspace--pick-repo
                   '(:name "p" :type project :root "~/dotfiles"))
                  (file-name-as-directory (expand-file-name "~/dotfiles")))))
@@ -20,8 +20,8 @@
         (progn
           (fset 'completing-read (lambda (&rest _) "b"))
           (should (equal (hym-workspace--pick-repo
-                          '(:name "w" :type worktree :root "~/orca/w"
+                          '(:name "w" :type worktree :root "~/workspaces/w"
                             :repos ("a" "b")))
                          (file-name-as-directory
-                          (expand-file-name "b" (expand-file-name "~/orca/w"))))))
+                          (expand-file-name "b" (expand-file-name "~/workspaces/w"))))))
       (fset 'completing-read orig))))

@@ -499,7 +499,7 @@
 (ert-deftest hym-workspace-new-from-preset-starts-agent-on-success ()
   (let* ((tmp (make-temp-file "hym-preset" t))
          (ws (list :name "fix it" :slug "fix_it" :type 'worktree
-                   :root tmp :repos '("ploy-client") :base-branch "main"))
+                   :root tmp :repos '("web-client") :base-branch "main"))
          (started nil)
          (provision-ok t)
          (err-shown nil)
@@ -523,7 +523,7 @@
                 (lambda (&rest _) (setq err-shown t)))
           (let ((hym-workspace-agents '(("claude" . "claude"))))
             (hym-workspace-new-from-preset
-             '(:name "frontend" :repos ("ploy-client") :agent "claude")
+             '(:name "frontend" :repos ("web-client") :agent "claude")
              "make the button smaller"))
           (should (equal started '("claude" "claude" "make the button smaller")))
           (should (null err-shown))
@@ -531,7 +531,7 @@
           (setq started nil provision-ok nil)
           (let ((hym-workspace-agents '(("claude" . "claude"))))
             (hym-workspace-new-from-preset
-             '(:name "frontend" :repos ("ploy-client") :agent "claude")
+             '(:name "frontend" :repos ("web-client") :agent "claude")
              "make the button smaller"))
           (should (null started))
           (should err-shown))

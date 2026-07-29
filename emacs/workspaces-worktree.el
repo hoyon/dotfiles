@@ -77,32 +77,56 @@ worktree add and skips the setup/archive steps."
        (seq-remove (lambda (n) (string-prefix-p "." n))
                    (directory-files root nil))))))
 
+(defun hym-workspace--git-string (directory &rest args)
+  "Run git with ARGS in DIRECTORY, returning trimmed stdout on success."
+  (when (file-directory-p directory)
+    (with-temp-buffer
+      (let ((default-directory directory))
+        (when (= 0 (apply #'call-process "git" nil (list t nil) nil args))
+          (string-trim (buffer-string)))))))
+
+(defun hym-workspace--branch-start-point (code base)
+  "Return (FETCH-REFSPEC . START-POINT) for branching off BASE in CODE.
+FETCH-REFSPEC is nil when CODE has no origin to fetch from, in which case
+the branch starts from the local BASE, or from HEAD when BASE is absent."
+  (if (hym-workspace--git-string code "remote" "get-url" "origin")
+      ;; Keep the source fully qualified.  With fetch.prune enabled, a
+      ;; short source such as "main" is not matched against
+      ;; "refs/heads/main" during pruning, so Git deletes origin/main
+      ;; immediately before trying to update it.
+      (cons (format "refs/heads/%s:refs/remotes/origin/%s" base base)
+            (format "origin/%s" base))
+    (cons nil
+          (if (hym-workspace--git-string code "rev-parse" "--verify" "--quiet"
+                                         (format "refs/heads/%s" base))
+              base
+            "HEAD"))))
+
 (defun hym-workspace--worktree-command (ws repo reuse-branch)
   "Return the shell command that adds REPO's worktree for WS.
 Create branch `:slug' unless REUSE-BRANCH is non-nil."
   (let* ((slug (hym-workspace-slug ws))
          (code (expand-file-name repo (expand-file-name hym-workspace-code-root)))
          (dest (expand-file-name repo (hym-workspace-root ws)))
-         (base (hym-workspace-base-branch ws))
-         (remote-base (format "origin/%s" base))
-         ;; Keep the source fully qualified.  With fetch.prune enabled, a
-         ;; short source such as "main" is not matched against
-         ;; "refs/heads/main" during pruning, so Git deletes origin/main
-         ;; immediately before trying to update it.
-         (fetch-refspec (format "refs/heads/%s:refs/remotes/%s"
-                                base remote-base)))
+         (base (hym-workspace-base-branch ws)))
     (if reuse-branch
         (format "git -C %s worktree add %s %s"
                 (shell-quote-argument code)
                 (shell-quote-argument dest)
                 (shell-quote-argument slug))
-      (format "git -C %s fetch origin %s && git -C %s worktree add -b %s %s %s"
-              (shell-quote-argument code)
-              (shell-quote-argument fetch-refspec)
-              (shell-quote-argument code)
-              (shell-quote-argument slug)
-              (shell-quote-argument dest)
-              (shell-quote-argument remote-base)))))
+      (pcase-let* ((`(,fetch-refspec . ,start-point)
+                    (hym-workspace--branch-start-point code base))
+                   (add (format "git -C %s worktree add -b %s %s %s"
+                                (shell-quote-argument code)
+                                (shell-quote-argument slug)
+                                (shell-quote-argument dest)
+                                (shell-quote-argument start-point))))
+        (if fetch-refspec
+            (format "git -C %s fetch origin %s && %s"
+                    (shell-quote-argument code)
+                    (shell-quote-argument fetch-refspec)
+                    add)
+          add)))))
 
 (defun hym-workspace--setup-command (ws repo)
   "Return REPO's setup command for WS, or nil when none is configured."
@@ -124,6 +148,53 @@ separate phases so all worktrees exist before any setup begins."
   (let ((add (hym-workspace--worktree-command ws repo reuse-branch))
         (setup (hym-workspace--setup-command ws repo)))
     (if setup (format "%s && %s" add setup) add)))
+
+(defconst hym-workspace--claude-asset-dirs '("skills" "agents")
+  "Subdirectories of `.claude' whose entries are surfaced per repo.")
+
+(defun hym-workspace--claude-dir (root kind)
+  (expand-file-name (concat ".claude/" kind) root))
+
+(defun hym-workspace--prune-claude-links (ws)
+  "Delete dangling `.claude' links at WS's root, left by removed worktrees."
+  (dolist (kind hym-workspace--claude-asset-dirs)
+    (let ((dir (hym-workspace--claude-dir (hym-workspace-root ws) kind)))
+      (when (file-directory-p dir)
+        (dolist (name (directory-files dir nil directory-files-no-dot-files-regexp))
+          (let ((link (expand-file-name name dir)))
+            (when (and (file-symlink-p link) (not (file-exists-p link)))
+              (delete-file link))))))))
+
+(defun hym-workspace--link-claude-assets (ws repo)
+  "Link REPO's skills and agents into WS's root `.claude'.
+An agent started at the workspace root only discovers skills and agents
+under the root's own `.claude', so each repo's entries are linked in
+individually.  Where two repos define the same name, the first repo in
+`:repos' keeps it."
+  (let ((root (hym-workspace-root ws)))
+    (dolist (kind hym-workspace--claude-asset-dirs)
+      (let ((source (hym-workspace--claude-dir
+                     (expand-file-name repo root) kind)))
+        (when (file-directory-p source)
+          (let ((dest (hym-workspace--claude-dir root kind)))
+            (make-directory dest t)
+            (dolist (name (directory-files
+                           source nil directory-files-no-dot-files-regexp))
+              (let ((link (expand-file-name name dest)))
+                (unless (file-exists-p link)
+                  (when (file-symlink-p link) (delete-file link))
+                  (make-symbolic-link (expand-file-name name source) link))))))))))
+
+(defun hym-workspace--sync-claude-assets (ws repos)
+  "Refresh WS's root `.claude' so it points at REPOS' skills and agents."
+  (hym-workspace--prune-claude-links ws)
+  (dolist (repo repos)
+    (hym-workspace--link-claude-assets ws repo)))
+
+(defun hym-workspace-link-claude-assets (ws)
+  "Refresh WS's root `.claude' links, for workspaces provisioned before this."
+  (interactive (list (or (hym-workspace-current) (user-error "Not in a workspace"))))
+  (hym-workspace--sync-claude-assets ws (hym-workspace-repos ws)))
 
 (defun hym-workspace--default-run-async (name command buffer callback)
   "Run COMMAND (a shell string) async, streaming to BUFFER.
@@ -190,6 +261,7 @@ Call ON-DONE with t when all succeed, nil on the first failure."
                (lambda (repo)
                  (hym-workspace--worktree-command ws repo reuse-branch))
                (lambda ()
+                 (hym-workspace--sync-claude-assets ws repos)
                  (funcall run-phase repos
                           (lambda (repo)
                             (hym-workspace--setup-command ws repo))
@@ -309,13 +381,6 @@ only if it fails."
                 remove)
       remove)))
 
-(defun hym-workspace--git-string (directory &rest args)
-  "Run git with ARGS in DIRECTORY, returning trimmed stdout on success."
-  (with-temp-buffer
-    (let ((default-directory directory))
-      (when (= 0 (apply #'call-process "git" nil (list t nil) nil args))
-        (string-trim (buffer-string))))))
-
 (defun hym-workspace--repo-worktree-registered-p (ws repo)
   "Non-nil when REPO is still registered as a git worktree for WS."
   (let* ((code (expand-file-name repo (expand-file-name hym-workspace-code-root)))
@@ -371,6 +436,7 @@ of every repo succeeds; surface failure via the provisioning badge."
     (cl-labels
         ((finish-success ()
            (remhash slug hym-workspace--provisioning)
+           (hym-workspace--prune-claude-links ws)
            (when-let ((cur (hym-workspace-get (hym-workspace-name ws))))
              (hym-workspace-put (plist-put (copy-sequence cur) :archived t)))
            (hym-workspace--refresh-sidebar))

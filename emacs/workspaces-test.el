@@ -17,8 +17,8 @@
 
 (ert-deftest hym-workspace-put-get-roundtrip ()
   (hym-workspace-test-with-empty-registry
-    (hym-workspace-put '(:name "zippy" :type worktree :root "~/orca/zippy"
-                         :repos ("ploy-server" "ploy-client") :base-branch "main"))
+    (hym-workspace-put '(:name "zippy" :type worktree :root "~/workspaces/zippy"
+                         :repos ("api-server" "web-client") :base-branch "main"))
     (should (equal (hym-workspace-name (hym-workspace-get "zippy")) "zippy"))
     (should (equal (hym-workspace-type (hym-workspace-get "zippy")) 'worktree))))
 
@@ -90,12 +90,12 @@
 
 (ert-deftest hym-workspace-repo-dirs-worktree-and-project ()
   (hym-workspace-test-with-empty-registry
-    (let ((wt '(:name "w" :type worktree :root "~/orca/w"
-                :repos ("ploy-server" "ploy-client")))
+    (let ((wt '(:name "w" :type worktree :root "~/workspaces/w"
+                :repos ("api-server" "web-client")))
           (pj '(:name "p" :type project :root "~/dotfiles")))
       (should (equal (hym-workspace-repo-dirs wt)
-                     (list (file-name-as-directory (expand-file-name "~/orca/w/ploy-server"))
-                           (file-name-as-directory (expand-file-name "~/orca/w/ploy-client")))))
+                     (list (file-name-as-directory (expand-file-name "~/workspaces/w/api-server"))
+                           (file-name-as-directory (expand-file-name "~/workspaces/w/web-client")))))
       (should (equal (hym-workspace-repo-dirs pj)
                      (list (file-name-as-directory (expand-file-name "~/dotfiles"))))))))
 

@@ -20,7 +20,7 @@
 (ert-deftest hym-workspace-sidebar-card-shows-worktree-repos-without-type-meta ()
   (hym-workspace-sidebar-test-with-registry
     (let ((card (hym-workspace-sidebar--card
-                 '(:name "zippy" :type worktree :root "~/orca/zippy"
+                 '(:name "zippy" :type worktree :root "~/workspaces/zippy"
                    :repos ("a" "b")))))
       (should (string-match-p "zippy" card))
       (should (string-match-p "^  a " card))
