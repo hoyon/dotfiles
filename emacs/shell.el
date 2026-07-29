@@ -104,6 +104,12 @@ From the default `auto' setting, the first toggle selects the terminal."
   (interactive)
   (ghostel-send-key "escape"))
 
+(defun hym/ghostel-send-double-escape ()
+  "Send two ESC keypress to the Ghostel terminal."
+  (interactive)
+  (ghostel-send-key "escape")
+  (ghostel-send-key "escape"))
+
 (use-package evil-ghostel
   :after (ghostel evil)
   :hook (ghostel-mode . evil-ghostel-mode)
@@ -117,4 +123,9 @@ From the default `auto' setting, the first toggle selects the terminal."
   (define-key ghostel-mode-map (kbd "C-c C-e")
               #'hym/ghostel-send-escape)
   (define-key ghostel-mode-map (kbd "C-c C-g")
-              #'hym/evil-ghostel-toggle-escape))
+              #'hym/evil-ghostel-toggle-escape)
+
+  (hym/local-leader-def
+   :keymaps 'ghostel-mode-map
+   "e" #'hym/ghostel-send-escape
+   "E" #'hym/ghostel-send-double-escape))
