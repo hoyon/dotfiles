@@ -138,7 +138,7 @@
   (hym-workspace-worktree-test-with-code
     (let* ((ran nil)
            (done nil)
-           (hym-workspace--provisioning (make-hash-table :test 'equal))
+           (hym-workspace--jobs (make-hash-table :test 'equal))
            (hym-workspace--run-async
             (lambda (_name _cmd _buf cb) (push _cmd ran) (funcall cb t)))
            (ws '(:name "auth" :slug "auth" :type worktree
@@ -147,7 +147,7 @@
       (hym-workspace--provision ws '("api-server") nil (lambda (ok) (setq done ok)))
       (should (eq done t))
       (should (= 2 (length ran)))
-      (should (null (gethash "auth" hym-workspace--provisioning))))))
+      (should (null (gethash "auth" hym-workspace--jobs))))))
 
 (ert-deftest hym-workspace-provision-adds-all-worktrees-before-any-setup ()
   (hym-workspace-worktree-test-with-code
@@ -157,7 +157,7 @@
       (insert "{\"scripts\":{\"setup\":\"npm install\"}}"))
     (let* ((ran nil)
            (done nil)
-           (hym-workspace--provisioning (make-hash-table :test 'equal))
+           (hym-workspace--jobs (make-hash-table :test 'equal))
            (hym-workspace--run-async
             (lambda (_name command _buffer callback)
               (setq ran (append ran (list command)))
@@ -183,14 +183,14 @@
 (ert-deftest hym-workspace-provision-stops-and-marks-failed ()
   (hym-workspace-worktree-test-with-code
     (let* ((done 'unset)
-           (hym-workspace--provisioning (make-hash-table :test 'equal))
+           (hym-workspace--jobs (make-hash-table :test 'equal))
            (hym-workspace--run-async (lambda (_n _c _b cb) (funcall cb nil)))
            (ws '(:name "auth" :slug "auth" :type worktree
                  :root "~/workspaces/auth"
                  :repos ("api-server") :base-branch "main")))
       (hym-workspace--provision ws '("api-server") nil (lambda (ok) (setq done ok)))
       (should (eq done nil))
-      (should (eq 'failed (plist-get (gethash "auth" hym-workspace--provisioning) :state))))))
+      (should (eq 'failed (plist-get (gethash "auth" hym-workspace--jobs) :state))))))
 
 (defun hym-workspace-worktree-test--make-assets (root repo &rest specs)
   "Create `.claude' entries under ROOT/REPO from SPECS of (KIND . NAME)."
@@ -256,7 +256,7 @@
   (hym-workspace-worktree-test-with-code
     (let* ((root (make-temp-file "hym-ws-root" t))
            (linked nil)
-           (hym-workspace--provisioning (make-hash-table :test 'equal))
+           (hym-workspace--jobs (make-hash-table :test 'equal))
            (hym-workspace--run-async
             (lambda (_name command _buffer callback)
               (when (string-match-p "worktree add" command)
@@ -274,16 +274,16 @@
             (should linked))
         (delete-directory root t)))))
 
-(ert-deftest hym-workspace-provisioning-badge-reflects-state ()
-  (let ((hym-workspace--provisioning (make-hash-table :test 'equal))
+(ert-deftest hym-workspace-job-badge-reflects-state ()
+  (let ((hym-workspace--jobs (make-hash-table :test 'equal))
         (ws '(:name "auth" :slug "auth" :type worktree :root "~")))
-    (should (null (hym-workspace--provisioning-badge ws)))
-    (puthash "auth" '(:repo "api-server" :state running) hym-workspace--provisioning)
+    (should (null (hym-workspace--job-badge ws)))
+    (puthash "auth" '(:repo "api-server" :state running) hym-workspace--jobs)
     (should (string-match-p "provisioning api-server"
-                            (car (hym-workspace--provisioning-badge ws))))
-    (puthash "auth" '(:repo "api-server" :state failed) hym-workspace--provisioning)
+                            (car (hym-workspace--job-badge ws))))
+    (puthash "auth" '(:repo "api-server" :state failed) hym-workspace--jobs)
     (should (string-match-p "failed"
-                            (car (hym-workspace--provisioning-badge ws))))))
+                            (car (hym-workspace--job-badge ws))))))
 
 (ert-deftest hym-workspace-read-repos-accumulates-until-done ()
   (let ((picks (list "api-server" "web-client" "[done]"))
@@ -307,7 +307,7 @@
           (hym-workspace--registry nil)
           (hym-workspace--loaded t)
           (hym-workspace-home (make-temp-file "hym-home" t))
-          (hym-workspace--provisioning (make-hash-table :test 'equal)))
+          (hym-workspace--jobs (make-hash-table :test 'equal)))
      (unwind-protect (progn ,@body)
        (delete-directory hym-workspace-home t)
        (when (file-exists-p temp) (delete-file temp)))))
@@ -388,7 +388,7 @@
                  (lambda (_ws _repo) t)))
         (hym-workspace-archive-worktree ws))
       (should (hym-workspace-archived-p (hym-workspace-get "auth")))
-      (should (null (gethash "auth" hym-workspace--provisioning))))))
+      (should (null (gethash "auth" hym-workspace--jobs))))))
 
 (ert-deftest hym-workspace-archive-worktree-skips-already-removed-repos ()
   (hym-workspace-worktree-test-with-registry
@@ -403,7 +403,7 @@
       (should (= 1 (length ran)))
       (should-not (string-match-p "/gone" (car ran)))
       (should (hym-workspace-archived-p (hym-workspace-get "auth")))
-      (should (null (gethash "auth" hym-workspace--provisioning))))))
+      (should (null (gethash "auth" hym-workspace--jobs))))))
 
 (ert-deftest hym-workspace-archive-worktree-leaves-active-on-failure ()
   (hym-workspace-worktree-test-with-registry
@@ -415,21 +415,21 @@
         (hym-workspace-archive-worktree ws))
       (should-not (hym-workspace-archived-p (hym-workspace-get "auth")))
       (should (eq 'archive-failed
-                  (plist-get (gethash "auth" hym-workspace--provisioning) :state))))))
+                  (plist-get (gethash "auth" hym-workspace--jobs) :state))))))
 
-(ert-deftest hym-workspace-archive-worktree-stops-servers-before-closing ()
+(ert-deftest hym-workspace-archive-worktree-tears-down-before-closing ()
   (hym-workspace-worktree-test-with-registry
     (let ((hym-workspace-worktree-test--events nil)
           (hym-workspace--run-async
            (lambda (_n _c _b cb)
              (push 'archive hym-workspace-worktree-test--events)
              (funcall cb t)))
+          (hym-workspace-teardown-functions
+           (list (lambda (_ws)
+                   (push 'kill hym-workspace-worktree-test--events))))
           (ws (hym-workspace--register-worktree "auth" "main" '("api-server"))))
       (make-directory (expand-file-name "api-server/.git" (hym-workspace-root ws)) t)
-      (cl-letf (((symbol-function 'hym-workspace-kill-workspace-servers)
-                 (lambda (_ws &optional _defer-refresh)
-                   (push 'kill hym-workspace-worktree-test--events)))
-                ((symbol-function 'hym-workspace-close)
+      (cl-letf (((symbol-function 'hym-workspace-close)
                  (lambda (_ws) (push 'close hym-workspace-worktree-test--events)))
                 ((symbol-function 'hym-workspace--repo-worktree-registered-p)
                  (lambda (_ws _repo) t)))
@@ -465,9 +465,29 @@
            (hym-workspace--run-async
             (lambda (_n cmd _b cb) (push cmd ran) (funcall cb t)))
            (ws (hym-workspace--register-worktree "w" "main" '("a" "b"))))
-      (puthash "w" '(:repo "b" :state failed) hym-workspace--provisioning)
+      (puthash "w" '(:repo "b" :state failed) hym-workspace--jobs)
       (make-directory (expand-file-name "a/.git" (hym-workspace-root ws)) t)
       (hym-workspace-provision-retry ws)
-      (should (null (gethash "w" hym-workspace--provisioning)))
+      (should (null (gethash "w" hym-workspace--jobs)))
       (should (= 1 (length ran)))
       (should-not (string-match-p "/a " (car ran))))))
+
+(ert-deftest hym-workspace-presets-corrupt-file-signals ()
+  (let ((f (make-temp-file "hym-presets")))
+    (unwind-protect
+        (progn
+          (with-temp-file f (insert "((:name \"frontend\""))
+          (let ((hym-workspace-presets-file f))
+            (should-error (hym-workspace-presets))))
+      (delete-file f))))
+
+(ert-deftest hym-workspace-setup-command-nil-without-conductor-script ()
+  (let* ((root (make-temp-file "hym-code" t))
+         (hym-workspace-code-root root)
+         (ws '(:name "w" :slug "w" :type worktree :root "/tmp/ws-w"
+               :repos ("api-server") :base-branch "main")))
+    (unwind-protect
+        (progn
+          (make-directory (expand-file-name "api-server" root) t)
+          (should (null (hym-workspace--setup-command ws "api-server"))))
+      (delete-directory root t))))

@@ -1,6 +1,7 @@
 ;; -*- lexical-binding: t -*-
 
 (require 'ert)
+(require 'cl-lib)
 (load-file (expand-file-name "workspaces.el" (file-name-directory load-file-name)))
 
 (defmacro hym-workspace-test-with-empty-registry (&rest body)
@@ -273,3 +274,78 @@
     (hym-workspace-put '(:name "b" :type project :root "~/b"))
     (should-error (hym-workspace-rename (hym-workspace-get "a") "b"))
     (should (hym-workspace-get "a"))))
+
+(ert-deftest hym-workspace-rename-renames-live-tab-group ()
+  (hym-workspace-test-with-shell
+    (let ((ws (hym-workspace-put '(:name "before" :type project :root "~"))))
+      (hym-workspace-open ws)
+      (hym-workspace-spawn-tab ws "second" #'ignore)
+      (hym-workspace-rename (hym-workspace-get "before") "after")
+      (should (member "after" (hym/tab-groups)))
+      (should-not (member "before" (hym/tab-groups)))
+      (should (equal (hym-workspace-name (hym-workspace-current)) "after")))))
+
+(ert-deftest hym-workspace-new-delegates-to-registered-type-creator ()
+  (hym-workspace-test-with-empty-registry
+    (let* ((called nil)
+           (hym-workspace-type-creators
+            (list (cons 'worktree
+                        (lambda () (interactive) (setq called t))))))
+      (cl-letf (((symbol-function 'hym-workspace--read-type)
+                 (lambda () 'worktree)))
+        (hym-workspace-new))
+      (should called))))
+
+(ert-deftest hym-workspace-new-creates-bare-entry-for-unregistered-type ()
+  (hym-workspace-test-with-empty-registry
+    (let ((hym-workspace-type-creators nil))
+      (cl-letf (((symbol-function 'hym-workspace--read-type)
+                 (lambda () 'directory)))
+        (cl-letf (((symbol-function 'hym-workspace--read-directory)
+                   (lambda () "~/somewhere/a-project")))
+          (hym-workspace-new)))
+      (let ((ws (hym-workspace-get "a-project")))
+        (should ws)
+        (should (eq (hym-workspace-type ws) 'directory))
+        (should (equal (hym-workspace-repos ws) '(".")))))))
+
+(ert-deftest hym-workspace-update-writes-named-props ()
+  (hym-workspace-test-with-empty-registry
+    (hym-workspace-put '(:name "a" :type project :root "~/a"))
+    (hym-workspace-update (hym-workspace-get "a") :archived t)
+    (should (hym-workspace-archived-p (hym-workspace-get "a")))
+    (should (equal (hym-workspace-root (hym-workspace-get "a"))
+                   (expand-file-name "~/a")))))
+
+(ert-deftest hym-workspace-update-rereads-entry-so-stale-copies-do-not-clobber ()
+  (hym-workspace-test-with-empty-registry
+    (hym-workspace-put '(:name "a" :type worktree :root "~/a" :repos ("one")))
+    (let ((stale (hym-workspace-get "a")))
+      (hym-workspace-put (plist-put (copy-sequence stale) :repos '("one" "two")))
+      (hym-workspace-update stale :archived t)
+      (should (equal (hym-workspace-repos (hym-workspace-get "a")) '("one" "two")))
+      (should (hym-workspace-archived-p (hym-workspace-get "a"))))))
+
+(ert-deftest hym-workspace-update-does-not-mutate-the-passed-plist ()
+  (hym-workspace-test-with-empty-registry
+    (hym-workspace-put '(:name "a" :type project :root "~/a"))
+    (let ((ws (hym-workspace-get "a")))
+      (hym-workspace-update ws :archived t)
+      (should-not (hym-workspace-archived-p ws)))))
+
+(ert-deftest hym-workspace-ui-refresh-hook-runs-on-registry-change ()
+  (hym-workspace-test-with-empty-registry
+    (let* ((n 0)
+           (hym-workspace-ui-refresh-hook (list (lambda () (setq n (1+ n))))))
+      (hym-workspace-refresh-ui)
+      (should (= n 1)))))
+
+(ert-deftest hym-workspace-select-index-command-captures-its-index ()
+  (hym-workspace-test-with-shell
+    (hym-workspace-put '(:name "a" :type project :root "~"))
+    (hym-workspace-put '(:name "b" :type project :root "~"))
+    (hym-workspace-put '(:name "c" :type project :root "~"))
+    (funcall (hym-workspace-select-index-command 3))
+    (should (equal (hym/tab-group) "c"))
+    (funcall (hym-workspace-select-index-command 1))
+    (should (equal (hym/tab-group) "a"))))

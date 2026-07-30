@@ -52,8 +52,19 @@
 ;;   `hym-workspace-spawn-tab'                 open a new tab in a workspace
 ;;   `hym-workspace-sidebar-status-functions'  add a sidebar badge
 ;;   `hym-workspace-type-creators'             provision a new workspace type
+;;   `hym-workspace-type-handlers'             per-type archive/unarchive/
+;;                                             add-repo/retry, so the sidebar
+;;                                             never needs to know about
+;;                                             worktrees
 ;;   `hym-workspace-agents'                    add a coding agent
+;;   `hym-workspace-ui-refresh-hook'           redraw whatever shows workspace
+;;                                             state (the sidebar adds itself)
+;;   `hym-workspace-teardown-functions'        stop what you started in a
+;;                                             workspace before it is archived
 ;;   `hym-workspace-open-hook' / -after-open-hook / -registry-change-hook
+;;
+;; Tests live beside each module as <module>-test.el; `make test' in this
+;; directory runs them all.
 ;;
 ;; Keys (leader `SPC o'): oo sidebar, on new, oa add-repo, ot shell, or server,
 ;; oc Ghostty agent, oC agent-shell, og/od/ol git status/diff/log, oN notes,
@@ -90,22 +101,51 @@ workspace (worktrees, notes, scratch, ad-hoc scripts)."
 (defvar hym-workspace-after-open-hook nil
   "Run after any workspace is opened or switched to via `hym-workspace-open'.")
 
+(defvar hym-workspace-ui-refresh-hook nil
+  "Run when workspace state changes in a way the UI should reflect.
+The sidebar adds itself here; anything tracking live state (provisioning,
+servers, agents) calls `hym-workspace-refresh-ui' rather than reaching
+for the sidebar directly.")
+
+(defun hym-workspace-refresh-ui ()
+  "Redraw anything displaying workspace state."
+  (run-hooks 'hym-workspace-ui-refresh-hook))
+
+(defvar hym-workspace-teardown-functions nil
+  "Functions called with a workspace before its resources are removed.
+Each feature owning something long-lived in a workspace (servers, agent
+terminals) registers a cleanup here rather than being called by name
+from the archiving code.")
+
+(defun hym-workspace-run-teardown (ws)
+  "Let every feature clean up after WS before its files go."
+  (run-hook-with-args 'hym-workspace-teardown-functions ws))
+
+(defun hym-workspace--read-eld (file what)
+  "Read the single sexp in FILE, or nil when it does not exist.
+WHAT names the file's contents in the error signalled for unparseable
+contents, so a corrupt file is never silently treated as empty."
+  (when (file-exists-p file)
+    (condition-case err
+        (with-temp-buffer
+          (insert-file-contents file)
+          (goto-char (point-min))
+          (read (current-buffer)))
+      (error
+       (error "Corrupt %s %s: %s" what file (error-message-string err))))))
+
 (defun hym-workspace-load ()
   "Load the registry from `hym-workspace-registry-file'.
 Signal rather than silently returning an empty registry when the file
 is present but unreadable, so a later save cannot clobber it."
   (setq hym-workspace--load-failed nil)
   (setq hym-workspace--registry
-        (when (file-exists-p hym-workspace-registry-file)
-          (condition-case err
-              (with-temp-buffer
-                (insert-file-contents hym-workspace-registry-file)
-                (goto-char (point-min))
-                (read (current-buffer)))
-            (error
-             (setq hym-workspace--load-failed t)
-             (error "Corrupt workspace registry %s: %s (fix or delete it)"
-                    hym-workspace-registry-file (error-message-string err))))))
+        (condition-case err
+            (hym-workspace--read-eld hym-workspace-registry-file
+                                     "workspace registry")
+          (error
+           (setq hym-workspace--load-failed t)
+           (error "%s (fix or delete it)" (error-message-string err)))))
   (setq hym-workspace--loaded t)
   hym-workspace--registry)
 
@@ -151,16 +191,35 @@ is present but unreadable, so a later save cannot clobber it."
   (hym-workspace-save)
   (run-hooks 'hym-workspace-registry-change-hook))
 
+(defun hym-workspace-update (ws &rest props)
+  "Apply PROPS (a plist) to WS's registry entry and persist it.
+The entry is re-read by name first, so a caller holding a copy taken
+before an async operation cannot roll back whatever landed meanwhile.
+WS itself is left untouched. Returns the stored workspace, or nil when
+WS is no longer registered."
+  (when-let ((current (hym-workspace-get (hym-workspace-name ws))))
+    (let ((updated (copy-sequence current)))
+      (while props
+        (setq updated (plist-put updated (pop props) (pop props))))
+      (hym-workspace-put updated))))
+
+;;;; Accessors
+
 (defun hym-workspace-name (ws) (plist-get ws :name))
 (defun hym-workspace-type (ws) (plist-get ws :type))
 (defun hym-workspace-root (ws) (expand-file-name (plist-get ws :root)))
 (defun hym-workspace-repos (ws) (or (plist-get ws :repos) '(".")))
 (defun hym-workspace-base-branch (ws) (plist-get ws :base-branch))
 (defun hym-workspace-archived-p (ws) (plist-get ws :archived))
+(defun hym-workspace-slug (ws) (plist-get ws :slug))
 
 (defun hym-workspace-active ()
   "Return non-archived workspaces in registry order."
   (seq-remove #'hym-workspace-archived-p (hym-workspace-registry)))
+
+(defun hym-workspace-archived ()
+  "Return archived workspaces in registry order."
+  (seq-filter #'hym-workspace-archived-p (hym-workspace-registry)))
 
 (defun hym-workspace-repo-dirs (ws)
   "Return absolute, slash-terminated directories to run git/server ops in for WS."
@@ -250,8 +309,7 @@ This is the seam every later feature (notes, scratch, git, server) uses."
   "Create and persist a bare workspace NAME of TYPE at ROOT.
 No provisioning happens here; that is Layer 1. Returns the workspace."
   (interactive
-   (let ((type (intern (completing-read "Type: "
-                                        '("worktree" "directory") nil t))))
+   (let ((type (hym-workspace--read-type)))
      (if (eq type 'directory)
          (let ((root (hym-workspace--read-directory)))
            (list (hym-workspace--directory-name root) type root))
@@ -298,7 +356,9 @@ Interactively prompt over the active (non-archived) workspaces."
   (when-let ((ws (nth (1- n) (hym-workspace-active))))
     (hym-workspace-open ws)))
 
-(defun hym-workspace-slug (ws) (plist-get ws :slug))
+(defun hym-workspace-select-index-command (n)
+  "Return a command switching to the Nth active workspace."
+  (lambda () (interactive) (hym-workspace-select-index n)))
 
 (defun hym-workspace--slugify (name)
   "Return a filesystem/branch/DB-safe slug for NAME."
@@ -319,28 +379,40 @@ scripts. Not created here; callers make it as needed."
    (expand-file-name (hym-workspace--key ws)
                      (expand-file-name hym-workspace-home))))
 
-(defun hym-workspace-archived ()
-  "Return archived workspaces in registry order."
-  (seq-filter #'hym-workspace-archived-p (hym-workspace-registry)))
+;;;; Per-type behaviour
 
 (defvar hym-workspace-type-creators nil
   "Alist mapping a workspace TYPE symbol to an interactive creator command.
 When `hym-workspace-new' is asked for a type present here, it delegates to
 that command instead of creating a bare entry.")
 
+(defvar hym-workspace-type-handlers nil
+  "Alist mapping a workspace TYPE symbol to a plist of operations.
+Recognised keys are `:archive', `:unarchive', `:add-repo' and `:retry',
+each a function of one argument, the workspace.  Types absent here fall
+back to the generic registry-only behaviour, which is how the sidebar
+offers these actions without knowing which types support them.")
+
+(defun hym-workspace-type-handler (ws op)
+  "Return WS's handler function for OP, or nil when its type has none."
+  (plist-get (alist-get (hym-workspace-type ws) hym-workspace-type-handlers)
+             op))
+
+(defun hym-workspace--read-type ()
+  "Read a workspace type."
+  (intern (completing-read "Type: " '("worktree" "directory") nil t)))
+
 (defun hym-workspace-new ()
   "Create a workspace, prompting for type and delegating provisioning."
   (interactive)
-  (let ((type (intern (completing-read "Type: "
-                                       '("worktree" "directory") nil t))))
+  (let ((type (hym-workspace--read-type)))
     (if-let ((creator (alist-get type hym-workspace-type-creators)))
         (call-interactively creator)
-      (if (eq type 'directory)
-          (let ((root (hym-workspace--read-directory)))
-            (hym-workspace-create (hym-workspace--directory-name root) type root))
-        (let ((name (read-string "Workspace name: "))
-              (root (hym-workspace--read-directory)))
-          (hym-workspace-create name type root))))))
+      (let* ((root (hym-workspace--read-directory))
+             (name (if (eq type 'directory)
+                       (hym-workspace--directory-name root)
+                     (read-string "Workspace name: "))))
+        (hym-workspace-create name type root)))))
 
 (defun hym-workspace-rename (ws new-name)
   "Rename WS's display name to NEW-NAME, keeping its registry position.
@@ -350,11 +422,7 @@ Renames the live tab group too when the workspace is open."
     (when (and (not (equal new-name old)) (hym-workspace-get new-name))
       (user-error "A workspace named %s already exists" new-name))
     (when (hym-workspace-open-p ws)
-      (let ((tabs (funcall tab-bar-tabs-function)) (n 1))
-        (dolist (tab tabs)
-          (when (equal (hym/tab-group tab) old)
-            (tab-bar-change-tab-group new-name n))
-          (setq n (1+ n)))))
+      (hym/tab-group-rename old new-name))
     (setq hym-workspace--registry
           (mapcar (lambda (w)
                     (if (equal (plist-get w :name) old)

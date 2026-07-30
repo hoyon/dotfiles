@@ -17,15 +17,7 @@ A list of plists, e.g. (:name \"frontend\" :repos (\"ploy-client\")
 (defun hym-workspace-presets ()
   "Return the preset list from `hym-workspace-presets-file'.
 A missing file yields nil; a present-but-unparseable file signals."
-  (when (file-exists-p hym-workspace-presets-file)
-    (condition-case err
-        (with-temp-buffer
-          (insert-file-contents hym-workspace-presets-file)
-          (goto-char (point-min))
-          (read (current-buffer)))
-      (error
-       (error "Corrupt presets file %s: %s"
-              hym-workspace-presets-file (error-message-string err))))))
+  (hym-workspace--read-eld hym-workspace-presets-file "presets file"))
 
 (defun hym-workspace-preset-name (preset) (plist-get preset :name))
 (defun hym-workspace-preset-repos (preset) (plist-get preset :repos))
@@ -55,6 +47,10 @@ A missing file yields nil; a present-but-unparseable file signals."
          (base (string-join words " ")))
     (hym-workspace--unique-name (if (string-empty-p base) "workspace" base))))
 
+(defun hym-workspace--code-dir (repo)
+  "Return the canonical checkout of REPO under `hym-workspace-code-root'."
+  (expand-file-name repo (expand-file-name hym-workspace-code-root)))
+
 (defun hym-workspace--repo-conductor (repo-dir)
   "Return the `scripts' alist from REPO-DIR's conductor.json, or nil."
   (let ((file (expand-file-name "conductor.json" repo-dir)))
@@ -64,6 +60,11 @@ A missing file yields nil; a present-but-unparseable file signals."
         (goto-char (point-min))
         (alist-get 'scripts (json-parse-buffer :object-type 'alist
                                                :null-object nil))))))
+
+(defun hym-workspace--conductor-script (repo script)
+  "Return REPO's conductor SCRIPT (a symbol such as `run'), or nil."
+  (alist-get script (hym-workspace--repo-conductor
+                     (hym-workspace--code-dir repo))))
 
 (defun hym-workspace--available-repos ()
   "Return names of git repos under `hym-workspace-code-root'.
@@ -102,12 +103,25 @@ the branch starts from the local BASE, or from HEAD when BASE is absent."
               base
             "HEAD"))))
 
+(defun hym-workspace--repo-dest (ws repo)
+  "Return REPO's checkout directory inside WS."
+  (expand-file-name repo (hym-workspace-root ws)))
+
+(defun hym-workspace--conductor-command (ws repo script)
+  "Return the shell command running SCRIPT in REPO's checkout for WS.
+The conductor environment names the canonical repo and the workspace."
+  (format "cd %s && CONDUCTOR_ROOT_PATH=%s CONDUCTOR_WORKSPACE_NAME=%s sh -c %s"
+          (shell-quote-argument (hym-workspace--repo-dest ws repo))
+          (shell-quote-argument (hym-workspace--code-dir repo))
+          (shell-quote-argument (hym-workspace-slug ws))
+          (shell-quote-argument script)))
+
 (defun hym-workspace--worktree-command (ws repo reuse-branch)
   "Return the shell command that adds REPO's worktree for WS.
 Create branch `:slug' unless REUSE-BRANCH is non-nil."
   (let* ((slug (hym-workspace-slug ws))
-         (code (expand-file-name repo (expand-file-name hym-workspace-code-root)))
-         (dest (expand-file-name repo (hym-workspace-root ws)))
+         (code (hym-workspace--code-dir repo))
+         (dest (hym-workspace--repo-dest ws repo))
          (base (hym-workspace-base-branch ws)))
     (if reuse-branch
         (format "git -C %s worktree add %s %s"
@@ -130,16 +144,8 @@ Create branch `:slug' unless REUSE-BRANCH is non-nil."
 
 (defun hym-workspace--setup-command (ws repo)
   "Return REPO's setup command for WS, or nil when none is configured."
-  (let* ((slug (hym-workspace-slug ws))
-         (code (expand-file-name repo (expand-file-name hym-workspace-code-root)))
-         (dest (expand-file-name repo (hym-workspace-root ws)))
-         (setup (alist-get 'setup (hym-workspace--repo-conductor code))))
-    (when setup
-      (format "cd %s && CONDUCTOR_ROOT_PATH=%s CONDUCTOR_WORKSPACE_NAME=%s sh -c %s"
-              (shell-quote-argument dest)
-              (shell-quote-argument code)
-              (shell-quote-argument slug)
-              (shell-quote-argument setup)))))
+  (when-let ((setup (hym-workspace--conductor-script repo 'setup)))
+    (hym-workspace--conductor-command ws repo setup)))
 
 (defun hym-workspace--provision-command (ws repo reuse-branch)
   "Return a command that adds REPO's worktree and runs its setup for WS.
@@ -212,64 +218,77 @@ Call CALLBACK with t on zero exit, nil otherwise."
   "Function (NAME COMMAND BUFFER CALLBACK) running COMMAND asynchronously.
 CALLBACK is called with t on success, nil on failure. Rebound in tests.")
 
-(defvar hym-workspace--provisioning (make-hash-table :test 'equal)
-  "Map workspace slug to `(:repo R :state running|failed)' during setup.
+(defvar hym-workspace--jobs (make-hash-table :test 'equal)
+  "Map workspace key to `(:repo R :state S)' while a repo job is in flight.
+S is one of `running', `failed', `archiving' or `archive-failed'.
 Runtime only; never persisted.")
 
-(defun hym-workspace--refresh-sidebar ()
-  (when (fboundp 'hym-workspace-sidebar-refresh)
-    (hym-workspace-sidebar-refresh)))
+(defun hym-workspace--set-job (ws repo state)
+  "Record that WS is in STATE on REPO, and redraw."
+  (puthash (hym-workspace--key ws) (list :repo repo :state state)
+           hym-workspace--jobs)
+  (hym-workspace-refresh-ui))
+
+(defun hym-workspace--clear-job (ws)
+  "Forget WS's in-flight job, and redraw."
+  (remhash (hym-workspace--key ws) hym-workspace--jobs)
+  (hym-workspace-refresh-ui))
 
 (defun hym-workspace--setup-buffer (ws)
   "Return WS's setup-output buffer, hidden (space-prefixed) until an error."
-  (get-buffer-create (format " *ws-setup: %s*" (hym-workspace-slug ws))))
+  (get-buffer-create (format " *ws-setup: %s*" (hym-workspace--key ws))))
+
+(defun hym-workspace--run-per-repo (ws repos command-fn state on-done)
+  "Run COMMAND-FN's shell command for each of REPOS in turn, for WS.
+Mark WS as STATE on the repo being worked on. A nil command skips that
+repo. Call ON-DONE with t once every repo succeeds, or with the failing
+repo's name on the first failure, and stop there."
+  (let ((buffer (hym-workspace--setup-buffer ws))
+        (key (hym-workspace--key ws)))
+    (letrec ((step
+              (lambda (remaining)
+                (if (null remaining)
+                    (funcall on-done t)
+                  (let* ((repo (car remaining))
+                         (command (funcall command-fn repo)))
+                    (if (null command)
+                        (funcall step (cdr remaining))
+                      (hym-workspace--set-job ws repo state)
+                      (funcall hym-workspace--run-async
+                               (format "ws-%s-%s-%s" state key repo)
+                               command buffer
+                               (lambda (ok)
+                                 (if ok
+                                     (funcall step (cdr remaining))
+                                   (funcall on-done repo))))))))))
+      (funcall step repos))))
 
 (defun hym-workspace--provision (ws repos reuse-branch &optional on-done)
   "Provision REPOS for WS through `hym-workspace--run-async'.
 Add every worktree sequentially before running any configured setup scripts.
 Call ON-DONE with t when all succeed, nil on the first failure."
-  (let ((slug (hym-workspace-slug ws))
-        (buffer (hym-workspace--setup-buffer ws)))
-    (letrec ((finish
-              (lambda (ok repo)
-                (if ok
-                    (remhash slug hym-workspace--provisioning)
-                  (puthash slug (list :repo repo :state 'failed)
-                           hym-workspace--provisioning))
-                (hym-workspace--refresh-sidebar)
-                (when on-done (funcall on-done ok))))
-             (run-phase
-              (lambda (remaining command-fn next)
-                (if (null remaining)
-                    (funcall next)
-                  (let* ((repo (car remaining))
-                         (command (funcall command-fn repo)))
-                    (if (null command)
-                        (funcall run-phase (cdr remaining) command-fn next)
-                      (puthash slug (list :repo repo :state 'running)
-                               hym-workspace--provisioning)
-                      (hym-workspace--refresh-sidebar)
-                      (funcall hym-workspace--run-async
-                               (format "ws-setup-%s-%s" slug repo)
-                               command buffer
-                               (lambda (ok)
-                                 (if ok
-                                     (funcall run-phase (cdr remaining)
-                                              command-fn next)
-                                   (funcall finish nil repo))))))))))
-      (funcall run-phase repos
-               (lambda (repo)
-                 (hym-workspace--worktree-command ws repo reuse-branch))
-               (lambda ()
-                 (hym-workspace--sync-claude-assets ws repos)
-                 (funcall run-phase repos
-                          (lambda (repo)
-                            (hym-workspace--setup-command ws repo))
-                          (lambda () (funcall finish t nil))))))))
+  (let ((finish (lambda (result)
+                  (if (eq result t)
+                      (hym-workspace--clear-job ws)
+                    (hym-workspace--set-job ws result 'failed))
+                  (when on-done (funcall on-done (eq result t))))))
+    (hym-workspace--run-per-repo
+     ws repos
+     (lambda (repo) (hym-workspace--worktree-command ws repo reuse-branch))
+     'running
+     (lambda (result)
+       (if (not (eq result t))
+           (funcall finish result)
+         (hym-workspace--sync-claude-assets ws repos)
+         (hym-workspace--run-per-repo
+          ws repos
+          (lambda (repo) (hym-workspace--setup-command ws repo))
+          'running
+          finish))))))
 
-(defun hym-workspace--provisioning-badge (ws)
-  "Status function: a badge line for WS while it is provisioning."
-  (when-let ((st (gethash (hym-workspace-slug ws) hym-workspace--provisioning)))
+(defun hym-workspace--job-badge (ws)
+  "Status function: a badge line for WS while a repo job is in flight."
+  (when-let ((st (gethash (hym-workspace--key ws) hym-workspace--jobs)))
     (list (pcase (plist-get st :state)
             ('running (propertize (format "~ provisioning %s..." (plist-get st :repo))
                                   'face 'warning))
@@ -282,7 +301,7 @@ Call ON-DONE with t when all succeed, nil on the first failure."
 
 (with-eval-after-load 'hym-workspaces-sidebar
   (add-to-list 'hym-workspace-sidebar-status-functions
-               #'hym-workspace--provisioning-badge))
+               #'hym-workspace--job-badge))
 
 (defun hym-workspace--register-worktree (name base-branch repos)
   "Validate slug uniqueness for NAME and register a worktree entry.
@@ -293,10 +312,7 @@ Return the workspace. Does not touch disk."
       (user-error "Workspace name has no usable characters"))
     (when (null repos)
       (user-error "Pick at least one repo"))
-    (when (or (hym-workspace-get name)
-              (seq-find (lambda (w) (equal (hym-workspace-slug w) slug))
-                        (hym-workspace-registry))
-              (file-exists-p root))
+    (when (or (hym-workspace--name-taken-p name) (file-exists-p root))
       (user-error "A workspace with slug %s already exists" slug))
     (hym-workspace-put (list :name name :slug slug :type 'worktree
                              :root (abbreviate-file-name root)
@@ -339,45 +355,42 @@ only if it fails."
      (lambda (ok) (unless ok (hym-workspace--show-setup-error ws))))
     ws))
 
+(defun hym-workspace--read-add-repo (ws)
+  "Read a repo to add to WS, excluding the ones it already has."
+  (completing-read "Add repo: "
+                   (seq-difference (hym-workspace--available-repos)
+                                   (hym-workspace-repos ws))
+                   nil t))
+
 (defun hym-workspace-add-repo (ws repo)
   "Add REPO to worktree WS, provisioning it, and append to `:repos'."
   (interactive
    (let ((ws (or (hym-workspace-current) (user-error "Not in a workspace"))))
-     (list ws (completing-read
-               "Add repo: "
-               (seq-difference (hym-workspace--available-repos)
-                               (hym-workspace-repos ws))
-               nil t))))
+     (list ws (hym-workspace--read-add-repo ws))))
   (when (member repo (hym-workspace-repos ws))
     (user-error "%s is already in this workspace" repo))
   (hym-workspace--provision
    ws (list repo) nil
    (lambda (ok)
      (if ok
-         (let ((cur (hym-workspace-get (hym-workspace-name ws))))
-           (hym-workspace-put
-            (plist-put (copy-sequence cur) :repos
-                       (append (hym-workspace-repos cur) (list repo)))))
+         (when-let ((cur (hym-workspace-get (hym-workspace-name ws))))
+           (hym-workspace-update
+            cur :repos (append (hym-workspace-repos cur) (list repo))))
        (hym-workspace--show-setup-error ws)))))
 
 (defun hym-workspace--archive-command (ws repo)
   "Return the shell command tearing REPO down: archive script then remove."
-  (let* ((slug (hym-workspace-slug ws))
-         (code (expand-file-name repo (expand-file-name hym-workspace-code-root)))
-         (dest (expand-file-name repo (hym-workspace-root ws)))
-         (archive (alist-get 'archive (hym-workspace--repo-conductor code)))
-         (remove (format "git -C %s worktree remove --force %s"
-                         (shell-quote-argument code)
-                         (shell-quote-argument dest))))
+  (let ((archive (hym-workspace--conductor-script repo 'archive))
+        (remove (format "git -C %s worktree remove --force %s"
+                        (shell-quote-argument (hym-workspace--code-dir repo))
+                        (shell-quote-argument
+                         (hym-workspace--repo-dest ws repo)))))
     (if archive
         ;; Gate the worktree removal on the archive script succeeding, so a
         ;; failed archive (e.g. couldn't drop a DB) surfaces as archive-failed
         ;; rather than being swallowed and the workspace marked archived anyway.
-        (format "cd %s && CONDUCTOR_ROOT_PATH=%s CONDUCTOR_WORKSPACE_NAME=%s sh -c %s && %s"
-                (shell-quote-argument dest)
-                (shell-quote-argument code)
-                (shell-quote-argument slug)
-                (shell-quote-argument archive)
+        (format "%s && %s"
+                (hym-workspace--conductor-command ws repo archive)
                 remove)
       remove)))
 
@@ -427,48 +440,30 @@ worktree is about to be removed and the buffer holds the only copy."
 (defun hym-workspace-archive-worktree (ws)
   "Tear WS down to just its branch, marking it archived only when teardown
 of every repo succeeds; surface failure via the provisioning badge."
-  (when (fboundp 'hym-workspace-kill-workspace-servers)
-    (hym-workspace-kill-workspace-servers ws t))
+  (hym-workspace-run-teardown ws)
   (hym-workspace--kill-buffers ws)
   (hym-workspace-close ws)
-  (let ((slug (hym-workspace-slug ws))
-        (buffer (hym-workspace--setup-buffer ws)))
-    (cl-labels
-        ((finish-success ()
-           (remhash slug hym-workspace--provisioning)
+  (hym-workspace--run-per-repo
+   ws (hym-workspace-repos ws)
+   (lambda (repo)
+     (unless (hym-workspace--repo-worktree-archived-p ws repo)
+       (hym-workspace--archive-command ws repo)))
+   'archiving
+   (lambda (result)
+     (if (eq result t)
+         (progn
+           (hym-workspace--clear-job ws)
            (hym-workspace--prune-claude-links ws)
-           (when-let ((cur (hym-workspace-get (hym-workspace-name ws))))
-             (hym-workspace-put (plist-put (copy-sequence cur) :archived t)))
-           (hym-workspace--refresh-sidebar))
-         (finish-failure (repo)
-           (puthash slug (list :repo repo :state 'archive-failed)
-                    hym-workspace--provisioning)
-           (hym-workspace--refresh-sidebar)
-           (hym-workspace--show-setup-error ws)
-           (message "Archive failed for %s in %s"
-                    repo (hym-workspace-name ws)))
-         (step (remaining)
-           (if (null remaining)
-               (finish-success)
-             (let ((repo (car remaining)))
-               (if (hym-workspace--repo-worktree-archived-p ws repo)
-                   (step (cdr remaining))
-                 (puthash slug (list :repo repo :state 'archiving)
-                          hym-workspace--provisioning)
-                 (hym-workspace--refresh-sidebar)
-                 (funcall hym-workspace--run-async
-                          (format "ws-archive-%s-%s" slug repo)
-                          (hym-workspace--archive-command ws repo)
-                          buffer
-                          (lambda (ok)
-                            (if ok
-                                (step (cdr remaining))
-                              (finish-failure repo)))))))))
-      (step (hym-workspace-repos ws)))))
+           (hym-workspace-update ws :archived t)
+           (hym-workspace-refresh-ui))
+       (hym-workspace--set-job ws result 'archive-failed)
+       (hym-workspace--show-setup-error ws)
+       (message "Archive failed for %s in %s"
+                result (hym-workspace-name ws))))))
 
 (defun hym-workspace-unarchive (ws)
   "Un-archive WS and re-provision its repos onto the existing branch."
-  (let ((active (hym-workspace-put (plist-put (copy-sequence ws) :archived nil))))
+  (let ((active (hym-workspace-update ws :archived nil)))
     (make-directory (hym-workspace-root active) t)
     (hym-workspace--provision
      active (hym-workspace-repos active) t
@@ -483,8 +478,7 @@ of every repo succeeds; surface failure via the provisioning badge."
 Repos whose worktree already exists are left alone; a repo that failed
 before its worktree was created is re-provisioned from scratch."
   (interactive (list (hym-workspace-current)))
-  (remhash (hym-workspace-slug ws) hym-workspace--provisioning)
-  (hym-workspace--refresh-sidebar)
+  (hym-workspace--clear-job ws)
   (let ((missing (seq-remove (lambda (repo) (hym-workspace--repo-worktree-p ws repo))
                              (hym-workspace-repos ws))))
     (when missing
@@ -495,6 +489,14 @@ before its worktree was created is re-provisioned from scratch."
 
 (with-eval-after-load 'hym-workspaces
   (add-to-list 'hym-workspace-type-creators
-               '(worktree . hym-workspace-create-worktree)))
+               '(worktree . hym-workspace-create-worktree))
+  (add-to-list 'hym-workspace-type-handlers
+               (list 'worktree
+                     :archive #'hym-workspace-archive-worktree
+                     :unarchive #'hym-workspace-unarchive
+                     :retry #'hym-workspace-provision-retry
+                     :add-repo (lambda (ws)
+                                 (hym-workspace-add-repo
+                                  ws (hym-workspace--read-add-repo ws))))))
 
 (provide 'hym-workspaces-worktree)

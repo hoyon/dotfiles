@@ -140,3 +140,47 @@
       (should (eq (alist-get 'hym-id (tab-bar--current-tab))
                   current-id))
       (should (equal (hym/tabs-test-current-name) "B2")))))
+
+(ert-deftest hym/tab-select-in-group-picks-nth-tab-of-current-group ()
+  (hym/tabs-test-with-clean-frame
+    (tab-bar-rename-tab "other")
+    (tab-bar-change-tab-group "other-group")
+    (hym/tabs-test-create "first" "group")
+    (hym/tabs-test-create "second" "group")
+    (hym/tabs-test-create "third" "group")
+    (hym/tab-select-in-group 1)
+    (should (equal (hym/tabs-test-current-name) "first"))
+    (hym/tab-select-in-group 3)
+    (should (equal (hym/tabs-test-current-name) "third"))))
+
+(ert-deftest hym/tab-select-in-group-ignores-out-of-range ()
+  (hym/tabs-test-with-clean-frame
+    (hym/tabs-test-create "only" "group")
+    (hym/tab-select-in-group 4)
+    (should (equal (hym/tabs-test-current-name) "only"))))
+
+(ert-deftest hym/tab-group-rename-moves-every-tab-in-the-group ()
+  (hym/tabs-test-with-clean-frame
+    (tab-bar-change-tab-group "keep")
+    (hym/tabs-test-create "a" "old")
+    (hym/tabs-test-create "b" "old")
+    (hym/tab-group-rename "old" "new")
+    (should (member "new" (hym/tab-groups)))
+    (should-not (member "old" (hym/tab-groups)))
+    (should (member "keep" (hym/tab-groups)))))
+
+(ert-deftest hym/tab-select-in-group-command-captures-its-index ()
+  (hym/tabs-test-with-clean-frame
+    (hym/tabs-test-create "first" "group")
+    (hym/tabs-test-create "second" "group")
+    (funcall (hym/tab-select-in-group-command 2))
+    (should (equal (hym/tabs-test-current-name) "second"))
+    (funcall (hym/tab-select-in-group-command 1))
+    (should (equal (hym/tabs-test-current-name) "first"))))
+
+(ert-deftest hym-tabs-number-bindings-cover-one-to-nine ()
+  (let ((bindings (hym-tabs--number-bindings "t%d")))
+    (should (= 18 (length bindings)))
+    (should (equal "t1" (nth 0 bindings)))
+    (should (equal "t9" (nth 16 bindings)))
+    (should (commandp (nth 17 bindings)))))

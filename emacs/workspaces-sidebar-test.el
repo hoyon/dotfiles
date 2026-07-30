@@ -290,3 +290,59 @@
         (hym-workspace-sidebar--goto-workspace "p")
         (hym-workspace-sidebar-unarchive)
         (should-not (hym-workspace-archived-p (hym-workspace-get "p")))))))
+
+(ert-deftest hym-workspace-sidebar-keymap-and-evil-keymap-agree ()
+  (let ((keys '("d" "x" "c" "+" "g" "a" "u" "r" "!")))
+    (dolist (key keys)
+      (should (commandp (lookup-key hym-workspace-sidebar-mode-map key))))
+    (should (commandp (lookup-key hym-workspace-sidebar-mode-map (kbd "RET"))))
+    (should (commandp (lookup-key hym-workspace-sidebar-mode-map (kbd "TAB"))))))
+
+(ert-deftest hym-workspace-sidebar-archive-delegates-to-type-handler ()
+  (hym-workspace-sidebar-test-with-registry
+    (let* ((archived nil)
+           (hym-workspace-type-handlers
+            (list (cons 'worktree
+                        (list :archive (lambda (ws)
+                                         (setq archived
+                                               (hym-workspace-name ws))))))))
+      (hym-workspace-put '(:name "wt" :type worktree :root "~/wt" :repos ("a")))
+      (with-temp-buffer
+        (hym-workspace-sidebar--render)
+        (goto-char (point-min))
+        (search-forward "wt")
+        (beginning-of-line)
+        (cl-letf (((symbol-function 'yes-or-no-p) (lambda (&rest _) t)))
+          (hym-workspace-sidebar-archive)))
+      (should (equal archived "wt"))
+      (should-not (hym-workspace-archived-p (hym-workspace-get "wt"))))))
+
+(ert-deftest hym-workspace-sidebar-archive-soft-archives-untyped-workspace ()
+  (hym-workspace-sidebar-test-with-registry
+    (let ((hym-workspace-type-handlers nil))
+      (hym-workspace-put '(:name "plain" :type directory :root "~/p"))
+      (with-temp-buffer
+        (hym-workspace-sidebar--render)
+        (goto-char (point-min))
+        (search-forward "plain")
+        (beginning-of-line)
+        (hym-workspace-sidebar-archive))
+      (should (hym-workspace-archived-p (hym-workspace-get "plain"))))))
+
+(ert-deftest hym-workspace-sidebar-archive-does-not-clobber-concurrent-edits ()
+  (hym-workspace-sidebar-test-with-registry
+    (let ((hym-workspace-type-handlers nil))
+      (hym-workspace-put '(:name "zed" :type directory :root "~/zed" :repos (".")))
+      (with-temp-buffer
+        (hym-workspace-sidebar--render)
+        (goto-char (point-min))
+        (search-forward "zed")
+        (beginning-of-line)
+        ;; The card was rendered from an older copy of the entry; a write
+        ;; landing in between must survive the archive.
+        (hym-workspace-put (plist-put (copy-sequence (hym-workspace-get "zed"))
+                                      :base-branch "develop"))
+        (hym-workspace-sidebar-archive))
+      (should (hym-workspace-archived-p (hym-workspace-get "zed")))
+      (should (equal (hym-workspace-base-branch (hym-workspace-get "zed"))
+                     "develop")))))

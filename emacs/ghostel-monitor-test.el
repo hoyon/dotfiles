@@ -2,6 +2,7 @@
 
 (require 'ert)
 (require 'cl-lib)
+(load-file (expand-file-name "workspaces.el" (file-name-directory load-file-name)))
 (load-file (expand-file-name "ghostel-monitor.el" (file-name-directory load-file-name)))
 
 (unless (fboundp 'ghostel-mode)

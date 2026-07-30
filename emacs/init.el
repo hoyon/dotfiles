@@ -120,6 +120,14 @@
   :states 'normal
   :keymaps 'local)
 
+(defun hym/leader-apply (&rest args)
+  "Define leader keys from ARGS, which unlike `hym/leader-def' are evaluated.
+`general-def' inspects its arguments before evaluation to find positional
+ones, so generated key strings and commands have to go straight to
+`general-define-key'."
+  (apply #'general-define-key
+         :prefix "SPC" :states 'normal :keymaps 'override args))
+
 (load-config "evil.el")
 (load-config "theme.el")
 (load-config "vertico.el")
@@ -170,16 +178,13 @@
   "tj" 'hym-workspace-prev
   "tk" 'hym-workspace-next
   "tt" 'hym-workspace-switch
-  "0" 'hym/tab-switch-to-default-group
-  "1" (lambda () (interactive) (hym-workspace-select-index 1))
-  "2" (lambda () (interactive) (hym-workspace-select-index 2))
-  "3" (lambda () (interactive) (hym-workspace-select-index 3))
-  "4" (lambda () (interactive) (hym-workspace-select-index 4))
-  "5" (lambda () (interactive) (hym-workspace-select-index 5))
-  "6" (lambda () (interactive) (hym-workspace-select-index 6))
-  "7" (lambda () (interactive) (hym-workspace-select-index 7))
-  "8" (lambda () (interactive) (hym-workspace-select-index 8))
-  "9" (lambda () (interactive) (hym-workspace-select-index 9)))
+  "0" 'hym/tab-switch-to-default-group)
+
+(apply #'hym/leader-apply
+       (mapcan (lambda (n)
+                 (list (number-to-string n)
+                       (hym-workspace-select-index-command n)))
+               (number-sequence 1 9)))
 
 (defun hym/grep-for-symbol-at-point ()
   (interactive)

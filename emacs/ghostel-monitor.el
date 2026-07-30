@@ -28,7 +28,7 @@
 (declare-function hym-workspace-current "workspaces")
 (declare-function hym-workspace-get "workspaces")
 (declare-function hym-workspace-sidebar--at-point "workspaces-sidebar")
-(declare-function hym-workspace-sidebar-refresh "workspaces-sidebar")
+(declare-function hym-workspace-refresh-ui "workspaces")
 
 ;; ── Customisation ───────────────────────────────────────────────────────────
 
@@ -388,7 +388,7 @@ ETIME may be seconds or an Emacs time value."
                    (mapcar (lambda (buf)
                              (hym-ghostel-monitor--buffer-info buf table))
                            (seq-filter #'buffer-live-p buffers)))
-                  (hym-ghostel-monitor--sidebar-refresh))
+                  (hym-workspace-refresh-ui))
               (message
                "ghostel-monitor process scan failed%s"
                (if (and (buffer-live-p stderr)
@@ -588,7 +588,7 @@ When WORKSPACE is nil, show terminals from every workspace."
             (hym-ghostel-monitor--kill-entry info))
           (setq hym-ghostel-monitor--marked nil)
           (hym-ghostel-monitor-refresh)
-          (hym-ghostel-monitor--sidebar-refresh)
+          (hym-workspace-refresh-ui)
           (message "Killed %d terminal%s" count (if (> count 1) "s" "")))))))
 
 (defun hym-ghostel-monitor-kill-all ()
@@ -604,14 +604,9 @@ When WORKSPACE is nil, show terminals from every workspace."
         (dolist (info entries)
           (hym-ghostel-monitor--kill-entry info))
         (hym-ghostel-monitor-refresh)
-        (hym-ghostel-monitor--sidebar-refresh)
+        (hym-workspace-refresh-ui)
         (message "Killed %d terminal%s"
                  (length entries) (if (> (length entries) 1) "s" ""))))))
-
-(defun hym-ghostel-monitor--sidebar-refresh ()
-  "Refresh the workspace sidebar if it exists."
-  (when (fboundp 'hym-workspace-sidebar-refresh)
-    (hym-workspace-sidebar-refresh)))
 
 (defun hym-ghostel-monitor--safe-sort (a b)
   "Compare two entries by their Memory sort-key, defaulting to 0."

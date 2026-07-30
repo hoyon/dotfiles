@@ -271,17 +271,25 @@ The obsolete GROUP argument is accepted so existing external callers keep
 working.  DIR selects the repository, defaulting to `default-directory'."
   (hym/git-delta-diff-refs-in-default-tab-group rev-a rev-b dir))
 
+(defun hym/tab-group-rename (old new)
+  "Move every tab in group OLD into group NEW.
+The tab list is re-read after each change because `tab-bar-change-tab-group'
+reorders tabs to keep groups contiguous, which invalidates any positions
+captured beforehand."
+  (let ((position (hym/tab-find-position
+                   (lambda (tab) (equal (hym/tab-group tab) old)))))
+    (while position
+      (tab-bar-change-tab-group new position)
+      (setq position (hym/tab-find-position
+                      (lambda (tab) (equal (hym/tab-group tab) old)))))))
+
 (defun hym/tab-rename-group ()
   "Rename the current tab group."
   (interactive)
-  (let* ((tabs (funcall tab-bar-tabs-function))
-         (current-group (hym/tab-group))
-         (new-name (read-string (format "Rename group '%s' to: " current-group)))
-         (n 1))
-    (dolist (tab tabs)
-      (when (equal (hym/tab-group tab) current-group)
-        (tab-bar-change-tab-group new-name n))
-      (setq n (1+ n)))))
+  (let ((current-group (hym/tab-group)))
+    (hym/tab-group-rename
+     current-group
+     (read-string (format "Rename group '%s' to: " current-group)))))
 
 (defun hym/tab-move-to-group ()
   "Move the current tab to a different tab group.
@@ -296,34 +304,28 @@ If the group exists, the tab is moved into it. Otherwise a new group is created.
   (interactive)
   (tab-bar-close-group-tabs (hym/tab-group)))
 
+(defun hym/tab-select-in-group-command (n)
+  "Return a command selecting the Nth tab in the current tab group."
+  (lambda () (interactive) (hym/tab-select-in-group n)))
+
+(defun hym-tabs--number-bindings (format-string)
+  "Return key/command pairs binding FORMAT-STRING applied to 1-9."
+  (mapcan (lambda (n)
+            (list (format format-string n)
+                  (hym/tab-select-in-group-command n)))
+          (number-sequence 1 9)))
+
 (defun hym-tabs-setup-keybindings ()
   "Install keybindings for grouped tab-bar commands."
   (hym/leader-def
     "tc" 'tab-close
     "tC" 'hym/tab-close-current-group
     "tr" 'tab-bar-rename-tab
-    "tn" 'tab-new
-    "t1" (lambda () (interactive) (hym/tab-select-in-group 1))
-    "t2" (lambda () (interactive) (hym/tab-select-in-group 2))
-    "t3" (lambda () (interactive) (hym/tab-select-in-group 3))
-    "t4" (lambda () (interactive) (hym/tab-select-in-group 4))
-    "t5" (lambda () (interactive) (hym/tab-select-in-group 5))
-    "t6" (lambda () (interactive) (hym/tab-select-in-group 6))
-    "t7" (lambda () (interactive) (hym/tab-select-in-group 7))
-    "t8" (lambda () (interactive) (hym/tab-select-in-group 8))
-    "t9" (lambda () (interactive) (hym/tab-select-in-group 9)))
+    "tn" 'tab-new)
+  (apply #'hym/leader-apply (hym-tabs--number-bindings "t%d"))
 
   ;; Use cmd+number to change tab.
-  (general-define-key
-   "s-1" (lambda () (interactive) (hym/tab-select-in-group 1))
-   "s-2" (lambda () (interactive) (hym/tab-select-in-group 2))
-   "s-3" (lambda () (interactive) (hym/tab-select-in-group 3))
-   "s-4" (lambda () (interactive) (hym/tab-select-in-group 4))
-   "s-5" (lambda () (interactive) (hym/tab-select-in-group 5))
-   "s-6" (lambda () (interactive) (hym/tab-select-in-group 6))
-   "s-7" (lambda () (interactive) (hym/tab-select-in-group 7))
-   "s-8" (lambda () (interactive) (hym/tab-select-in-group 8))
-   "s-9" (lambda () (interactive) (hym/tab-select-in-group 9)))
+  (apply #'general-define-key (hym-tabs--number-bindings "s-%d"))
 
   (general-define-key
    "C-<tab>" 'hym/tab-next-in-group
@@ -430,6 +432,7 @@ was supplied explicitly, or when the current tab is the last in its group."
      'help-echo "mouse-2: close this tab group")))
 
 (when (and (fboundp 'hym/leader-def)
+           (fboundp 'hym/leader-apply)
            (fboundp 'general-define-key))
   (hym-tabs-setup-keybindings))
 

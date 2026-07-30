@@ -67,6 +67,30 @@ or an agent waiting for input without the sidebar knowing about them.")
       (mapcar (lambda (repo) (propertize repo 'face face))
               (hym-workspace-repos ws)))))
 
+(defun hym-workspace-sidebar--name-face (current)
+  "Return the face for a workspace name, highlighted when CURRENT."
+  (if current
+      (hym-workspace-sidebar--face 'hym-workspace-sidebar-current current)
+    'hym-workspace-sidebar-name))
+
+(defun hym-workspace-sidebar--block (lines name current help)
+  "Join LINES into a clickable card block for the workspace called NAME.
+CURRENT highlights the block as the workspace you are in; HELP is its
+tooltip."
+  (let ((block (concat (mapconcat #'hym-workspace-sidebar--line-target
+                                  lines "\n")
+                       "\n")))
+    (when current
+      (add-face-text-property 0 (length block)
+                              'hym-workspace-sidebar-current-bg nil block))
+    (add-text-properties 0 (length block)
+                         (list 'hym-workspace name
+                               'mouse-face 'highlight
+                               'pointer 'hand
+                               'help-echo help)
+                         block)
+    block))
+
 (defun hym-workspace-sidebar--card (ws &optional index)
   "Return a propertized multi-line card block for WS.
 When INDEX is non-nil, show it as the workspace jump number."
@@ -79,56 +103,27 @@ When INDEX is non-nil, show it as the workspace jump number."
                        (prefix (format "%s " prefix))
                        (dot (format "%s " dot))
                        (t "")))
-         (indent (make-string (string-width leader) ?\s))
-         (name-face (if current
-                        (hym-workspace-sidebar--face
-                         'hym-workspace-sidebar-current current)
-                      'hym-workspace-sidebar-name))
-         (lines (append
-                 (list (concat leader
-                               (propertize name 'face name-face)))
-                 (mapcar (lambda (repo) (concat indent repo))
-                         (hym-workspace-sidebar--repos ws current))
-                 (mapcar (lambda (b) (concat indent b))
-                         (hym-workspace-sidebar--badges ws))))
-         (block (concat (mapconcat #'identity
-                                    (mapcar #'hym-workspace-sidebar--line-target
-                                            lines)
-                                    "\n")
-                        "\n")))
-    (when current
-      (add-face-text-property 0 (length block)
-                              'hym-workspace-sidebar-current-bg nil block))
-    (add-text-properties 0 (length block)
-                         (list 'hym-workspace name
-                               'mouse-face 'highlight
-                               'pointer 'hand
-                               'help-echo "mouse-1: switch to this workspace")
-                         block)
-    block))
+         (indent (make-string (string-width leader) ?\s)))
+    (hym-workspace-sidebar--block
+     (append
+      (list (concat leader
+                    (propertize name 'face
+                                (hym-workspace-sidebar--name-face current))))
+      (mapcar (lambda (repo) (concat indent repo))
+              (hym-workspace-sidebar--repos ws current))
+      (mapcar (lambda (b) (concat indent b))
+              (hym-workspace-sidebar--badges ws)))
+     name current "mouse-1: switch to this workspace")))
 
 (defun hym-workspace-sidebar--general-card ()
   "Return the non-registry group-zero card for the catch-all space."
   (let* ((name hym/default-tab-group)
-         (current (equal name (hym/tab-group)))
-         (name-face (if current
-                        (hym-workspace-sidebar--face
-                         'hym-workspace-sidebar-current current)
-                      'hym-workspace-sidebar-name))
-         (block (concat
-                 (hym-workspace-sidebar--line-target
-                  (concat "0 " (propertize name 'face name-face)))
-                 "\n")))
-    (when current
-      (add-face-text-property 0 (length block)
-                              'hym-workspace-sidebar-current-bg nil block))
-    (add-text-properties 0 (length block)
-                         (list 'hym-workspace name
-                               'mouse-face 'highlight
-                               'pointer 'hand
-                               'help-echo "mouse-1: switch to general")
-                         block)
-    block))
+         (current (equal name (hym/tab-group))))
+    (hym-workspace-sidebar--block
+     (list (concat "0 " (propertize
+                         name 'face
+                         (hym-workspace-sidebar--name-face current))))
+     name current "mouse-1: switch to general")))
 
 (defvar hym-workspace-sidebar--point-name nil
   "Workspace the sidebar cursor should rest on across re-renders.
@@ -288,6 +283,7 @@ restores a layout without the side window; this puts it back."
 (advice-add 'tab-bar-change-tab-group :after #'hym-workspace-sidebar--sync)
 (add-hook 'hym-workspace-after-open-hook #'hym-workspace-sidebar--sync)
 (add-hook 'hym-workspace-registry-change-hook #'hym-workspace-sidebar-refresh)
+(add-hook 'hym-workspace-ui-refresh-hook #'hym-workspace-sidebar-refresh)
 (add-hook 'window-configuration-change-hook #'hym-workspace-sidebar--fix-width)
 
 (defun hym-workspace-sidebar-visit ()
@@ -302,35 +298,38 @@ restores a layout without the side window; this puts it back."
         (hym-workspace-open ws)))
     (hym-workspace-sidebar-refresh)))
 
+(defun hym-workspace-sidebar--workspace-at-point ()
+  "Return the registered workspace on the current line, or nil."
+  (when-let ((name (hym-workspace-sidebar--at-point)))
+    (hym-workspace-get name)))
+
 (defun hym-workspace-sidebar-close-ws ()
   "Close (tear down tabs of) the workspace on the current line."
   (interactive)
-  (when-let ((ws (hym-workspace-get (hym-workspace-sidebar--at-point))))
+  (when-let ((ws (hym-workspace-sidebar--workspace-at-point)))
     (hym-workspace-close ws)
     (hym-workspace-sidebar-refresh)))
 
 (defun hym-workspace-sidebar-retry ()
-  "Retry provisioning for the worktree workspace on the current line."
+  "Retry provisioning for the workspace on the current line."
   (interactive)
-  (when-let* ((name (hym-workspace-sidebar--at-point))
-              (ws (hym-workspace-get name)))
-    (when (and (eq (hym-workspace-type ws) 'worktree)
-               (fboundp 'hym-workspace-provision-retry))
-      (hym-workspace-provision-retry ws))))
+  (when-let* ((ws (hym-workspace-sidebar--workspace-at-point))
+              (retry (hym-workspace-type-handler ws :retry)))
+    (funcall retry ws)))
 
 (defun hym-workspace-sidebar-archive ()
-  "Archive the workspace on the current line."
+  "Archive the workspace on the current line.
+Types with an `:archive' handler tear their resources down first; the
+rest are simply closed and flagged."
   (interactive)
-  (when-let* ((name (hym-workspace-sidebar--at-point))
-              (ws (hym-workspace-get name)))
-    (if (and (eq (hym-workspace-type ws) 'worktree)
-             (fboundp 'hym-workspace-archive-worktree))
+  (when-let ((ws (hym-workspace-sidebar--workspace-at-point)))
+    (if-let ((archive (hym-workspace-type-handler ws :archive)))
         (when (yes-or-no-p
                (format "Archive %s? Removes its worktrees; uncommitted changes are lost. "
-                       name))
-          (hym-workspace-archive-worktree ws))
+                       (hym-workspace-name ws)))
+          (funcall archive ws))
       (hym-workspace-close ws)
-      (hym-workspace-put (plist-put (copy-sequence ws) :archived t)))
+      (hym-workspace-update ws :archived t))
     (hym-workspace-sidebar-refresh)))
 
 (defun hym-workspace-sidebar-new ()
@@ -349,33 +348,24 @@ restores a layout without the side window; this puts it back."
 (defun hym-workspace-sidebar-unarchive ()
   "Unarchive the workspace on the current line."
   (interactive)
-  (when-let* ((name (hym-workspace-sidebar--at-point))
-              (ws (hym-workspace-get name)))
+  (when-let ((ws (hym-workspace-sidebar--workspace-at-point)))
     (when (hym-workspace-archived-p ws)
-      (if (and (eq (hym-workspace-type ws) 'worktree)
-               (fboundp 'hym-workspace-unarchive))
-          (hym-workspace-unarchive ws)
-        (hym-workspace-put (plist-put (copy-sequence ws) :archived nil)))
+      (if-let ((unarchive (hym-workspace-type-handler ws :unarchive)))
+          (funcall unarchive ws)
+        (hym-workspace-update ws :archived nil))
       (hym-workspace-sidebar-refresh))))
 
 (defun hym-workspace-sidebar-add-repo ()
-  "Add a repo to the worktree workspace on the current line."
+  "Add a repo to the workspace on the current line."
   (interactive)
-  (when-let* ((name (hym-workspace-sidebar--at-point))
-              (ws (hym-workspace-get name)))
-    (when (and (eq (hym-workspace-type ws) 'worktree)
-               (fboundp 'hym-workspace-add-repo))
-      (hym-workspace-add-repo
-       ws (completing-read "Add repo: "
-                           (seq-difference (hym-workspace--available-repos)
-                                           (hym-workspace-repos ws))
-                           nil t)))))
+  (when-let* ((ws (hym-workspace-sidebar--workspace-at-point))
+              (add-repo (hym-workspace-type-handler ws :add-repo)))
+    (funcall add-repo ws)))
 
 (defun hym-workspace-sidebar-rename (new-name)
   "Rename the workspace on the current line to NEW-NAME."
   (interactive (list (read-string "New name: " (hym-workspace-sidebar--at-point))))
-  (when-let* ((old (hym-workspace-sidebar--at-point))
-              (ws (hym-workspace-get old)))
+  (when-let ((ws (hym-workspace-sidebar--workspace-at-point)))
     (setq hym-workspace-sidebar--point-name new-name)
     (hym-workspace-rename ws new-name)
     (hym-workspace-sidebar-refresh)))
@@ -386,34 +376,28 @@ restores a layout without the side window; this puts it back."
   (mouse-set-point event)
   (hym-workspace-sidebar-visit))
 
-(let ((map hym-workspace-sidebar-mode-map))
-  (define-key map (kbd "RET") #'hym-workspace-sidebar-visit)
-  (define-key map [mouse-1] #'hym-workspace-sidebar-mouse-visit)
-  (define-key map "d" #'hym-workspace-sidebar-close-ws)
-  (define-key map "x" #'hym-workspace-sidebar-archive)
-  (define-key map "c" #'hym-workspace-sidebar-new)
-  (define-key map "+" #'hym-workspace-sidebar-new)
-  (define-key map "g" #'hym-workspace-sidebar-refresh)
-  (define-key map (kbd "TAB") #'hym-workspace-sidebar-toggle-archived)
-  (define-key map "a" #'hym-workspace-sidebar-add-repo)
-  (define-key map "u" #'hym-workspace-sidebar-unarchive)
-  (define-key map "r" #'hym-workspace-sidebar-rename)
-  (define-key map "!" #'hym-workspace-sidebar-retry))
+(defconst hym-workspace-sidebar--bindings
+  (list (cons (kbd "RET") #'hym-workspace-sidebar-visit)
+        (cons [mouse-1] #'hym-workspace-sidebar-mouse-visit)
+        (cons "d" #'hym-workspace-sidebar-close-ws)
+        (cons "x" #'hym-workspace-sidebar-archive)
+        (cons "c" #'hym-workspace-sidebar-new)
+        (cons "+" #'hym-workspace-sidebar-new)
+        (cons "g" #'hym-workspace-sidebar-refresh)
+        (cons (kbd "TAB") #'hym-workspace-sidebar-toggle-archived)
+        (cons "a" #'hym-workspace-sidebar-add-repo)
+        (cons "u" #'hym-workspace-sidebar-unarchive)
+        (cons "r" #'hym-workspace-sidebar-rename)
+        (cons "!" #'hym-workspace-sidebar-retry))
+  "Sidebar keys, applied to both the plain and the evil normal-state map.")
+
+(pcase-dolist (`(,key . ,command) hym-workspace-sidebar--bindings)
+  (define-key hym-workspace-sidebar-mode-map key command))
 
 (when (fboundp 'evil-define-key)
   (evil-set-initial-state 'hym-workspace-sidebar-mode 'normal)
-  (evil-define-key 'normal hym-workspace-sidebar-mode-map
-    (kbd "RET") #'hym-workspace-sidebar-visit
-    [mouse-1] #'hym-workspace-sidebar-mouse-visit
-    "d" #'hym-workspace-sidebar-close-ws
-    "x" #'hym-workspace-sidebar-archive
-    "c" #'hym-workspace-sidebar-new
-    "+" #'hym-workspace-sidebar-new
-    "g" #'hym-workspace-sidebar-refresh
-    (kbd "TAB") #'hym-workspace-sidebar-toggle-archived
-    "a" #'hym-workspace-sidebar-add-repo
-    "u" #'hym-workspace-sidebar-unarchive
-    "r" #'hym-workspace-sidebar-rename
-    "!" #'hym-workspace-sidebar-retry))
+  (apply #'evil-define-key* 'normal hym-workspace-sidebar-mode-map
+         (mapcan (lambda (binding) (list (car binding) (cdr binding)))
+                 hym-workspace-sidebar--bindings)))
 
 (provide 'hym-workspaces-sidebar)

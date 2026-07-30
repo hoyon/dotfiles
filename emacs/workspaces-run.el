@@ -55,50 +55,20 @@ agent buffer is killed."
   "Return the current Ghostel environment list, or nil before Ghostel loads."
   (and (boundp 'ghostel-environment) ghostel-environment))
 
-(defun hym-workspace--run-refresh ()
-  (when (fboundp 'hym-workspace-sidebar-refresh)
-    (hym-workspace-sidebar-refresh)))
-
 (defun hym-workspace--agent-state-key (slug session)
   "Return the hash key for SLUG and SESSION."
   (list slug session))
-
-(defun hym-workspace--agent-entry-slug (key entry)
-  "Return the workspace slug represented by KEY and ENTRY."
-  (or (plist-get (and (consp entry) entry) :slug)
-      (and (stringp key) key)))
-
-(defun hym-workspace--agent-entry-state (entry)
-  "Return the state represented by ENTRY."
-  (if (consp entry)
-      (plist-get entry :state)
-    entry))
-
-(defun hym-workspace--agent-entry-updated-at (entry)
-  "Return ENTRY's last update time, or nil for legacy entries."
-  (when (consp entry)
-    (plist-get entry :updated-at)))
-
-(defun hym-workspace--agent-normalize-entry (key entry)
-  "Return ENTRY as a session plist, accepting the old slug -> state shape."
-  (if (consp entry)
-      entry
-    (list :slug key :agent "agent" :session "default"
-          :state entry :updated-at nil)))
 
 (defun hym-workspace--agent-clear-state (slug &optional session)
   "Clear tracked agent state for SLUG.
 When SESSION is non-nil, clear only that session."
   (if session
-      (progn
-        (remhash (hym-workspace--agent-state-key slug session)
-                 hym-workspace--agent-state)
-        (when (equal session "default")
-          (remhash slug hym-workspace--agent-state)))
+      (remhash (hym-workspace--agent-state-key slug session)
+               hym-workspace--agent-state)
     (let (keys)
       (maphash
-       (lambda (key entry)
-         (when (equal slug (hym-workspace--agent-entry-slug key entry))
+       (lambda (key _entry)
+         (when (equal slug (car-safe key))
            (push key keys)))
        hym-workspace--agent-state)
       (dolist (key keys)
@@ -106,8 +76,8 @@ When SESSION is non-nil, clear only that session."
 
 (defun hym-workspace--agent-state-stale-p (entry)
   "Return non-nil when ENTRY should be discarded as stale."
-  (and (eq (hym-workspace--agent-entry-state entry) 'working)
-       (let ((updated-at (hym-workspace--agent-entry-updated-at entry)))
+  (and (eq (plist-get entry :state) 'working)
+       (let ((updated-at (plist-get entry :updated-at)))
          (and updated-at
               (> (- (float-time) updated-at)
                  hym-workspace-agent-working-timeout)))))
@@ -134,7 +104,7 @@ Return non-nil when anything changed."
            hym-workspace-agent-stale-check-interval
            (lambda ()
              (when (hym-workspace--agent-sweep-stale-working)
-               (hym-workspace--run-refresh)))))))
+               (hym-workspace-refresh-ui)))))))
 
 (defun hym-workspace--agent-event-state (event old)
   "Return EVENT's new state, using OLD for unknown events."
@@ -155,55 +125,48 @@ Return non-nil when anything changed."
     ;; blocked question as `agent_needs_input' above.
     (_ old)))
 
-(defun hym-workspace-agent-signal (slug &rest args)
-  "Update SLUG's agent state from hook ARGS, and refresh.
-The preferred call shape is (SLUG AGENT SESSION EVENT).  The older
-(SLUG EVENT) shape is accepted as a compatibility fallback.
+(defun hym-workspace-agent-signal (slug agent session event)
+  "Update SLUG's AGENT/SESSION state from hook EVENT, and refresh.
 Only re-renders when the state actually changes, so the stream of tool
 events during an active turn doesn't churn the sidebar. Called from the
 hook via `emacsclient --eval'."
-  (let* ((agent (if (= (length args) 1) "agent" (or (nth 0 args) "agent")))
-         (session (if (= (length args) 1) "default" (or (nth 1 args) "default")))
-         (event (if (= (length args) 1) (car args) (nth 2 args)))
+  (let* ((agent (or agent "agent"))
+         (session (or session "default"))
          (key (hym-workspace--agent-state-key slug session))
          (entry (gethash key hym-workspace--agent-state))
-         (legacy-entry (and (equal session "default")
-                            (gethash slug hym-workspace--agent-state)))
          (old (plist-get entry :state))
          (new (hym-workspace--agent-event-state event old)))
-    (if (and (null new) (equal event "SessionEnd") (or entry legacy-entry))
-        (progn
-          (hym-workspace--agent-clear-state slug session)
-          (hym-workspace--run-refresh))
-      (if (eq new old)
-        (when new
-          (plist-put entry :updated-at (float-time))
-          (puthash key entry hym-workspace--agent-state)
-          (hym-workspace--agent-ensure-stale-timer))
-        (if new
-            (progn
-              (puthash key
-                       (list :slug slug :agent agent :session session
-                             :state new :updated-at (float-time))
-                       hym-workspace--agent-state)
-              (hym-workspace--agent-ensure-stale-timer))
-          (hym-workspace--agent-clear-state slug session))
-        (hym-workspace--run-refresh)))))
+    (cond
+     ;; An unchanged state still refreshes the timestamp, so a long turn is
+     ;; not swept up as stale, but needs no redraw.
+     ((and new (eq new old))
+      (plist-put entry :updated-at (float-time))
+      (puthash key entry hym-workspace--agent-state)
+      (hym-workspace--agent-ensure-stale-timer))
+     (new
+      (puthash key
+               (list :slug slug :agent agent :session session
+                     :state new :updated-at (float-time))
+               hym-workspace--agent-state)
+      (hym-workspace--agent-ensure-stale-timer)
+      (hym-workspace-refresh-ui))
+     (entry
+      (hym-workspace--agent-clear-state slug session)
+      (hym-workspace-refresh-ui)))))
 
 (defun hym-workspace--agent-entries (slug)
   "Return non-stale tracked agent entries for SLUG."
   (let (entries keys)
     (maphash
      (lambda (key entry)
-       (when (equal slug (hym-workspace--agent-entry-slug key entry))
+       (when (equal slug (car-safe key))
          (if (hym-workspace--agent-state-stale-p entry)
              (push key keys)
-           (push (hym-workspace--agent-normalize-entry key entry)
-                 entries))))
+           (push entry entries))))
      hym-workspace--agent-state)
     (dolist (key keys)
       (remhash key hym-workspace--agent-state))
-    (when keys (hym-workspace--run-refresh))
+    (when keys (hym-workspace-refresh-ui))
     (sort entries
           (lambda (a b)
             (string< (format "%s/%s" (plist-get a :agent) (plist-get a :session))
@@ -251,25 +214,45 @@ hook via `emacsclient --eval'."
                         'face 'success))
           (hym-workspace--live-servers (hym-workspace--key ws))))
 
-(defun hym-workspace--live-servers (workspace-key)
-  "Return live (REPO . BUFFER-NAME) servers for WORKSPACE-KEY.
-Remove dead server entries while collecting the result."
+(defun hym-workspace--server-buffer-live-p (name)
+  "Return non-nil when the server buffer NAME still has a live process."
+  (let ((buf (and name (get-buffer name))))
+    (and buf (process-live-p (get-buffer-process buf)))))
+
+(defun hym-workspace--sweep-servers (predicate)
+  "Return (SERVER-KEY . BUFFER-NAME) for live servers matching PREDICATE.
+Dead entries are dropped from the table on the way past, whether or not
+they match."
   (let (live dead)
     (maphash
      (lambda (server-key name)
-       (when (equal workspace-key (car-safe server-key))
-         (let ((buf (get-buffer name)))
-           (if (and buf (process-live-p (get-buffer-process buf)))
-               (push (cons (cadr server-key) name) live)
-             (push server-key dead)))))
+       (if (not (hym-workspace--server-buffer-live-p name))
+           (push server-key dead)
+         (when (funcall predicate server-key)
+           (push (cons server-key name) live))))
      hym-workspace--servers)
     (dolist (server-key dead)
       (remhash server-key hym-workspace--servers))
-    (sort live (lambda (a b) (string< (car a) (car b))))))
+    live))
+
+(defun hym-workspace--live-servers (workspace-key)
+  "Return live (REPO . BUFFER-NAME) servers for WORKSPACE-KEY.
+Remove dead server entries while collecting the result."
+  (sort (mapcar (lambda (entry) (cons (cadr (car entry)) (cdr entry)))
+                (hym-workspace--sweep-servers
+                 (lambda (server-key)
+                   (equal workspace-key (car-safe server-key)))))
+        (lambda (a b) (string< (car a) (car b)))))
 
 (with-eval-after-load 'hym-workspaces-sidebar
   (add-to-list 'hym-workspace-sidebar-status-functions #'hym-workspace--server-badge)
   (add-to-list 'hym-workspace-sidebar-status-functions #'hym-workspace--agent-badge))
+
+(defun hym-workspace--teardown-servers (ws)
+  "Stop WS's servers, leaving the redraw to whoever is tearing WS down."
+  (hym-workspace-kill-workspace-servers ws t))
+
+(add-hook 'hym-workspace-teardown-functions #'hym-workspace--teardown-servers)
 
 (defun hym-workspace--repos-with-run (ws)
   "Return WS's repos whose conductor.json defines a `run' script."
@@ -316,9 +299,8 @@ real key rather than the literal \"nil\"."
 
 (defun hym-workspace--server-live-p (workspace-key repo)
   "Return non-nil when REPO has a live server in WORKSPACE-KEY."
-  (let* ((name (gethash (list workspace-key repo) hym-workspace--servers))
-         (buf (and name (get-buffer name))))
-    (and buf (process-live-p (get-buffer-process buf)))))
+  (hym-workspace--server-buffer-live-p
+   (gethash (list workspace-key repo) hym-workspace--servers)))
 
 (defun hym-workspace--rename-server-tab (buf)
   "Mark every tab containing BUF as an old server tab."
@@ -405,7 +387,7 @@ Call AFTER-KILL only once the old process has been killed and cleaned up."
         (funcall after-kill)))
     (remhash server-key hym-workspace--servers)
     (unless defer-refresh
-      (hym-workspace--run-refresh))))
+      (hym-workspace-refresh-ui))))
 
 (defun hym-workspace-kill-workspace-servers (ws &optional defer-refresh)
   "Kill every tracked server for WS.
@@ -415,24 +397,17 @@ When DEFER-REFRESH is non-nil, leave sidebar refresh to the caller."
     (dolist (repo repos)
       (hym-workspace--kill-server key repo t))
     (unless defer-refresh
-      (hym-workspace--run-refresh))
+      (hym-workspace-refresh-ui))
     repos))
 
 (defun hym-workspace--running-server-choices ()
   "Return (DISPLAY . SERVER-KEY) choices for every live tracked server."
-  (let (choices dead)
-    (maphash
-     (lambda (server-key name)
-       (let ((buf (get-buffer name)))
-         (if (and buf (process-live-p (get-buffer-process buf)))
-             (push (cons (format "%s/%s" (car server-key) (cadr server-key))
-                         server-key)
-                   choices)
-           (push server-key dead))))
-     hym-workspace--servers)
-    (dolist (server-key dead)
-      (remhash server-key hym-workspace--servers))
-    (sort choices (lambda (a b) (string< (car a) (car b))))))
+  (sort (mapcar (lambda (entry)
+                  (let ((server-key (car entry)))
+                    (cons (format "%s/%s" (car server-key) (cadr server-key))
+                          server-key)))
+                (hym-workspace--sweep-servers #'always))
+        (lambda (a b) (string< (car a) (car b)))))
 
 (defun hym-workspace-kill-server ()
   "Prompt for and kill any running workspace server."
@@ -467,8 +442,8 @@ When DEFER-REFRESH is non-nil, leave sidebar refresh to the caller."
        (puthash (list key repo) bufname hym-workspace--servers)
        (when-let ((proc (get-buffer-process (get-buffer bufname))))
          (add-function :after (process-sentinel proc)
-                       (lambda (&rest _) (hym-workspace--run-refresh))))
-       (hym-workspace--run-refresh)))))
+                       (lambda (&rest _) (hym-workspace-refresh-ui))))
+       (hym-workspace-refresh-ui)))))
 
 (defun hym-workspace-run-server ()
   "Run a repo's conductor `run' script in a server tab, with live output."
@@ -526,7 +501,7 @@ Servers that are not currently running are left stopped."
                      (lambda ()
                        (run-at-time delay nil
                                     #'hym-workspace--start-server ws repo)))))
-      (hym-workspace--run-refresh)
+      (hym-workspace-refresh-ui)
       (message "Restarting %d server%s" (length repos)
                (if (= (length repos) 1) "" "s")))))
 
@@ -564,7 +539,7 @@ argument when non-blank."
        (add-hook 'kill-buffer-hook
                  (lambda ()
                    (hym-workspace--agent-clear-state key session)
-                   (hym-workspace--run-refresh))
+                   (hym-workspace-refresh-ui))
                  nil t)
        (ghostel-send-string
         (concat (hym-workspace--agent-launch-string command prompt) "\n"))))))
@@ -631,7 +606,7 @@ argument when non-blank."
          (add-hook 'kill-buffer-hook
                    (lambda ()
                      (hym-workspace--agent-clear-state key session)
-                     (hym-workspace--run-refresh))
+                     (hym-workspace-refresh-ui))
                    nil t))))))
 
 (provide 'hym-workspaces-run)
