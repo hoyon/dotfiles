@@ -166,9 +166,18 @@
          ("\\.sl\\'" . slang-mode)
          ("\\.slangh\\'" . slang-mode)))
 
+(defun hym/odin-mode-hook ()
+  "Odin mode configuration"
+
+  ; Odin uses tabs instead of spaces
+  (setq tab-width 4)
+  (indent-tabs-mode))
+
 (use-package odin-ts-mode
     :straight (odin-ts-mode :host github :repo "Sampie159/odin-ts-mode")
     :mode (("\\.odin\\'" . odin-ts-mode)))
+
+(add-hook 'odin-ts-mode-hook 'hym/odin-mode-hook)
 
 (setq go-ts-mode-indent-offset 8)
 
