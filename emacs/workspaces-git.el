@@ -22,7 +22,7 @@ project/notes workspaces `:repos' is (\".\"), so this returns the root."
   (interactive)
   (when-let ((ws (hym-workspace-current)))
     (let ((default-directory (hym-workspace--pick-repo ws)))
-      (hym/git-delta-diff-merge-base))))
+      (hym/git-delta-diff-merge-base (hym-workspace-base-branch ws)))))
 
 (defun hym-workspace-git-diff-unstaged-with-untracked ()
   "Show unstaged diff, including untracked files, for a workspace repo."

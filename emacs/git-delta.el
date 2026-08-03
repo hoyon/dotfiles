@@ -132,12 +132,17 @@ COMMAND-FN, if provided, is a function returning the shell command to run."
      (format "{ GIT_PAGER=cat git diff --stat; git ls-files --others --exclude-standard | while IFS= read -r f; do GIT_PAGER=cat git diff --stat --no-index /dev/null \"$f\"; done; echo; { GIT_PAGER=cat git diff -U5; git ls-files --others --exclude-standard | while IFS= read -r f; do GIT_PAGER=cat git diff --no-index /dev/null \"$f\"; done; } | delta --side-by-side --width %d; }"
              (hym/git-delta-diff--width)))))
 
-(defun hym/git-delta-diff-merge-base ()
-  "Show delta diff from merge base with default branch."
+(defun hym/git-delta-diff-merge-base (&optional base-branch)
+  "Show delta diff from merge base with BASE-BRANCH or the default branch.
+Prefers the remote-tracking ref over the local branch: worktree branches
+fork from origin/<base>, so a stale local default branch would drag
+unrelated upstream commits into the diff."
   (interactive)
   (let* ((default-directory (magit-toplevel))
-         (default-branch (magit-main-branch))
-         (merge-base (magit-git-string "merge-base" default-branch "HEAD")))
+         (branch (or base-branch (magit-main-branch)))
+         (remote-branch (concat "origin/" branch))
+         (base (if (magit-rev-verify remote-branch) remote-branch branch))
+         (merge-base (magit-git-string "merge-base" base "HEAD")))
     (message merge-base)
     (hym/git-delta-diff (format "%s..HEAD" merge-base) "merge-base")))
 
