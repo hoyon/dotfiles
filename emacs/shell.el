@@ -86,7 +86,11 @@
   (setq ghostel-shell (executable-find "fish")
         ;; Server tabs can be very chatty; keep useful history without making
         ;; every Ghostel buffer unreasonably expensive.
-        ghostel-max-scrollback (* 25 1024 1024)))
+        ghostel-max-scrollback (* 25 1024 1024))
+  ;; `setopt' rather than `setq': the setter rebuilds the keymap that decides
+  ;; whether C-g reaches the terminal or falls through to `keyboard-quit'.
+  (setopt ghostel-keymap-exceptions
+          (seq-union ghostel-keymap-exceptions '("C-g"))))
 
 (defun hym/evil-ghostel-toggle-escape ()
   "Toggle ESC between the terminal and Evil in this Ghostel buffer.
