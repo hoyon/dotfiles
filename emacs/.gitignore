@@ -1,5 +1,6 @@
 transient
-straight
+straight/*
+!straight/versions/
 recentf
 backup
 eshell

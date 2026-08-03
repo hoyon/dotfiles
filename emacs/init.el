@@ -145,6 +145,7 @@ ones, so generated key strings and commands have to go straight to
 (load-config "modes.el")
 (load-config "agents.el")
 (load-config "docker.el")
+(load-config "packages.el")
 
 (load-config "tabs.el")
 (hym-tabs-mode 1)
