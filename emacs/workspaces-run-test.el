@@ -400,6 +400,29 @@
             (should (equal (hym-workspace--repos-with-run ws) '("a")))))
       (delete-directory root t))))
 
+(ert-deftest hym-workspace-server-environment-reads-repo-mapping ()
+  (let ((file (make-temp-file "hym-server-environments")))
+    (unwind-protect
+        (progn
+          (with-temp-file file
+            (insert "((\"ploy-server\" . (\"PORT=4101\" \"FEATURE=true\")))"))
+          (let ((hym-workspace-server-environments-file file))
+            (should (equal (hym-workspace--server-environment "ploy-server")
+                           '("PORT=4101" "FEATURE=true")))
+            (should-not (hym-workspace--server-environment "ploy-client"))))
+      (delete-file file))))
+
+(ert-deftest hym-workspace-server-environment-rejects-malformed-values ()
+  (let ((file (make-temp-file "hym-server-environments")))
+    (unwind-protect
+        (progn
+          (with-temp-file file
+            (insert "((\"ploy-server\" . \"PORT=4101\"))"))
+          (let ((hym-workspace-server-environments-file file))
+            (should-error (hym-workspace--server-environment "ploy-server")
+                          :type 'error)))
+      (delete-file file))))
+
 (ert-deftest hym-workspace-agent-env-carries-slug-and-name ()
   (let ((env (hym-workspace--agent-env '(:name "w" :slug "auth" :type worktree :root "~")
                                        "claude" "session-1")))

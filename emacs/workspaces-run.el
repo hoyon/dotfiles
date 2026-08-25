@@ -18,6 +18,14 @@
   "Alist of (NAME . SHELL-COMMAND) for agents launchable in a workspace."
   :type '(alist :key-type string :value-type string) :group 'hym-workspace)
 
+(defcustom hym-workspace-server-environments-file
+  (expand-file-name "server-environments.eld" hym-workspace-home)
+  "File mapping repo names to environment variables for their servers.
+The file contains an alist whose keys are repo names and whose values are
+lists of \"KEY=VALUE\" strings.  It is read on every server start, so edits
+take effect without restarting Emacs."
+  :type 'file :group 'hym-workspace)
+
 (defvar hym-workspace--servers (make-hash-table :test 'equal)
   "Map (WORKSPACE-KEY REPO) to its server (`ghostel-compile') buffer name.")
 
@@ -54,6 +62,27 @@ agent buffer is killed."
 (defun hym-workspace--ghostel-environment ()
   "Return the current Ghostel environment list, or nil before Ghostel loads."
   (and (boundp 'ghostel-environment) ghostel-environment))
+
+(defun hym-workspace--server-environment (repo)
+  "Return the configured server environment for REPO.
+Read `hym-workspace-server-environments-file' on every call.  A missing file
+or an unconfigured repo yields nil; malformed entries signal an error rather
+than starting a server with an unexpected environment."
+  (let ((entries
+         (hym-workspace--read-eld hym-workspace-server-environments-file
+                                  "server environments file")))
+    (unless
+        (and (listp entries)
+             (seq-every-p
+              (lambda (entry)
+                (and (consp entry)
+                     (stringp (car entry))
+                     (listp (cdr entry))
+                     (seq-every-p #'stringp (cdr entry))))
+              entries))
+      (error "Invalid server environments in %s"
+             hym-workspace-server-environments-file))
+    (alist-get repo entries nil nil #'equal)))
 
 (defun hym-workspace--agent-state-key (slug session)
   "Return the hash key for SLUG and SESSION."
@@ -431,7 +460,10 @@ When DEFER-REFRESH is non-nil, leave sidebar refresh to the caller."
      ws (format "server:%s" repo)
      (lambda ()
        (let ((default-directory (expand-file-name repo (hym-workspace-root ws)))
-             (ghostel-compile-buffer-name bufname))
+             (ghostel-compile-buffer-name bufname)
+             (ghostel-environment
+              (append (hym-workspace--server-environment repo)
+                      (hym-workspace--ghostel-environment))))
          (ghostel-compile run t))
        ;; ghostel-compile splits; make its output fill the new tab's main
        ;; window instead of sitting beside the cloned old buffer. The

@@ -430,9 +430,10 @@ worktree is about to be removed and the buffer holds the only copy."
                      (string-prefix-p root (expand-file-name dir)))
             (if (and (buffer-file-name buf) (buffer-modified-p buf))
                 (setq kept (1+ kept))
-              (when-let ((proc (get-buffer-process buf)))
-                (set-process-query-on-exit-flag proc nil))
-              (kill-buffer buf))))))
+              ;; Bind rather than clear process flags: ghostel installs its
+              ;; own query function that ignores `process-query-on-exit-flag'.
+              (let ((kill-buffer-query-functions nil))
+                (kill-buffer buf)))))))
     (when (> kept 0)
       (message "%s: left %d modified buffer(s) open"
                (hym-workspace-name ws) kept))))
