@@ -63,6 +63,36 @@ agent buffer is killed."
   "Return the current Ghostel environment list, or nil before Ghostel loads."
   (and (boundp 'ghostel-environment) ghostel-environment))
 
+(defvar-local hym-workspace--terminal-workspace nil
+  "Name of the workspace whose tab spawned this terminal buffer.")
+
+(defun hym-workspace--tag-terminal ()
+  "Record the current workspace's name on this terminal buffer."
+  (when-let ((ws (hym-workspace-current)))
+    (setq hym-workspace--terminal-workspace (hym-workspace-name ws))))
+
+(add-hook 'ghostel-mode-hook #'hym-workspace--tag-terminal)
+
+(defun hym-workspace--notification-text (title body)
+  "Format an OSC notification as \"[WORKSPACE] TITLE: BODY\".
+Drop the workspace when the buffer was not spawned in one, and the title
+when the agent sent none (iTerm2-style OSC 9); with neither, fall back to
+the buffer name so the message still says where it came from."
+  (let* ((ws hym-workspace--terminal-workspace)
+         (summary (cond ((and title (not (string-empty-p title))) title)
+                        ((null ws) (buffer-name)))))
+    (concat (and ws (format "[%s] " ws))
+            (and summary (format "%s: " summary))
+            body)))
+
+(defun hym-workspace-notify (title body)
+  "Echo an agent's OSC notification, prefixed with the workspace it came from.
+Ghostel calls this with the originating terminal current, so the prefix is
+right even when another workspace's tab is selected."
+  (message "%s" (hym-workspace--notification-text title body)))
+
+(setq ghostel-notification-function #'hym-workspace-notify)
+
 (defun hym-workspace--server-environment (repo)
   "Return the configured server environment for REPO.
 Read `hym-workspace-server-environments-file' on every call.  A missing file

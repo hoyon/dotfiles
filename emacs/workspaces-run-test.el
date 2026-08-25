@@ -554,3 +554,28 @@
       (fset 'hym-workspace--start-agent orig-start)
       (fset 'hym-workspace--show-setup-error orig-err)
       (delete-directory tmp t))))
+
+(ert-deftest hym-workspace-notification-text-prefixes-workspace ()
+  (with-temp-buffer
+    (setq hym-workspace--terminal-workspace "tf flows")
+    (should (equal (hym-workspace--notification-text "Claude Code" "Done")
+                   "[tf flows] Claude Code: Done"))
+    (should (equal (hym-workspace--notification-text "" "Done")
+                   "[tf flows] Done")))
+  (with-temp-buffer
+    (rename-buffer "*ghostel*" t)
+    (should (equal (hym-workspace--notification-text "Codex" "Done")
+                   "Codex: Done"))
+    (should (equal (hym-workspace--notification-text nil "Done")
+                   "*ghostel*: Done"))))
+
+(ert-deftest hym-workspace-tag-terminal-records-workspace-name ()
+  (with-temp-buffer
+    (cl-letf (((symbol-function 'hym-workspace-current)
+               (lambda () '(:name "tf flows" :slug "tf_flows"))))
+      (hym-workspace--tag-terminal))
+    (should (equal hym-workspace--terminal-workspace "tf flows")))
+  (with-temp-buffer
+    (cl-letf (((symbol-function 'hym-workspace-current) #'ignore))
+      (hym-workspace--tag-terminal))
+    (should (null hym-workspace--terminal-workspace))))
