@@ -5,17 +5,19 @@
 input=$(cat)
 
 # One value per line, not tab-separated: tab is IFS whitespace, so `read` would
-# collapse an empty directory field into the token count. Bad JSON leaves both
+# collapse an empty directory field into the token count. Bad JSON leaves all
 # unset and the defaults below take over rather than leaking jq's error.
-{ IFS= read -r dir; IFS= read -r ktokens; } < <(
+{ IFS= read -r dir; IFS= read -r ktokens; IFS= read -r model; } < <(
   jq -r '
     (.workspace.current_dir // .cwd // ""),
-    ((.context_window.total_input_tokens // 0) / 1000)
+    ((.context_window.total_input_tokens // 0) / 1000),
+    (.model.display_name // "")
   ' <<<"$input" 2>/dev/null
 )
 : "${dir:=$PWD}" "${ktokens:=0}"
 
 line=$(printf '%.1fk' "$ktokens")
+[ -n "$model" ] && line="$line | $model"
 
 # The payload only carries a branch inside worktree sessions, so ask git.
 branch=$(git -C "$dir" branch --show-current 2>/dev/null)
