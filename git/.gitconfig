@@ -33,3 +33,5 @@
 
 [merge]
     conflictStyle = zdiff3
+[diff "elixir"]
+    xfuncname = ^[ \t]*((defp?|defmacro|defmodule|defimpl|defprotocol|test)[ \t].*)$
