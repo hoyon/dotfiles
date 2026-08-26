@@ -10,10 +10,6 @@ endif
 
 call plug#begin('~/.vim/plugged')
 
-Plug 'morhetz/gruvbox'
-Plug 'NLKNguyen/papercolor-theme'
-Plug 'chriskempson/base16-vim'
-
 Plug 'vim-airline/vim-airline'
 Plug 'vim-airline/vim-airline-themes'
 Plug 'Raimondi/delimitMate'
@@ -37,11 +33,8 @@ Plug 'tpope/vim-commentary'
 Plug 'junegunn/fzf'
 Plug 'junegunn/fzf.vim'
 
-Plug 'joshdick/onedark.vim'
-
-let g:polyglot_disabled = ['org']
+let g:polyglot_disabled = ['org', 'sensible']
 Plug 'sheerun/vim-polyglot'
-Plug 'imsnif/kdl.vim'
 
 call plug#end()
 
@@ -53,46 +46,41 @@ set smartcase
 set showmatch
 set shortmess+=I
 set mouse=a
+set clipboard^=unnamed
 set showcmd
 set shell=sh
 
 set termguicolors
 set background=light
-"colorscheme PaperColor
 
 set noswapfile
 set nobackup
 set autoread
-set nolazyredraw
 set hlsearch
 
 "Indent settings
 set expandtab
 set shiftwidth=4
 set softtabstop=4
-set cindent
+set autoindent
 "Use shift-tab to insert a literal tab character
 inoremap <S-Tab> <C-V><Tab>
 
 set ttimeoutlen=0
 
 "Use I-beam when in insert mode
-if &term ==# 'xterm-256color' || &term ==# 'screen-256color' || &term ==# 'xterm-termite' || &term ==# 'xterm-kitty'
-    let &t_SI = "\<Esc>[5 q"
-    let &t_EI = "\<Esc>[1 q"
-endif
-
-if exists('$TMUX')
-    let &t_EI = "\<Esc>Ptmux;\<Esc>\<Esc>]50;CursorShape=0\x7\<Esc>\\"
-    let &t_SI = "\<Esc>Ptmux;\<Esc>\<Esc>]50;CursorShape=1\x7\<Esc>\\"
-endif
+let &t_SI = "\<Esc>[5 q"
+let &t_EI = "\<Esc>[1 q"
 
 augroup vimrc
     autocmd! 
 augroup END
 
 set title
-autocmd vimrc BufEnter * let &titlestring = 'vim ' . expand("%:p")
+autocmd vimrc BufEnter * let &titlestring = v:progname . ' ' . expand("%:p")
+
+"vim-polyglot replaces filetype.vim with a stale snapshot, so newer built-in filetypes need declaring
+autocmd vimrc BufRead,BufNewFile *.kdl setf kdl
 
 "Move by screen lines instead of actual lines
 nnoremap <silent> j gj
@@ -102,7 +90,7 @@ vnoremap <silent> k gk
 
 "Space as an additional leader
 map <space> <leader>
-nmap <silent> <leader><space> :nohlsearch<cr>
+nnoremap <silent> <leader><space> :nohlsearch<cr>
 
 "Prevent searches being highlighed when vimrc reloads
 nohlsearch
@@ -111,61 +99,51 @@ nohlsearch
 cnoremap %% <C-R>=expand('%:h').'/'<cr>
 
 "quickly edit this file
-nmap <leader>ev :e ~/.vimrc<cr>
-nmap <leader>sv :so ~/.vimrc<cr>
+nnoremap <leader>ev :e $MYVIMRC<cr>
+nnoremap <leader>sv :so $MYVIMRC<cr>
 
 "Quit vim with Q as well as q
 command! Q q
 command! W w
 
 "open a file where I left off last time
-if has('autocmd')
-    autocmd vimrc BufReadPost * if line("'\"") > 0 && line("'\"") <= line('$') && &filetype !=# 'gitcommit'
-                \| exe "normal! '\"" | endif
-endif
+autocmd vimrc BufReadPost * if line("'\"") > 0 && line("'\"") <= line('$') && &filetype !=# 'gitcommit'
+            \| exe "normal! '\"" | endif
 
 "Wild mode
 set wildmenu
 set wildmode=list:longest,full
 
 "Make background transparent
-highlight! Normal ctermbg=none
-highlight! NonText ctermbg=none
-
-if has('nvim')
-    highlight! Normal guibg=none
-    highlight! NonText guibg=none
-endif
+highlight! Normal ctermbg=NONE guibg=NONE
+highlight! NonText ctermbg=NONE guibg=NONE
 
 "Highlight current line numbe
 hi clear CursorLine
 hi CursorLineNR cterm=bold
 set cursorline
 
-"Undo tree
 "Persistent undo
-if has('persistent_undo')
-    set undodir=~/.vim/undodir/
-    set undofile
+set undodir=~/.vim/undodir/
+set undofile
 
-    " neovim undo files are incompatible with regular vim
-    if has('nvim')
-        set undodir=~/.vim/undodir/neovim
-    endif
+" neovim undo files are incompatible with regular vim
+if has('nvim')
+    set undodir=~/.vim/undodir/neovim
 endif
 
 "Switch to last buffer
-nmap gb <C-^>
+nnoremap gb <C-^>
 
 "vim airline
 let g:airline_powerline_fonts = 1
 let g:airline_theme = 'sol'
 let g:airline#extensions#whitespace#enabled = 0
 
-" fzf
-nmap <C-p> :Files<cr>
-nmap <leader>b :Buffers<cr>
-nmap <leader>/ :Rg<space>
+"fzf
+nnoremap <C-p> :Files<cr>
+nnoremap <leader>b :Buffers<cr>
+nnoremap <leader>/ :Rg<space>
 
 "delimitMate
 let g:delimitMate_expand_cr = 2
