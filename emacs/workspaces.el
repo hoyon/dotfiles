@@ -19,7 +19,7 @@
 ;;    :slug "auth_refactor"   ; frozen id for worktree types: dir/branch/DB name
 ;;    :type worktree          ; worktree | directory
 ;;    :root "~/workspaces/auth_refactor"
-;;    :repos ("ploy-server" "ploy-client")  ; (".") for directory
+;;    :repos ("api" "web")  ; (".") for directory
 ;;    :base-branch "main" :archived nil)
 ;;
 ;; `hym-workspace-home' (~/workspaces) is the one home: the registry plus a dir

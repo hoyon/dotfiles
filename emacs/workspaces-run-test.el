@@ -405,11 +405,11 @@
     (unwind-protect
         (progn
           (with-temp-file file
-            (insert "((\"ploy-server\" . (\"PORT=4101\" \"FEATURE=true\")))"))
+            (insert "((\"api\" . (\"PORT=4101\" \"FEATURE=true\")))"))
           (let ((hym-workspace-server-environments-file file))
-            (should (equal (hym-workspace--server-environment "ploy-server")
+            (should (equal (hym-workspace--server-environment "api")
                            '("PORT=4101" "FEATURE=true")))
-            (should-not (hym-workspace--server-environment "ploy-client"))))
+            (should-not (hym-workspace--server-environment "web"))))
       (delete-file file))))
 
 (ert-deftest hym-workspace-server-environment-rejects-malformed-values ()
@@ -417,9 +417,9 @@
     (unwind-protect
         (progn
           (with-temp-file file
-            (insert "((\"ploy-server\" . \"PORT=4101\"))"))
+            (insert "((\"api\" . \"PORT=4101\"))"))
           (let ((hym-workspace-server-environments-file file))
-            (should-error (hym-workspace--server-environment "ploy-server")
+            (should-error (hym-workspace--server-environment "api")
                           :type 'error)))
       (delete-file file))))
 

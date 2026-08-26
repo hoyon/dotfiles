@@ -10,7 +10,7 @@
 (defcustom hym-workspace-presets-file
   (expand-file-name "presets.eld" hym-workspace-home)
   "File defining worktree presets, kept outside the dotfiles repo.
-A list of plists, e.g. (:name \"frontend\" :repos (\"ploy-client\")
+A list of plists, e.g. (:name \"frontend\" :repos (\"web\")
 :base-branch \"main\" :agent \"claude\")."
   :type 'file :group 'hym-workspace)
 
