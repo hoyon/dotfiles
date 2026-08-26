@@ -2,10 +2,214 @@
 
 ;; Use delta to show side by side diffs of staged and unstaged changes
 
+(require 'ansi-color)
+(require 'outline)
+(require 'text-property-search)
+
 (defvar-local hym/git-delta-diff--directory nil)
 (defvar-local hym/git-delta-diff--command-fn nil)
 (defvar-local hym/git-delta-diff--rendered-width nil
   "Column width the current delta buffer was last rendered at.")
+
+(defun hym/git-delta-diff--parse-file-header (line)
+  (cond
+   ((string-match "\\`renamed: .* ⟶ +\\(.+\\)\\'" line)
+    (cons (match-string 1 line) 'renamed))
+   ((string-match "\\`added: \\(.+\\)\\'" line)
+    (cons (match-string 1 line) 'added))
+   ((string-match "\\`removed: \\(.+\\)\\'" line)
+    (cons (match-string 1 line) 'removed))
+   (t (cons line 'modified))))
+
+(defun hym/git-delta-diff--hunk-line-number (line)
+  (when (string-match "\\`\\([0-9]+\\): " line)
+    (string-to-number (match-string 1 line))))
+
+(defun hym/git-delta-diff--right-line-number (line)
+  (let ((cells (split-string line "│")))
+    (when (> (length cells) 3)
+      (let ((cell (string-trim (nth 3 cells))))
+        (when (string-match-p "\\`[0-9]+\\'" cell)
+          (string-to-number cell))))))
+
+(defun hym/git-delta-diff--file-header-p (line)
+  (and (not (string-empty-p line))
+       (not (string-match-p "\\`[│─[:space:]]" line))
+       (save-excursion
+         (and (zerop (forward-line 1))
+              (eq (char-after) ?─)))))
+
+(defface hym/git-delta-file-header
+  '((t :inherit (header-line bold) :extend t))
+  "Band behind a file header and its rule in delta diff buffers.")
+
+(defvar hym/git-delta-diff-file-gap 3.0
+  "Height, in lines, of the blank line separating one file's diff from the next.")
+
+(defun hym/git-delta-diff--decorate-file-header (bol first)
+  (save-excursion
+    (goto-char bol)
+    (forward-line 1)
+    (add-face-text-property bol (min (point-max) (1+ (line-end-position)))
+                            'hym/git-delta-file-header)
+    (goto-char bol)
+    (when (and (not first) (zerop (forward-line -1)) (eolp))
+      (put-text-property (point) (1+ (point)) 'line-height hym/git-delta-diff-file-gap))))
+
+(defun hym/git-delta-diff--mark-headings ()
+  (save-excursion
+    (goto-char (point-min))
+    (let ((first-file t))
+      (while (not (eobp))
+        (let* ((bol (line-beginning-position))
+               (eol (line-end-position))
+               (line (buffer-substring-no-properties bol eol))
+               (hunk (hym/git-delta-diff--hunk-line-number line)))
+          (cond
+           (hunk
+            (add-text-properties bol eol `(hym/git-delta-heading 2 hym/git-delta-hunk ,hunk)))
+           ((hym/git-delta-diff--file-header-p line)
+            (add-text-properties
+             bol eol
+             `(hym/git-delta-heading 1
+               hym/git-delta-file ,(hym/git-delta-diff--parse-file-header line)))
+            (hym/git-delta-diff--decorate-file-header bol first-file)
+            (setq first-file nil))))
+        (forward-line 1)))))
+
+(defun hym/git-delta-diff--imenu-index ()
+  (let (index match)
+    (save-excursion
+      (goto-char (point-min))
+      (while (setq match (text-property-search-forward 'hym/git-delta-file))
+        (push (cons (car (prop-match-value match))
+                    (copy-marker (prop-match-beginning match)))
+              index)))
+    (nreverse index)))
+
+(defun hym/git-delta-diff--location-at-point ()
+  (save-excursion
+    (beginning-of-line)
+    (let (file line)
+      (while (and (not file) (not (bobp)))
+        (let ((bol (point)))
+          (setq file (get-text-property bol 'hym/git-delta-file))
+          (unless (or file line)
+            (setq line (or (get-text-property bol 'hym/git-delta-hunk)
+                           (hym/git-delta-diff--right-line-number
+                            (buffer-substring-no-properties bol (line-end-position))))))
+          (forward-line -1)))
+      (unless file
+        (setq file (get-text-property (point) 'hym/git-delta-file)))
+      (when file
+        (list (car file) (cdr file) (or line 1))))))
+
+(defun hym/git-delta-diff--outline-search (&optional bound move backward looking-at)
+  (outline-search-text-property 'hym/git-delta-heading nil bound move backward looking-at))
+
+(defun hym/git-delta-diff--outline-level ()
+  (get-text-property (point) 'hym/git-delta-heading))
+
+(defun hym/git-delta-diff--headings ()
+  (let (headings path match)
+    (save-excursion
+      (goto-char (point-min))
+      (while (setq match (text-property-search-forward 'hym/git-delta-heading))
+        (let* ((pos (prop-match-beginning match))
+               (file (get-text-property pos 'hym/git-delta-file))
+               (hunk (get-text-property pos 'hym/git-delta-hunk)))
+          (when file (setq path (car file)))
+          (push (cons (if hunk (cons path hunk) path) pos) headings))))
+    (nreverse headings)))
+
+(defun hym/git-delta-diff--collapsed-headings ()
+  (save-excursion
+    (seq-keep (lambda (heading)
+                (goto-char (cdr heading))
+                (and (outline-invisible-p (line-end-position))
+                     (car heading)))
+              (hym/git-delta-diff--headings))))
+
+(defun hym/git-delta-diff--restore-folds (keys)
+  (let ((headings (hym/git-delta-diff--headings)))
+    (save-excursion
+      (dolist (key keys)
+        (when-let ((pos (cdr (assoc key headings))))
+          (goto-char pos)
+          (outline-hide-subtree))))))
+
+(defun hym/git-delta-diff-visit-file ()
+  "Open the file under point at the line shown in the right-hand pane."
+  (interactive)
+  (pcase (hym/git-delta-diff--location-at-point)
+    ('nil (user-error "No file at point"))
+    (`(,path removed ,_) (user-error "%s was deleted in this diff" path))
+    (`(,path ,_ ,line)
+     (find-file (expand-file-name path hym/git-delta-diff--directory))
+     (goto-char (point-min))
+     (forward-line (1- line)))))
+
+(defun hym/git-delta-diff--goto-heading (level backward)
+  (let ((target (save-excursion
+                  (if backward (beginning-of-line) (end-of-line))
+                  (and (outline-search-text-property 'hym/git-delta-heading level nil nil backward)
+                       (line-beginning-position)))))
+    (unless target
+      (user-error "No %s %s" (if backward "previous" "next") (if (= level 1) "file" "hunk")))
+    (goto-char target)))
+
+(defun hym/git-delta-diff-next-file ()
+  "Move to the next file header."
+  (interactive)
+  (hym/git-delta-diff--goto-heading 1 nil))
+
+(defun hym/git-delta-diff-previous-file ()
+  "Move to the previous file header."
+  (interactive)
+  (hym/git-delta-diff--goto-heading 1 t))
+
+(defun hym/git-delta-diff-next-hunk ()
+  "Move to the next hunk header."
+  (interactive)
+  (hym/git-delta-diff--goto-heading 2 nil))
+
+(defun hym/git-delta-diff-previous-hunk ()
+  "Move to the previous hunk header."
+  (interactive)
+  (hym/git-delta-diff--goto-heading 2 t))
+
+(defun hym/git-delta-diff-hide-all ()
+  "Collapse the diff to its list of files."
+  (interactive)
+  (outline-hide-sublevels 1))
+
+(defun hym/git-delta-diff--delta-command (width)
+  (format "delta --side-by-side --hunk-header-decoration-style underline --width %d" width))
+
+(defun hym/git-delta-diff--match-text (match)
+  (string-trim (buffer-substring (prop-match-beginning match) (prop-match-end match))))
+
+(defun hym/git-delta-diff--sticky-header-at (pos)
+  (save-excursion
+    (goto-char pos)
+    (end-of-line)
+    (when-let ((nearest (text-property-search-backward 'hym/git-delta-heading)))
+      (if (get-text-property (prop-match-beginning nearest) 'hym/git-delta-hunk)
+          (concat (hym/git-delta-diff--match-text
+                   (text-property-search-backward 'hym/git-delta-file))
+                  " — "
+                  (hym/git-delta-diff--match-text nearest))
+        (hym/git-delta-diff--match-text nearest)))))
+
+(defun hym/git-delta-diff--sticky-header ()
+  (hym/git-delta-diff--sticky-header-at (window-start)))
+
+(define-derived-mode hym/git-delta-diff-mode special-mode "Delta"
+  (setq-local outline-search-function #'hym/git-delta-diff--outline-search
+              outline-level #'hym/git-delta-diff--outline-level
+              imenu-create-index-function #'hym/git-delta-diff--imenu-index
+              header-line-format '(:eval (hym/git-delta-diff--sticky-header)))
+  (outline-minor-mode 1))
 
 (defun hym/git-delta-diff--width ()
   "Columns to render delta into.
@@ -28,12 +232,15 @@ frame width when the buffer is not displayed yet."
         ;; buffer, so undo would just accumulate copies of the old diff.
         (buffer-undo-list t)
         (default-directory hym/git-delta-diff--directory)
-        (pos (point)))
+        (pos (point))
+        (folds (hym/git-delta-diff--collapsed-headings)))
     (erase-buffer)
     (call-process-shell-command (funcall hym/git-delta-diff--command-fn) nil t)
     (if (= (point-min) (point-max))
         (insert "No changes")
-      (ansi-color-apply-on-region (point-min) (point-max)))
+      (ansi-color-apply-on-region (point-min) (point-max))
+      (hym/git-delta-diff--mark-headings)
+      (hym/git-delta-diff--restore-folds folds))
     (setq hym/git-delta-diff--rendered-width (hym/git-delta-diff--width))
     (goto-char (min pos (point-max)))))
 
@@ -83,21 +290,27 @@ frame's. ARGS, BUF-NAME and COMMAND-FN are as described in
                        (hym/git-delta-diff--workspace-name)
                        (project-name (project-current))))))
     (with-current-buffer buf
-      (special-mode)
+      (hym/git-delta-diff-mode)
       (setq-local hym/git-delta-diff--directory dir)
       (setq-local hym/git-delta-diff--command-fn
                   (or command-fn
                       (lambda ()
-                        (format "{ GIT_PAGER=cat git diff --stat %1$s; echo; GIT_PAGER=cat git diff -U5 %1$s | delta --side-by-side --width %2$d; }"
+                        (format "{ GIT_PAGER=cat git diff --stat %1$s; echo; GIT_PAGER=cat git diff -U5 %1$s | %2$s; }"
                                 (or args "")
-                                (hym/git-delta-diff--width)))))
+                                (hym/git-delta-diff--delta-command (hym/git-delta-diff--width))))))
       (let ((inhibit-read-only t)
             (buffer-undo-list t))
         (erase-buffer)
         (insert "Loading diff…")
         (goto-char (point-min)))
       (evil-local-set-key 'normal "q" 'tab-close)
-      (evil-local-set-key 'normal "gr" 'hym/git-delta-diff-refresh))
+      (evil-local-set-key 'normal "gr" 'hym/git-delta-diff-refresh)
+      (evil-local-set-key 'normal (kbd "RET") 'hym/git-delta-diff-visit-file)
+      (evil-local-set-key 'normal "]f" 'hym/git-delta-diff-next-file)
+      (evil-local-set-key 'normal "[f" 'hym/git-delta-diff-previous-file)
+      (evil-local-set-key 'normal "]c" 'hym/git-delta-diff-next-hunk)
+      (evil-local-set-key 'normal "[c" 'hym/git-delta-diff-previous-hunk)
+      (evil-local-set-key 'normal "zM" 'hym/git-delta-diff-hide-all))
     buf))
 
 (defun hym/git-delta-diff (&optional args buf-name command-fn)
@@ -129,8 +342,8 @@ COMMAND-FN, if provided, is a function returning the shell command to run."
   (hym/git-delta-diff
    nil "unstaged+untracked"
    (lambda ()
-     (format "{ GIT_PAGER=cat git diff --stat; git ls-files --others --exclude-standard | while IFS= read -r f; do GIT_PAGER=cat git diff --stat --no-index /dev/null \"$f\"; done; echo; { GIT_PAGER=cat git diff -U5; git ls-files --others --exclude-standard | while IFS= read -r f; do GIT_PAGER=cat git diff --no-index /dev/null \"$f\"; done; } | delta --side-by-side --width %d; }"
-             (hym/git-delta-diff--width)))))
+     (format "{ GIT_PAGER=cat git diff --stat; git ls-files --others --exclude-standard | while IFS= read -r f; do GIT_PAGER=cat git diff --stat --no-index /dev/null \"$f\"; done; echo; { GIT_PAGER=cat git diff -U5; git ls-files --others --exclude-standard | while IFS= read -r f; do GIT_PAGER=cat git diff --no-index /dev/null \"$f\"; done; } | %s; }"
+             (hym/git-delta-diff--delta-command (hym/git-delta-diff--width))))))
 
 (defun hym/git-delta-diff-merge-base (&optional base-branch)
   "Show delta diff from merge base with BASE-BRANCH or the default branch.
@@ -181,8 +394,8 @@ unrelated upstream commits into the diff."
       (let ((qf (shell-quote-argument file)))
         (hym/git-delta-diff
          nil (format "untracked: %s" file)
-         (lambda () (format "git diff --no-index /dev/null %s | delta --side-by-side --width %d"
-                            qf (hym/git-delta-diff--width))))))
+         (lambda () (format "git diff --no-index /dev/null %s | %s"
+                            qf (hym/git-delta-diff--delta-command (hym/git-delta-diff--width)))))))
      (file
       (hym/git-delta-diff (format "-- %s" (shell-quote-argument file))))
      (in-staged
