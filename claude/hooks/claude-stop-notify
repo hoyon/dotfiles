@@ -1,0 +1,20 @@
+#!/bin/sh
+# Claude Code Stop hook. Rings the bell on the controlling terminal, and when
+# running inside Emacs (Ghostel sets INSIDE_EMACS) also sends the reply's first
+# line as an OSC 777 notification so it lands in the minibuffer. Claude's own
+# end-of-turn/idle notifications are disabled via preferredNotifChannel
+# because in a bare terminal they become OS notifications.
+payload=$(cat)
+pid=$$
+tty=
+while [ -n "$pid" ] && [ "$pid" != "1" ]; do
+  t=$(ps -p "$pid" -o tty= | tr -d ' ')
+  case "$t" in ""|"?"|"??") ;; *) [ -e "/dev/$t" ] && { tty="/dev/$t"; break; } ;; esac
+  pid=$(ps -p "$pid" -o ppid= | tr -d ' ')
+done
+[ -n "$tty" ] || exit 0
+printf '\a' > "$tty"
+[ -n "$INSIDE_EMACS" ] || exit 0
+line=$(printf '%s' "$payload" | jq -r '.last_assistant_message // empty' | grep -m1 . | tr -d '\000-\037\177' | cut -c1-200)
+[ -n "$line" ] || exit 0
+printf '\033]777;notify;Claude Code;%s\a' "$line" > "$tty"
