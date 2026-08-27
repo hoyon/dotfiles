@@ -138,11 +138,42 @@
           (goto-char pos)
           (outline-hide-subtree))))))
 
+(defun hym/git-delta-diff--stat-path (line)
+  (when (string-match "\\` \\(.+?\\) +| " line)
+    (let ((path (replace-regexp-in-string "{[^}]* => \\([^}]*\\)}" "\\1"
+                                          (match-string 1 line))))
+      (if (string-match "\\`.* => \\(.+\\)\\'" path)
+          (match-string 1 path)
+        path))))
+
+(defun hym/git-delta-diff--resolve-stat-path (stat-path paths)
+  (if (string-prefix-p "..." stat-path)
+      (let ((suffix (substring stat-path 3)))
+        (seq-find (lambda (path) (string-suffix-p suffix path)) paths))
+    (car (member stat-path paths))))
+
+(defun hym/git-delta-diff--goto-stat-file ()
+  (let* ((index (hym/git-delta-diff--imenu-index))
+         (stat-path (hym/git-delta-diff--stat-path
+                     (buffer-substring-no-properties (line-beginning-position)
+                                                     (line-end-position))))
+         (path (and stat-path
+                    (hym/git-delta-diff--resolve-stat-path stat-path (mapcar #'car index)))))
+    (unless path
+      (user-error "No file at point"))
+    (goto-char (cdr (assoc path index)))
+    (hym/git-delta-diff--scroll-to-top)))
+
+(defun hym/git-delta-diff--scroll-to-top ()
+  (when (eq (window-buffer) (current-buffer))
+    (recenter 0)))
+
 (defun hym/git-delta-diff-visit-file ()
-  "Open the file under point at the line shown in the right-hand pane."
+  "Open the file under point at the line shown in the right-hand pane.
+On a line of the stat block at the top, jump to that file's header instead."
   (interactive)
   (pcase (hym/git-delta-diff--location-at-point)
-    ('nil (user-error "No file at point"))
+    ('nil (hym/git-delta-diff--goto-stat-file))
     (`(,path removed ,_) (user-error "%s was deleted in this diff" path))
     (`(,path ,_ ,line)
      (find-file (expand-file-name path hym/git-delta-diff--directory))
@@ -161,12 +192,14 @@
 (defun hym/git-delta-diff-next-file ()
   "Move to the next file header."
   (interactive)
-  (hym/git-delta-diff--goto-heading 1 nil))
+  (hym/git-delta-diff--goto-heading 1 nil)
+  (hym/git-delta-diff--scroll-to-top))
 
 (defun hym/git-delta-diff-previous-file ()
   "Move to the previous file header."
   (interactive)
-  (hym/git-delta-diff--goto-heading 1 t))
+  (hym/git-delta-diff--goto-heading 1 t)
+  (hym/git-delta-diff--scroll-to-top))
 
 (defun hym/git-delta-diff-next-hunk ()
   "Move to the next hunk header."

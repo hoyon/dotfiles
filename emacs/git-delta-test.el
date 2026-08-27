@@ -224,12 +224,13 @@ added: f3.txt
         (should-error (hym/git-delta-diff-visit-file) :type 'user-error)
         (should-not visited)))))
 
-(ert-deftest hym/git-delta-visit-file-rejects-point-before-first-file ()
+(ert-deftest hym/git-delta-visit-file-on-stat-line-does-not-open-file ()
   (let (visited)
     (hym/git-delta-test-with-find-file-stub visited
       (hym/git-delta-test-with-fixture
         (setq-local hym/git-delta-diff--directory "/repo/")
-        (should-error (hym/git-delta-diff-visit-file) :type 'user-error)
+        (hym/git-delta-diff-visit-file)
+        (should (looking-at "f1.txt"))
         (should-not visited)))))
 
 (ert-deftest hym/git-delta-sticky-header-shows-file-and-hunk-above-position ()
@@ -321,3 +322,29 @@ added: f3.txt
     (should (looking-at "1: "))
     (hym/git-delta-diff-previous-hunk)
     (should (looking-at "9: h"))))
+
+(ert-deftest hym/git-delta-stat-path-forms ()
+  (should (equal (hym/git-delta-diff--stat-path " lib/foo.ex | 4 ++--") "lib/foo.ex"))
+  (should (equal (hym/git-delta-diff--stat-path " old.txt => new.txt | 0") "new.txt"))
+  (should (equal (hym/git-delta-diff--stat-path " lib/{old => new}/f.ex | 2 +-") "lib/new/f.ex"))
+  (should (equal (hym/git-delta-diff--stat-path " img.png | Bin 0 -> 12 bytes") "img.png"))
+  (should-not (hym/git-delta-diff--stat-path " 2 files changed, 3 insertions(+)"))
+  (should-not (hym/git-delta-diff--stat-path "│  1 │a | b       │  1 │a | b")))
+
+(ert-deftest hym/git-delta-resolve-stat-path-handles-truncation ()
+  (let ((paths '("f1.txt" "lib/very/long/path/foo.ex")))
+    (should (equal (hym/git-delta-diff--resolve-stat-path "f1.txt" paths) "f1.txt"))
+    (should (equal (hym/git-delta-diff--resolve-stat-path "...long/path/foo.ex" paths)
+                   "lib/very/long/path/foo.ex"))
+    (should-not (hym/git-delta-diff--resolve-stat-path "nope.ex" paths))))
+
+(ert-deftest hym/git-delta-visit-file-on-stat-line-jumps-to-header ()
+  (hym/git-delta-test-with-fixture
+    (hym/git-delta-test-goto-line-matching "^ f3.txt | 1 \\+")
+    (hym/git-delta-diff-visit-file)
+    (should (looking-at "added: f3.txt"))))
+
+(ert-deftest hym/git-delta-visit-file-on-stat-summary-errors ()
+  (hym/git-delta-test-with-fixture
+    (hym/git-delta-test-goto-line-matching "^ 2 files changed")
+    (should-error (hym/git-delta-diff-visit-file) :type 'user-error)))
