@@ -269,8 +269,10 @@ frame width when the buffer is not displayed yet."
         (folds (hym/git-delta-diff--collapsed-headings)))
     (erase-buffer)
     (call-process-shell-command (funcall hym/git-delta-diff--command-fn) nil t)
-    (if (= (point-min) (point-max))
-        (insert "No changes")
+    (if (string-blank-p (buffer-string))
+        (progn
+          (erase-buffer)
+          (insert "No changes"))
       (ansi-color-apply-on-region (point-min) (point-max))
       (hym/git-delta-diff--mark-headings)
       (hym/git-delta-diff--restore-folds folds))
