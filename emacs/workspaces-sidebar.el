@@ -230,8 +230,9 @@ point in sync."
       (hym-workspace-sidebar--render))
     buf))
 
-(defvar hym-workspace-sidebar--visible nil
-  "Whether the sidebar should be shown, so it survives tab-config restores.")
+(defvar hym-workspace-sidebar--visible t
+  "Whether the sidebar should be shown, so it survives tab-config restores.
+The sidebar starts visible by default.")
 
 (defun hym-workspace-sidebar--show ()
   (display-buffer-in-side-window
@@ -241,16 +242,42 @@ point in sync."
      (preserve-size . (t . nil))
      (window-parameters . ((no-delete-other-windows . t))))))
 
+(defun hym-workspace-sidebar--set-current-tab-visible (visible)
+  "Show the sidebar in the current tab when VISIBLE, otherwise hide it."
+  (if visible
+      (unless (get-buffer-window hym-workspace-sidebar-buffer-name)
+        (hym-workspace-sidebar--show))
+    (when-let* ((win (get-buffer-window hym-workspace-sidebar-buffer-name)))
+      (delete-window win))))
+
+(defun hym-workspace-sidebar--set-all-tabs-visible (visible)
+  "Show or hide the sidebar in every tab of every live frame.
+Tab window configurations are independent, so visit each one long enough to
+update it, then restore the originally selected tab and frame."
+  (dolist (frame (frame-list))
+    (when (and (frame-live-p frame)
+               (not (eq (frame-parameter frame 'minibuffer) 'only)))
+      (with-selected-frame frame
+        (let* ((tabs (funcall tab-bar-tabs-function))
+               (original-tab (1+ (tab-bar--current-tab-index tabs)))
+               ;; This traversal is maintenance, not a user tab selection.
+               (hym/tab-restore-group-selection nil)
+               (inhibit-redisplay t))
+          (unwind-protect
+              (dotimes (index (length tabs))
+                (tab-bar-select-tab (1+ index))
+                (hym-workspace-sidebar--set-current-tab-visible visible))
+            (tab-bar-select-tab original-tab))))))
+  ;; The shared buffer was last rendered for whichever frame was visited last.
+  (hym-workspace-sidebar-refresh))
+
 (defun hym-workspace-sidebar-toggle ()
-  "Toggle the workspace sidebar in a left side window."
+  "Toggle the workspace sidebar across every tab and workspace."
   (interactive)
-  (let ((win (get-buffer-window hym-workspace-sidebar-buffer-name)))
-    (if win
-        (progn
-          (setq hym-workspace-sidebar--visible nil)
-          (delete-window win))
-      (setq hym-workspace-sidebar--visible t)
-      (hym-workspace-sidebar--show))))
+  (setq hym-workspace-sidebar--visible
+        (not hym-workspace-sidebar--visible))
+  (hym-workspace-sidebar--set-all-tabs-visible
+   hym-workspace-sidebar--visible))
 
 (defun hym-workspace-sidebar--fix-width (&rest _)
   "Re-enforce the configured sidebar width after window changes.
@@ -278,8 +305,21 @@ restores a layout without the side window; this puts it back."
   (hym-workspace-sidebar--ensure-window)
   (hym-workspace-sidebar-refresh))
 
+(defun hym-workspace-sidebar--sync-frame (frame)
+  "Synchronize the sidebar in a newly created FRAME."
+  (when (frame-live-p frame)
+    (with-selected-frame frame
+      (hym-workspace-sidebar--sync))))
+
+(defun hym-workspace-sidebar--open-at-startup ()
+  "Open the workspace sidebar everywhere after Emacs finishes starting."
+  (setq hym-workspace-sidebar--visible t)
+  (hym-workspace-sidebar--set-all-tabs-visible t))
+
 (add-hook 'tab-bar-tab-post-open-functions #'hym-workspace-sidebar--sync)
 (add-hook 'tab-bar-tab-post-select-functions #'hym-workspace-sidebar--sync)
+(add-hook 'after-make-frame-functions #'hym-workspace-sidebar--sync-frame)
+(add-hook 'emacs-startup-hook #'hym-workspace-sidebar--open-at-startup)
 (advice-add 'tab-bar-change-tab-group :after #'hym-workspace-sidebar--sync)
 (add-hook 'hym-workspace-after-open-hook #'hym-workspace-sidebar--sync)
 (add-hook 'hym-workspace-registry-change-hook #'hym-workspace-sidebar-refresh)
