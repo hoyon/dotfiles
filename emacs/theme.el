@@ -149,33 +149,14 @@ The exact color values are taken from the active Ef theme."
 
   (add-hook 'ef-themes-post-load-hook #'hym/ef-themes-hl-todo-faces))
 
-(defun hym/ef-themes-tab-group-faces ()
+(defun hym/ef-themes-tab-bar-faces ()
   (ef-themes-with-colors
-    (set-face-attribute 'tab-bar nil
-                        :background bg-ochre)
-    (set-face-attribute 'tab-bar-tab-group-current nil
-                        :foreground fg-alt
-                        :background bg-alt
-                        :box `(:line-width 1 :color ,bg-alt)
-                        :weight 'bold)
-    (set-face-attribute 'tab-bar-tab-group-inactive nil
-                        :foreground fg-dim
-                        :background bg-dim
-                        :box `(:line-width 1 :color ,bg-dim))
-    (set-face-attribute 'tab-bar-tab nil
-                        :foreground fg-alt
-                        :background bg-ochre
-                        :weight 'bold
-                        :box nil)
-    (set-face-attribute 'tab-bar-tab-inactive nil
-                        :foreground fg-dim
-                        :background bg-ochre
-                        :weight 'normal
-                        :box nil)))
+    (set-face-attribute 'tab-bar-tab-highlight nil
+                        :foreground fg-main
+                        :background bg-hover-secondary
+                        :box `(:line-width -2 :color ,bg-hover-secondary))))
 
-(add-hook 'ef-themes-post-load-hook #'hym/ef-themes-tab-group-faces)
+(add-hook 'ef-themes-post-load-hook #'hym/ef-themes-tab-bar-faces)
 
 ;; ef-elea-light on macOS, ef-melissa-light everywhere else
-(if (eq system-type 'darwin)
-    (load-theme 'ef-elea-light t)
-  (load-theme 'ef-melissa-light t))
+(ef-themes-load-theme (if (eq system-type 'darwin) 'ef-elea-light 'ef-melissa-light))

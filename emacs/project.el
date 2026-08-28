@@ -5,6 +5,7 @@
 ; disable dispatch menu
 (setq
  project-switch-commands 'project-find-file
+ project-list-exclude '("/straight/repos/")
  compilation-ask-about-save nil)
 
 ;; project compile shortcuts

@@ -429,6 +429,7 @@ was supplied explicitly, or when the current tab is the last in its group."
     (propertize
      (format "┃%d %s┃" group-n group)
      'face (if current-p 'tab-bar-tab-group-current 'tab-bar-tab-group-inactive)
+     'mouse-face 'tab-bar-tab-highlight
      'help-echo "mouse-2: close this tab group")))
 
 (when (and (fboundp 'hym/leader-def)

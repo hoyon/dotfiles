@@ -249,8 +249,6 @@ See also `org-save-all-org-buffers'"
 (add-hook 'org-mode-hook #'auto-revert-mode)
 (add-hook 'org-mode-hook #'auto-fill-mode)
 
-(use-package unfill)
-
 (use-package verb
   :config
   (general-define-key

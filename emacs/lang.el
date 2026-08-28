@@ -11,6 +11,11 @@
 (add-hook 'markdown-mode-hook 'hym/show-trailing-whitespace)
 
 (add-hook 'prog-mode-hook #'hs-minor-mode)
+(setq hs-display-lines-hidden t
+      hs-show-indicators t
+      hs-indicator-type 'fringe)
+(with-eval-after-load 'hideshow
+  (evil-define-key 'normal hs-minor-mode-map (kbd "<tab>") #'hs-cycle))
 
 (use-package reformatter)
 
@@ -253,19 +258,8 @@
               (yaml "https://github.com/ikatyang/tree-sitter-yaml")
               (odin "https://github.com/tree-sitter-grammars/tree-sitter-odin")))
 
-      ;; Install all grammars if not yet available
-      (pcase-dolist (`(,lang . ,_) treesit-language-source-alist)
-        (unless (treesit-language-available-p lang)
-          (treesit-install-language-grammar lang)))
-
-      (setq major-mode-remap-alist
-            '((bash-mode . bash-ts-mode)
-              (css-mode . css-ts-mode)
-              (python-mode . python-ts-mode)
-              (cmake-mode . cmake-ts-mode)
-              (dockerfile-mode . dockerfile-ts-mode)
-              (c++-mode . c++-ts-mode)
-              (c-mode . c-ts-mode)
-              (go-mode . go-ts-mode)
-              (go-dot-mod-mode . go-mod-ts-mode)))
+      (setopt treesit-auto-install-grammar 'always
+            treesit-enabled-modes '(bash-ts-mode css-ts-mode python-ts-mode cmake-ts-mode
+                                    dockerfile-ts-mode c-ts-mode c++-ts-mode
+                                    go-ts-mode go-mod-ts-mode))
       ))
