@@ -203,6 +203,38 @@ WS is no longer registered."
         (setq updated (plist-put updated (pop props) (pop props))))
       (hym-workspace-put updated))))
 
+(defun hym-workspace-move (ws direction)
+  "Move WS one position in DIRECTION within its archival section.
+DIRECTION must be 1 (later) or -1 (earlier).  Active and archived
+workspaces are ordered independently.  Persist and notify registry
+listeners when the workspace can be moved; return non-nil in that case."
+  (unless (memq direction '(-1 1))
+    (error "Workspace move direction must be -1 or 1"))
+  (when-let* ((current (hym-workspace-get (hym-workspace-name ws))))
+    (let* ((registry (hym-workspace-registry))
+           (archived (hym-workspace-archived-p current))
+           (section (seq-filter
+                     (lambda (candidate)
+                       (eq (and (hym-workspace-archived-p candidate) t)
+                           (and archived t)))
+                     registry))
+           (position (seq-position section current #'eq))
+           (target-position (and position (+ position direction)))
+           (target (and target-position
+                        (>= target-position 0)
+                        (< target-position (length section))
+                        (nth target-position section))))
+      (when target
+        (let* ((moved (copy-sequence registry))
+               (from (seq-position moved current #'eq))
+               (to (seq-position moved target #'eq)))
+          (setcar (nthcdr from moved) target)
+          (setcar (nthcdr to moved) current)
+          (setq hym-workspace--registry moved)
+          (hym-workspace-save)
+          (run-hooks 'hym-workspace-registry-change-hook)
+          t)))))
+
 ;;;; Accessors
 
 (defun hym-workspace-name (ws) (plist-get ws :name))

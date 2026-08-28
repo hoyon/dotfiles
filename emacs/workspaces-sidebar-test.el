@@ -342,11 +342,30 @@
         (should-not (hym-workspace-archived-p (hym-workspace-get "p")))))))
 
 (ert-deftest hym-workspace-sidebar-keymap-and-evil-keymap-agree ()
-  (let ((keys '("d" "x" "c" "+" "g" "a" "u" "r" "!")))
+  (let ((keys '("d" "x" "c" "+" "g" "a" "u" "r" "!"
+                "M-<up>" "M-<down>" "M-k" "M-j")))
     (dolist (key keys)
-      (should (commandp (lookup-key hym-workspace-sidebar-mode-map key))))
+      (should (commandp (lookup-key hym-workspace-sidebar-mode-map (kbd key)))))
     (should (commandp (lookup-key hym-workspace-sidebar-mode-map (kbd "RET"))))
     (should (commandp (lookup-key hym-workspace-sidebar-mode-map (kbd "TAB"))))))
+
+(ert-deftest hym-workspace-sidebar-move-reorders-and-renumbers-cards ()
+  (hym-workspace-sidebar-test-with-registry
+    (hym-workspace-put '(:name "one" :type project :root "~/1"))
+    (hym-workspace-put '(:name "two" :type project :root "~/2"))
+    (hym-workspace-put '(:name "three" :type project :root "~/3"))
+    (with-temp-buffer
+      (hym-workspace-sidebar-mode)
+      (hym-workspace-sidebar--render)
+      (hym-workspace-sidebar--goto-workspace "two")
+      (hym-workspace-sidebar-move-up)
+      (should (equal (hym-workspace-sidebar--at-point) "two"))
+      (goto-char (point-min))
+      (should (search-forward "1 two" nil t))
+      (should (search-forward "2 one" nil t))
+      (should (search-forward "3 three" nil t))
+      (should (equal (mapcar #'hym-workspace-name (hym-workspace-active))
+                     '("two" "one" "three"))))))
 
 (ert-deftest hym-workspace-sidebar-archive-delegates-to-type-handler ()
   (hym-workspace-sidebar-test-with-registry

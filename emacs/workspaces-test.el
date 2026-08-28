@@ -76,6 +76,44 @@
     (should (equal (mapcar #'hym-workspace-name (hym-workspace-active))
                    '("live")))))
 
+(ert-deftest hym-workspace-move-persists-registry-order ()
+  (hym-workspace-test-with-empty-registry
+    (hym-workspace-put '(:name "a" :type project :root "~/a"))
+    (hym-workspace-put '(:name "b" :type project :root "~/b"))
+    (hym-workspace-put '(:name "c" :type project :root "~/c"))
+    (should (hym-workspace-move (hym-workspace-get "b") -1))
+    (should (equal (mapcar #'hym-workspace-name (hym-workspace-registry))
+                   '("b" "a" "c")))
+    (let ((hym-workspace--registry nil)
+          (hym-workspace--loaded nil))
+      (should (equal (mapcar #'hym-workspace-name (hym-workspace-registry))
+                     '("b" "a" "c"))))))
+
+(ert-deftest hym-workspace-move-orders-active-and-archived-independently ()
+  (hym-workspace-test-with-empty-registry
+    (hym-workspace-put '(:name "a" :type project :root "~/a"))
+    (hym-workspace-put '(:name "old-a" :type project :root "~/old-a" :archived t))
+    (hym-workspace-put '(:name "b" :type project :root "~/b"))
+    (hym-workspace-put '(:name "old-b" :type project :root "~/old-b" :archived t))
+    (should (hym-workspace-move (hym-workspace-get "b") -1))
+    (should (equal (mapcar #'hym-workspace-name (hym-workspace-registry))
+                   '("b" "old-a" "a" "old-b")))
+    (should (hym-workspace-move (hym-workspace-get "old-a") 1))
+    (should (equal (mapcar #'hym-workspace-name (hym-workspace-registry))
+                   '("b" "old-b" "a" "old-a")))))
+
+(ert-deftest hym-workspace-move-at-section-edge-is-a-noop ()
+  (hym-workspace-test-with-empty-registry
+    (hym-workspace-put '(:name "a" :type project :root "~/a"))
+    (hym-workspace-put '(:name "b" :type project :root "~/b"))
+    (let ((changes 0)
+          (hym-workspace-registry-change-hook
+           (list (lambda () (setq changes (1+ changes))))))
+      (should-not (hym-workspace-move (hym-workspace-get "a") -1))
+      (should (= changes 0))
+      (should (equal (mapcar #'hym-workspace-name (hym-workspace-registry))
+                     '("a" "b"))))))
+
 (ert-deftest hym-workspace-load-signals-and-save-refuses-on-corrupt-file ()
   (hym-workspace-test-with-empty-registry
     (let ((garbage "(:name \"x\""))

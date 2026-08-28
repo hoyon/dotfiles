@@ -410,6 +410,23 @@ rest are simply closed and flagged."
     (hym-workspace-rename ws new-name)
     (hym-workspace-sidebar-refresh)))
 
+(defun hym-workspace-sidebar--move (direction)
+  "Move the workspace at point by DIRECTION places in its section."
+  (when-let* ((ws (hym-workspace-sidebar--workspace-at-point)))
+    (setq hym-workspace-sidebar--point-name (hym-workspace-name ws)
+          hym-workspace-sidebar--point-line nil)
+    (hym-workspace-move ws direction)))
+
+(defun hym-workspace-sidebar-move-up ()
+  "Move the workspace at point one place up in its sidebar section."
+  (interactive)
+  (hym-workspace-sidebar--move -1))
+
+(defun hym-workspace-sidebar-move-down ()
+  "Move the workspace at point one place down in its sidebar section."
+  (interactive)
+  (hym-workspace-sidebar--move 1))
+
 (defun hym-workspace-sidebar-mouse-visit (event)
   "Switch to the workspace clicked with EVENT."
   (interactive "e")
@@ -428,6 +445,10 @@ rest are simply closed and flagged."
         (cons "a" #'hym-workspace-sidebar-add-repo)
         (cons "u" #'hym-workspace-sidebar-unarchive)
         (cons "r" #'hym-workspace-sidebar-rename)
+        (cons (kbd "M-<up>") #'hym-workspace-sidebar-move-up)
+        (cons (kbd "M-<down>") #'hym-workspace-sidebar-move-down)
+        (cons (kbd "M-k") #'hym-workspace-sidebar-move-up)
+        (cons (kbd "M-j") #'hym-workspace-sidebar-move-down)
         (cons "!" #'hym-workspace-sidebar-retry))
   "Sidebar keys, applied to both the plain and the evil normal-state map.")
 
