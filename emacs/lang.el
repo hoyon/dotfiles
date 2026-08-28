@@ -155,6 +155,7 @@
 (use-package powershell)
 (use-package racket-mode)
 (use-package sly)
+(use-package groovy-mode)
 
 (use-package terraform-mode
   :custom (terraform-command "tofu"))
