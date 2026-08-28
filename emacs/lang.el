@@ -111,15 +111,12 @@
   (setq web-mode-engines-alist
         '(("elixir" . "\\.heex"))))
 
-(use-package markdown-mode
-  :commands (markdown-mode gfm-mode)
-  :init
-  (setq markdown-command "multimarkdown")
-  :custom
-  (markdown-gfm-use-electric-backquote nil)
-  (markdown-css-paths '("https://cdn.simplecss.org/simple.min.css"))
-  (markdown-xhtml-header-content
-   "<style>body { max-width: 1200px; grid-template-columns: 1fr min(1200px, 90%) 1fr; }</style>"))
+(use-package markdown-ts-mode
+  :straight nil
+  :ensure nil
+  :mode ("\\.md\\'" "\\.mdx\\'" "\\.markdown\\'")
+  :config
+  (require 'markdown-ts-mode-x))
 
 (use-package rust-mode
   :init
@@ -204,7 +201,6 @@
       '(
         ("\\.yaml\\'" . yaml-ts-mode)
         ("\\.yml\\'" . yaml-ts-mode)
-        ("\\.glsl\\'" . glsl-ts-mode)
         ("\\.ex\\'" . elixir-ts-mode)
         ("\\.exs\\'" . elixir-ts-mode)
 
@@ -224,40 +220,12 @@
         ("\\.njk\\'" . web-mode)
         ("\\.webc\\'" . web-mode)
 
-        ("\\.lua\\'" . lua-ts-mode)
-
-        ("\\.md\\'" . markdown-mode)
-        ("\\.markdown\\'" . markdown-mode)
-        ("README\\.md\\'" . gfm-mode)))
+        ("\\.lua\\'" . lua-ts-mode)))
 
 (if (and (fboundp 'treesit-available-p) (treesit-available-p))
     (progn
-      (setq treesit-language-source-alist
-            '((bash "https://github.com/tree-sitter/tree-sitter-bash")
-              (cmake "https://github.com/uyha/tree-sitter-cmake")
-              (css "https://github.com/tree-sitter/tree-sitter-css")
-              (c "https://github.com/tree-sitter/tree-sitter-c")
-              (cpp "https://github.com/tree-sitter/tree-sitter-cpp")
-              (dockerfile "https://github.com/camdencheek/tree-sitter-dockerfile")
-              (elisp "https://github.com/Wilfred/tree-sitter-elisp")
-              (elixir "https://github.com/elixir-lang/tree-sitter-elixir")
-              (heex "https://github.com/phoenixframework/tree-sitter-heex")
-              (go "https://github.com/tree-sitter/tree-sitter-go")
-              (gomod "https://github.com/camdencheek/tree-sitter-go-mod")
-              (html "https://github.com/tree-sitter/tree-sitter-html")
-              (javascript "https://github.com/tree-sitter/tree-sitter-javascript" "master" "src")
-              (json "https://github.com/tree-sitter/tree-sitter-json")
-              (make "https://github.com/alemuller/tree-sitter-make")
-              (markdown "https://github.com/ikatyang/tree-sitter-markdown")
-              (python "https://github.com/tree-sitter/tree-sitter-python")
-              (rust "https://github.com/tree-sitter/tree-sitter-rust")
-              (toml "https://github.com/tree-sitter/tree-sitter-toml")
-              (tsx "https://github.com/tree-sitter/tree-sitter-typescript" "master" "tsx/src")
-              (typescript "https://github.com/tree-sitter/tree-sitter-typescript" "master" "typescript/src")
-              (glsl "https://github.com/tree-sitter-grammars/tree-sitter-glsl")
-              (lua "https://github.com/tree-sitter-grammars/tree-sitter-lua")
-              (yaml "https://github.com/ikatyang/tree-sitter-yaml")
-              (odin "https://github.com/tree-sitter-grammars/tree-sitter-odin")))
+      (add-to-list 'treesit-language-source-alist
+                   '(odin "https://github.com/tree-sitter-grammars/tree-sitter-odin"))
 
       (setopt treesit-auto-install-grammar 'always
             treesit-enabled-modes '(bash-ts-mode css-ts-mode python-ts-mode cmake-ts-mode
