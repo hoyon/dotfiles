@@ -24,14 +24,14 @@ instead of spawning a duplicate."
 (defun hym-workspace-notes ()
   "Open the current workspace's persistent org notes, reusing its tab."
   (interactive)
-  (when-let ((ws (hym-workspace-current)))
+  (when-let* ((ws (hym-workspace-current)))
     (hym-workspace--open-file-tab ws "notes" (hym-workspace--notes-file ws))))
 
 (defun hym-workspace-scratch ()
   "Open the current workspace's persistent scratch buffer, reusing its tab.
 The file has no extension, so it opens in `fundamental-mode'."
   (interactive)
-  (when-let ((ws (hym-workspace-current)))
+  (when-let* ((ws (hym-workspace-current)))
     (hym-workspace--open-file-tab ws "scratch" (hym-workspace--scratch-file ws))))
 
 (provide 'hym-workspaces-notes)

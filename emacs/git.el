@@ -59,7 +59,7 @@
     "Show `diff-hl' markers for all changes on the current Git branch."
     (when (and buffer-file-name
                (eq (vc-backend buffer-file-name) 'Git))
-      (if-let ((revision (hym/diff-hl-branch-reference-revision)))
+      (if-let* ((revision (hym/diff-hl-branch-reference-revision)))
           (setq-local diff-hl-reference-revision revision)
         (kill-local-variable 'diff-hl-reference-revision))))
 

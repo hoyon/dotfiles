@@ -134,7 +134,7 @@
   (let ((headings (hym/git-delta-diff--headings)))
     (save-excursion
       (dolist (key keys)
-        (when-let ((pos (cdr (assoc key headings))))
+        (when-let* ((pos (cdr (assoc key headings))))
           (goto-char pos)
           (outline-hide-subtree))))))
 
@@ -226,7 +226,7 @@ On a line of the stat block at the top, jump to that file's header instead."
   (save-excursion
     (goto-char pos)
     (end-of-line)
-    (when-let ((nearest (text-property-search-backward 'hym/git-delta-heading)))
+    (when-let* ((nearest (text-property-search-backward 'hym/git-delta-heading)))
       (if (get-text-property (prop-match-beginning nearest) 'hym/git-delta-hunk)
           (concat (hym/git-delta-diff--match-text
                    (text-property-search-backward 'hym/git-delta-file))
@@ -249,7 +249,7 @@ On a line of the stat block at the top, jump to that file's header instead."
 The diff window's text width, so a side window (e.g. the workspace
 sidebar) taking part of the frame is accounted for; falls back to the
 frame width when the buffer is not displayed yet."
-  (if-let ((win (get-buffer-window (current-buffer) t)))
+  (if-let* ((win (get-buffer-window (current-buffer) t)))
       (window-body-width win)
     (- (frame-width) 1)))
 
@@ -302,7 +302,7 @@ Reuse an existing tab only when it belongs to the current group."
 
 (defun hym/git-delta-diff--workspace-name ()
   "Return the current workspace name, or the current tab group as a fallback."
-  (if-let ((ws (and (fboundp 'hym-workspace-current)
+  (if-let* ((ws (and (fboundp 'hym-workspace-current)
                     (hym-workspace-current))))
       (hym-workspace-name ws)
     (if (fboundp 'hym/tab-group)
@@ -396,14 +396,14 @@ unrelated upstream commits into the diff."
 
 (defun hym/git-delta-diff--section-type-p (type)
   "Return non-nil if current section or its parent has TYPE."
-  (when-let ((section (magit-current-section)))
+  (when-let* ((section (magit-current-section)))
     (or (eq (oref section type) type)
         (and-let* ((parent (oref section parent)))
           (eq (oref parent type) type)))))
 
 (defun hym/git-delta-diff--selected-commit-range ()
   "Return a git diff range covering the selected commits."
-  (when-let ((commits (magit-region-values 'commit t)))
+  (when-let* ((commits (magit-region-values 'commit t)))
     (when (cdr commits)
       (deactivate-mark)
       (format "%s^..%s" (car (last commits)) (car commits)))))

@@ -153,7 +153,7 @@
           (progn
             (hym-workspace-sidebar--ensure-window)
             (should (get-buffer-window hym-workspace-sidebar-buffer-name t)))
-        (when-let ((win (get-buffer-window hym-workspace-sidebar-buffer-name t)))
+        (when-let* ((win (get-buffer-window hym-workspace-sidebar-buffer-name t)))
           (delete-window win))))))
 
 (ert-deftest hym-workspace-sidebar-archive-marks-and-hides ()

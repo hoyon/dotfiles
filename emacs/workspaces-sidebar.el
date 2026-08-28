@@ -193,13 +193,13 @@ point in sync."
                                              'hym-workspace)
                           name)))
       (hym-workspace-sidebar--goto-workspace name))
-    (when-let ((win (get-buffer-window (current-buffer) t)))
+    (when-let* ((win (get-buffer-window (current-buffer) t)))
       (set-window-point win (point)))
     (hym-workspace-sidebar--reset-hscroll)))
 
 (defun hym-workspace-sidebar--remember-point ()
   "Record the workspace and line at point so re-renders can restore them."
-  (when-let ((name (hym-workspace-sidebar--at-point)))
+  (when-let* ((name (hym-workspace-sidebar--at-point)))
     (setq hym-workspace-sidebar--point-name name
           hym-workspace-sidebar--point-line (line-number-at-pos))))
 
@@ -219,7 +219,7 @@ point in sync."
   (interactive)
   (if (derived-mode-p 'hym-workspace-sidebar-mode)
       (hym-workspace-sidebar--render)
-    (when-let ((buf (get-buffer hym-workspace-sidebar-buffer-name)))
+    (when-let* ((buf (get-buffer hym-workspace-sidebar-buffer-name)))
       (with-current-buffer buf (hym-workspace-sidebar--render)))))
 
 (defun hym-workspace-sidebar--get-buffer ()
@@ -257,7 +257,7 @@ point in sync."
 Normal Emacs operations (splits, `enlarge-window', `balance-windows', etc.)
 can resize the side window away from `hym-workspace-sidebar-width'; this
 puts it back."
-  (when-let ((win (get-buffer-window hym-workspace-sidebar-buffer-name)))
+  (when-let* ((win (get-buffer-window hym-workspace-sidebar-buffer-name)))
     (unless (= (window-width win) hym-workspace-sidebar-width)
       (condition-case nil
           (window-resize win (- hym-workspace-sidebar-width (window-width win))
@@ -289,24 +289,24 @@ restores a layout without the side window; this puts it back."
 (defun hym-workspace-sidebar-visit ()
   "Open or switch to the workspace on the current line."
   (interactive)
-  (when-let ((name (hym-workspace-sidebar--at-point)))
+  (when-let* ((name (hym-workspace-sidebar--at-point)))
     (setq hym-workspace-sidebar--point-name name
           hym-workspace-sidebar--point-line (line-number-at-pos))
     (if (equal name hym/default-tab-group)
         (hym/tab-switch-to-default-group)
-      (when-let ((ws (hym-workspace-get name)))
+      (when-let* ((ws (hym-workspace-get name)))
         (hym-workspace-open ws)))
     (hym-workspace-sidebar-refresh)))
 
 (defun hym-workspace-sidebar--workspace-at-point ()
   "Return the registered workspace on the current line, or nil."
-  (when-let ((name (hym-workspace-sidebar--at-point)))
+  (when-let* ((name (hym-workspace-sidebar--at-point)))
     (hym-workspace-get name)))
 
 (defun hym-workspace-sidebar-close-ws ()
   "Close (tear down tabs of) the workspace on the current line."
   (interactive)
-  (when-let ((ws (hym-workspace-sidebar--workspace-at-point)))
+  (when-let* ((ws (hym-workspace-sidebar--workspace-at-point)))
     (hym-workspace-close ws)
     (hym-workspace-sidebar-refresh)))
 
@@ -322,8 +322,8 @@ restores a layout without the side window; this puts it back."
 Types with an `:archive' handler tear their resources down first; the
 rest are simply closed and flagged."
   (interactive)
-  (when-let ((ws (hym-workspace-sidebar--workspace-at-point)))
-    (if-let ((archive (hym-workspace-type-handler ws :archive)))
+  (when-let* ((ws (hym-workspace-sidebar--workspace-at-point)))
+    (if-let* ((archive (hym-workspace-type-handler ws :archive)))
         (when (yes-or-no-p
                (format "Archive %s? Removes its worktrees; uncommitted changes are lost. "
                        (hym-workspace-name ws)))
@@ -348,9 +348,9 @@ rest are simply closed and flagged."
 (defun hym-workspace-sidebar-unarchive ()
   "Unarchive the workspace on the current line."
   (interactive)
-  (when-let ((ws (hym-workspace-sidebar--workspace-at-point)))
+  (when-let* ((ws (hym-workspace-sidebar--workspace-at-point)))
     (when (hym-workspace-archived-p ws)
-      (if-let ((unarchive (hym-workspace-type-handler ws :unarchive)))
+      (if-let* ((unarchive (hym-workspace-type-handler ws :unarchive)))
           (funcall unarchive ws)
         (hym-workspace-update ws :archived nil))
       (hym-workspace-sidebar-refresh))))
@@ -365,7 +365,7 @@ rest are simply closed and flagged."
 (defun hym-workspace-sidebar-rename (new-name)
   "Rename the workspace on the current line to NEW-NAME."
   (interactive (list (read-string "New name: " (hym-workspace-sidebar--at-point))))
-  (when-let ((ws (hym-workspace-sidebar--workspace-at-point)))
+  (when-let* ((ws (hym-workspace-sidebar--workspace-at-point)))
     (setq hym-workspace-sidebar--point-name new-name)
     (hym-workspace-rename ws new-name)
     (hym-workspace-sidebar-refresh)))

@@ -8,7 +8,7 @@
 (defun hym/close-compilation-buffer ()
   "Finds and closes the compilation buffer"
   (interactive)
-  (when-let ((compilation-buffer (get-buffer-window "*compilation*")))
+  (when-let* ((compilation-buffer (get-buffer-window "*compilation*")))
     (select-window compilation-buffer)
     (quit-window)))
 

@@ -144,7 +144,7 @@ Create branch `:slug' unless REUSE-BRANCH is non-nil."
 
 (defun hym-workspace--setup-command (ws repo)
   "Return REPO's setup command for WS, or nil when none is configured."
-  (when-let ((setup (hym-workspace--conductor-script repo 'setup)))
+  (when-let* ((setup (hym-workspace--conductor-script repo 'setup)))
     (hym-workspace--conductor-command ws repo setup)))
 
 (defun hym-workspace--provision-command (ws repo reuse-branch)
@@ -288,7 +288,7 @@ Call ON-DONE with t when all succeed, nil on the first failure."
 
 (defun hym-workspace--job-badge (ws)
   "Status function: a badge line for WS while a repo job is in flight."
-  (when-let ((st (gethash (hym-workspace--key ws) hym-workspace--jobs)))
+  (when-let* ((st (gethash (hym-workspace--key ws) hym-workspace--jobs)))
     (list (pcase (plist-get st :state)
             ('running (propertize (format "~ provisioning %s..." (plist-get st :repo))
                                   'face 'warning))
@@ -373,7 +373,7 @@ only if it fails."
    ws (list repo) nil
    (lambda (ok)
      (if ok
-         (when-let ((cur (hym-workspace-get (hym-workspace-name ws))))
+         (when-let* ((cur (hym-workspace-get (hym-workspace-name ws))))
            (hym-workspace-update
             cur :repos (append (hym-workspace-repos cur) (list repo))))
        (hym-workspace--show-setup-error ws)))))

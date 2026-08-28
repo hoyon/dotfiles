@@ -14,20 +14,20 @@ project/notes workspaces `:repos' is (\".\"), so this returns the root."
 (defun hym-workspace-git-status ()
   "Open magit status for a repo in the current workspace."
   (interactive)
-  (when-let ((ws (hym-workspace-current)))
+  (when-let* ((ws (hym-workspace-current)))
     (magit-status (hym-workspace--pick-repo ws))))
 
 (defun hym-workspace-git-diff ()
   "Show the PR-style delta diff (merge-base..HEAD) for a workspace repo."
   (interactive)
-  (when-let ((ws (hym-workspace-current)))
+  (when-let* ((ws (hym-workspace-current)))
     (let ((default-directory (hym-workspace--pick-repo ws)))
       (hym/git-delta-diff-merge-base (hym-workspace-base-branch ws)))))
 
 (defun hym-workspace-git-diff-unstaged-with-untracked ()
   "Show unstaged diff, including untracked files, for a workspace repo."
   (interactive)
-  (when-let ((ws (hym-workspace-current)))
+  (when-let* ((ws (hym-workspace-current)))
     (let ((default-directory (hym-workspace--pick-repo ws)))
       (hym/git-delta-diff-unstaged-with-untracked))))
 
@@ -35,7 +35,7 @@ project/notes workspaces `:repos' is (\".\"), so this returns the root."
   "Open magit log for a repo in the current workspace.
 Press D on a commit (or over a selected range) for its delta diff."
   (interactive)
-  (when-let ((ws (hym-workspace-current)))
+  (when-let* ((ws (hym-workspace-current)))
     (let ((default-directory (hym-workspace--pick-repo ws)))
       (magit-log-head))))
 

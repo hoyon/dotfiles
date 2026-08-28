@@ -28,7 +28,7 @@
        (dolist (buf created)
          (when (buffer-live-p buf)
            (kill-buffer buf)))
-       (when-let ((buf (get-buffer hym-ghostel-monitor-buffer-name)))
+       (when-let* ((buf (get-buffer hym-ghostel-monitor-buffer-name)))
          (kill-buffer buf)))))
 
 (ert-deftest hym-ghostel-monitor-refresh-preserves-monitor-point ()
@@ -187,9 +187,9 @@
       (when (process-live-p process)
         (delete-process process))
       (when process
-        (when-let ((stdout (process-buffer process)))
+        (when-let* ((stdout (process-buffer process)))
           (when (buffer-live-p stdout) (kill-buffer stdout)))
-        (when-let ((stderr
+        (when-let* ((stderr
                     (process-get process 'hym-ghostel-monitor-stderr)))
           (when (buffer-live-p stderr) (kill-buffer stderr)))))))
 

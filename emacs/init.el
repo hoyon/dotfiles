@@ -193,7 +193,7 @@ ones, so generated key strings and commands have to go straight to
 
 (defun hym/copy-buffer-file-name ()
   (interactive)
-  (if-let ((file-name (buffer-file-name)))
+  (if-let* ((file-name (buffer-file-name)))
       (progn
         (message file-name)
         (kill-new file-name))
@@ -214,7 +214,7 @@ ones, so generated key strings and commands have to go straight to
 
 (defun hym/delete-current-file ()
   (interactive)
-  (if-let ((file-name (buffer-file-name)))
+  (if-let* ((file-name (buffer-file-name)))
       (when (yes-or-no-p (format "Delete %s? " file-name))
         (delete-file file-name)
         (kill-buffer))

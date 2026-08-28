@@ -197,7 +197,7 @@ The entry is re-read by name first, so a caller holding a copy taken
 before an async operation cannot roll back whatever landed meanwhile.
 WS itself is left untouched. Returns the stored workspace, or nil when
 WS is no longer registered."
-  (when-let ((current (hym-workspace-get (hym-workspace-name ws))))
+  (when-let* ((current (hym-workspace-get (hym-workspace-name ws))))
     (let ((updated (copy-sequence current)))
       (while props
         (setq updated (plist-put updated (pop props) (pop props))))
@@ -328,7 +328,7 @@ Interactively prompt over the active (non-archived) workspaces."
   (interactive)
   (let* ((names (mapcar #'hym-workspace-name (hym-workspace-active)))
          (name (or name (completing-read "Workspace: " names nil t))))
-    (when-let ((ws (hym-workspace-get name)))
+    (when-let* ((ws (hym-workspace-get name)))
       (hym-workspace-open ws))))
 
 (defun hym-workspace--cycle (direction)
@@ -353,7 +353,7 @@ Interactively prompt over the active (non-archived) workspaces."
 (defun hym-workspace-select-index (n)
   "Switch to the Nth active workspace (1-based), opening it if needed."
   (interactive "p")
-  (when-let ((ws (nth (1- n) (hym-workspace-active))))
+  (when-let* ((ws (nth (1- n) (hym-workspace-active))))
     (hym-workspace-open ws)))
 
 (defun hym-workspace-select-index-command (n)
@@ -406,7 +406,7 @@ offers these actions without knowing which types support them.")
   "Create a workspace, prompting for type and delegating provisioning."
   (interactive)
   (let ((type (hym-workspace--read-type)))
-    (if-let ((creator (alist-get type hym-workspace-type-creators)))
+    (if-let* ((creator (alist-get type hym-workspace-type-creators)))
         (call-interactively creator)
       (let* ((root (hym-workspace--read-directory))
              (name (if (eq type 'directory)

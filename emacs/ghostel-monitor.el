@@ -67,7 +67,7 @@ Tagged when the terminal is created inside a workspace tab.")
   "Record the current workspace on this terminal buffer."
   (when (and (fboundp 'hym-workspace-current)
              (fboundp 'hym-workspace--key))
-    (when-let ((ws (hym-workspace-current)))
+    (when-let* ((ws (hym-workspace-current)))
       (setq hym-ghostel-monitor--workspace (hym-workspace--key ws)))))
 
 ;; ── Buffer discovery ────────────────────────────────────────────────────────
@@ -105,7 +105,7 @@ This avoids process inspection and is safe for sidebar rendering."
 
 (defun hym-ghostel-monitor--buffer-pid (buf)
   "Return the PID of the process in BUF, or nil."
-  (or (when-let ((proc (get-buffer-process buf)))
+  (or (when-let* ((proc (get-buffer-process buf)))
         (ignore-errors (process-id proc)))
       ;; On macOS Ghostel uses a network process as its Emacs process
       ;; object, for which `process-id' is nil.  The native terminal's
@@ -172,7 +172,7 @@ Return a hash table keyed by PID.  Each value is a plist containing
                    table))))
     (maphash
      (lambda (pid info)
-       (when-let ((parent (gethash (plist-get info :ppid) table)))
+       (when-let* ((parent (gethash (plist-get info :ppid) table)))
          (puthash (plist-get info :ppid)
                   (plist-put parent :children
                              (cons pid (plist-get parent :children)))
@@ -221,7 +221,7 @@ use `make-process' through `hym-ghostel-monitor--refresh-sidebar-cache'."
               (let ((comm (plist-get (gethash child table) :comm)))
                 (if (member comm hym-ghostel-monitor-known-agents)
                     (throw 'found comm)
-                  (when-let ((found
+                  (when-let* ((found
                               (hym-ghostel-monitor--snapshot-interesting-child
                                child table (1+ (or depth 0)) seen)))
                     (throw 'found found)))))))))))
@@ -428,7 +428,7 @@ killed buffer mid-iteration) never breaks the sidebar."
              (summary (or (gethash key hym-ghostel-monitor--sidebar-cache)
                           (hym-ghostel-monitor--cheap-summary key))))
         (hym-ghostel-monitor--schedule-sidebar-cache-refresh)
-        (when-let ((line (hym-ghostel-monitor--summary-line summary)))
+        (when-let* ((line (hym-ghostel-monitor--summary-line summary)))
           (list line)))
     (error
      (message "ghostel-monitor badge error: %s" (error-message-string err))
@@ -501,7 +501,7 @@ When WORKSPACE is nil, show terminals from every workspace."
 
 (defun hym-ghostel-monitor--entry-at-point ()
   "Return the info plist for the entry at point, or nil."
-  (when-let ((buf (tabulated-list-get-id)))
+  (when-let* ((buf (tabulated-list-get-id)))
     (when (bufferp buf)
       (seq-find (lambda (info) (eq (plist-get info :buffer) buf))
                 hym-ghostel-monitor--entries))))
@@ -542,7 +542,7 @@ When WORKSPACE is nil, show terminals from every workspace."
 (defun hym-ghostel-monitor-mark ()
   "Toggle the deletion mark on the current line."
   (interactive)
-  (when-let ((buf (tabulated-list-get-id))
+  (when-let* ((buf (tabulated-list-get-id))
              ((bufferp buf)))
     (if (hym-ghostel-monitor--marked-p buf)
         (progn
@@ -558,7 +558,7 @@ When WORKSPACE is nil, show terminals from every workspace."
 (defun hym-ghostel-monitor-unmark ()
   "Remove the deletion mark from the current line."
   (interactive)
-  (when-let ((buf (tabulated-list-get-id))
+  (when-let* ((buf (tabulated-list-get-id))
              ((bufferp buf)))
     (setq hym-ghostel-monitor--marked
           (delete buf hym-ghostel-monitor--marked))
@@ -642,7 +642,7 @@ When WORKSPACE is nil, show terminals from every workspace."
 (defun hym-ghostel-monitor-visit ()
   "Visit the terminal buffer at point."
   (interactive)
-  (when-let ((info (hym-ghostel-monitor--entry-at-point))
+  (when-let* ((info (hym-ghostel-monitor--entry-at-point))
              (buf (plist-get info :buffer))
              ((buffer-live-p buf)))
     (switch-to-buffer-other-window buf)))
@@ -721,7 +721,7 @@ Dired-style marking:
   RET   visit terminal buffer
   q     quit"
   (interactive)
-  (if-let ((buf (get-buffer hym-ghostel-monitor-buffer-name)))
+  (if-let* ((buf (get-buffer hym-ghostel-monitor-buffer-name)))
       (progn
         (with-current-buffer buf
           (hym-ghostel-monitor--set-workspace-filter workspace))

@@ -68,7 +68,7 @@ agent buffer is killed."
 
 (defun hym-workspace--tag-terminal ()
   "Record the current workspace's name on this terminal buffer."
-  (when-let ((ws (hym-workspace-current)))
+  (when-let* ((ws (hym-workspace-current)))
     (setq hym-workspace--terminal-workspace (hym-workspace-name ws))))
 
 (add-hook 'ghostel-mode-hook #'hym-workspace--tag-terminal)
@@ -347,7 +347,7 @@ real key rather than the literal \"nil\"."
 (defun hym-workspace-run-shell ()
   "Open a shell tab at the current workspace's root."
   (interactive)
-  (when-let ((ws (hym-workspace-current)))
+  (when-let* ((ws (hym-workspace-current)))
     (hym-workspace-spawn-tab
      ws "shell"
      (lambda ()
@@ -498,11 +498,11 @@ When DEFER-REFRESH is non-nil, leave sidebar refresh to the caller."
        ;; ghostel-compile splits; make its output fill the new tab's main
        ;; window instead of sitting beside the cloned old buffer. The
        ;; sidebar survives via its no-delete-other-windows parameter.
-       (when-let ((buf (get-buffer bufname)))
+       (when-let* ((buf (get-buffer bufname)))
          (switch-to-buffer buf)
          (delete-other-windows))
        (puthash (list key repo) bufname hym-workspace--servers)
-       (when-let ((proc (get-buffer-process (get-buffer bufname))))
+       (when-let* ((proc (get-buffer-process (get-buffer bufname))))
          (add-function :after (process-sentinel proc)
                        (lambda (&rest _) (hym-workspace-refresh-ui))))
        (hym-workspace-refresh-ui)))))
@@ -510,7 +510,7 @@ When DEFER-REFRESH is non-nil, leave sidebar refresh to the caller."
 (defun hym-workspace-run-server ()
   "Run a repo's conductor `run' script in a server tab, with live output."
   (interactive)
-  (when-let ((ws (hym-workspace-current)))
+  (when-let* ((ws (hym-workspace-current)))
     (let ((key (hym-workspace--key ws)))
       (let* ((repos (hym-workspace--repos-with-run ws))
              (repo (cond ((null repos) (user-error "No repo has a run script"))
@@ -530,7 +530,7 @@ When DEFER-REFRESH is non-nil, leave sidebar refresh to the caller."
   "Run every configured server in the current workspace.
 Servers that are already live are left running."
   (interactive)
-  (when-let ((ws (hym-workspace-current)))
+  (when-let* ((ws (hym-workspace-current)))
     (let* ((key (hym-workspace--key ws))
            (repos (hym-workspace--repos-with-run ws))
            started)
@@ -549,7 +549,7 @@ Servers that are already live are left running."
   "Restart every live server in the current workspace.
 Servers that are not currently running are left stopped."
   (interactive)
-  (when-let ((ws (hym-workspace-current)))
+  (when-let* ((ws (hym-workspace-current)))
     (let* ((key (hym-workspace--key ws))
            (repos (mapcar #'car (hym-workspace--live-servers key))))
       (unless repos
@@ -642,7 +642,7 @@ argument when non-blank."
 (defun hym-workspace-run-agent ()
   "Open an agent tab at the workspace root and start the chosen agent."
   (interactive)
-  (when-let ((ws (hym-workspace-current)))
+  (when-let* ((ws (hym-workspace-current)))
     (let ((agent (hym-workspace--pick-agent)))
       (hym-workspace--start-agent ws (car agent) (cdr agent)))))
 
@@ -652,7 +652,7 @@ argument when non-blank."
   (unless (or (fboundp 'agent-shell-new-shell)
               (require 'agent-shell nil t))
     (user-error "agent-shell is not available"))
-  (when-let ((ws (hym-workspace-current)))
+  (when-let* ((ws (hym-workspace-current)))
     (let* ((key (hym-workspace--key ws))
            (session (hym-workspace--agent-session-id "agent-shell")))
       (hym-workspace-spawn-tab

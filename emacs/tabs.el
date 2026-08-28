@@ -115,7 +115,7 @@
 (defun hym/tab-group-switch-to (group)
   "Switch to GROUP, restoring the last active tab if possible."
   (hym/tab-group-save-current)
-  (when-let ((position
+  (when-let* ((position
               (hym/tab-group-position
                group (hym/tab-group-last-id group))))
     (let ((hym/tab-restore-group-selection nil))
@@ -365,7 +365,7 @@ was supplied explicitly, or when the current tab is the last in its group."
               (funcall orig-fn tab-number replacement))
           (when (and replacement-id
                      (null (hym/tab-position-by-id closing-id)))
-            (when-let ((replacement-pos
+            (when-let* ((replacement-pos
                         (hym/tab-position-by-id replacement-id)))
               (unless (eq (alist-get 'hym-id (tab-bar--current-tab))
                           replacement-id)

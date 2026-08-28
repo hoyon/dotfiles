@@ -142,7 +142,7 @@ dead branch long after the local checkout has moved to the new one."
          (branches
           (delq nil
                 (list (plist-get (hym/packages--recipe repo) :branch)
-                      (when-let ((ref (hym/packages--git
+                      (when-let* ((ref (hym/packages--git
                                        repo "symbolic-ref" "--short"
                                        (format "refs/remotes/%s/HEAD" remote))))
                         (string-remove-prefix (concat remote "/") ref))
@@ -353,7 +353,7 @@ real subprocesses."
 
 (defun hym/packages--row-at-point ()
   "Return the row under point, or nil."
-  (when-let ((repo (tabulated-list-get-id)))
+  (when-let* ((repo (tabulated-list-get-id)))
     (seq-find (lambda (row) (equal repo (hym/packages-row-repo row)))
               hym/packages--rows)))
 
@@ -421,7 +421,7 @@ real subprocesses."
 (defun hym/packages-mark ()
   "Mark the repository at point for update and move to the next line."
   (interactive)
-  (if-let ((row (hym/packages--row-at-point)))
+  (if-let* ((row (hym/packages--row-at-point)))
       (if (hym/packages--updatable-p row)
           (progn
             (cl-pushnew (hym/packages-row-repo row) hym/packages--marked
@@ -434,7 +434,7 @@ real subprocesses."
 (defun hym/packages-unmark ()
   "Unmark the repository at point and move to the next line."
   (interactive)
-  (when-let ((repo (tabulated-list-get-id)))
+  (when-let* ((repo (tabulated-list-get-id)))
     (setq hym/packages--marked (delete repo hym/packages--marked)))
   (tabulated-list-put-tag " " t))
 
@@ -456,7 +456,7 @@ real subprocesses."
   "Merge UPDATES, an alist of repo to commit, into the lockfile at PATH."
   (let ((alist (hym/packages--lockfile-read path)))
     (pcase-dolist (`(,repo . ,commit) updates)
-      (if-let ((cell (assoc repo alist)))
+      (if-let* ((cell (assoc repo alist)))
           (setcdr cell commit)
         (push (cons repo commit) alist)))
     (hym/packages--lockfile-write alist path)))
@@ -492,7 +492,7 @@ lockfile does not record."
         (when (file-directory-p dir)
           (delete-directory dir t)))
       (straight-rebuild-package package))
-    (when-let ((post (alist-get repo hym/packages-post-build nil nil #'equal)))
+    (when-let* ((post (alist-get repo hym/packages-post-build nil nil #'equal)))
       (funcall post))
     (list :repo repo
           :desc (hym/packages-row-target-desc row)
