@@ -216,6 +216,12 @@ On a line of the stat block at the top, jump to that file's header instead."
   (interactive)
   (outline-hide-sublevels 1))
 
+(defun hym/git-delta-diff--stat-args (width)
+  "Git stat flags sized to WIDTH.
+Git assumes 80 columns when stdout is not a terminal and truncates
+paths from the left to fit, so long names lose their directories."
+  (format "--stat --stat-width=%d" width))
+
 (defun hym/git-delta-diff--delta-command (width)
   (format "delta --side-by-side --hunk-header-decoration-style underline --width %d" width))
 
@@ -330,9 +336,11 @@ frame's. ARGS, BUF-NAME and COMMAND-FN are as described in
       (setq-local hym/git-delta-diff--command-fn
                   (or command-fn
                       (lambda ()
-                        (format "{ GIT_PAGER=cat git diff --stat %1$s; echo; GIT_PAGER=cat git diff -U5 %1$s | %2$s; }"
-                                (or args "")
-                                (hym/git-delta-diff--delta-command (hym/git-delta-diff--width))))))
+                        (let ((width (hym/git-delta-diff--width)))
+                          (format "{ GIT_PAGER=cat git diff %1$s %2$s; echo; GIT_PAGER=cat git diff -U5 %2$s | %3$s; }"
+                                  (hym/git-delta-diff--stat-args width)
+                                  (or args "")
+                                  (hym/git-delta-diff--delta-command width))))))
       (let ((inhibit-read-only t)
             (buffer-undo-list t))
         (erase-buffer)
@@ -377,8 +385,10 @@ COMMAND-FN, if provided, is a function returning the shell command to run."
   (hym/git-delta-diff
    nil "unstaged+untracked"
    (lambda ()
-     (format "{ GIT_PAGER=cat git diff --stat; git ls-files --others --exclude-standard | while IFS= read -r f; do GIT_PAGER=cat git diff --stat --no-index /dev/null \"$f\"; done; echo; { GIT_PAGER=cat git diff -U5; git ls-files --others --exclude-standard | while IFS= read -r f; do GIT_PAGER=cat git diff --no-index /dev/null \"$f\"; done; } | %s; }"
-             (hym/git-delta-diff--delta-command (hym/git-delta-diff--width))))))
+     (let ((width (hym/git-delta-diff--width)))
+       (format "{ GIT_PAGER=cat git diff %1$s; git ls-files --others --exclude-standard | while IFS= read -r f; do GIT_PAGER=cat git diff %1$s --no-index /dev/null \"$f\"; done; echo; { GIT_PAGER=cat git diff -U5; git ls-files --others --exclude-standard | while IFS= read -r f; do GIT_PAGER=cat git diff --no-index /dev/null \"$f\"; done; } | %2$s; }"
+               (hym/git-delta-diff--stat-args width)
+               (hym/git-delta-diff--delta-command width))))))
 
 (defun hym/git-delta-diff-merge-base (&optional base-branch)
   "Show delta diff from merge base with BASE-BRANCH or the default branch.
