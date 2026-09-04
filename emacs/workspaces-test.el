@@ -349,3 +349,27 @@
     (should (equal (hym/tab-group) "c"))
     (funcall (hym-workspace-select-index-command 1))
     (should (equal (hym/tab-group) "a"))))
+
+(ert-deftest hym-workspace-spawn-tab-reuses-existing-tab-when-asked ()
+  (hym-workspace-test-with-shell
+    (let ((ws (hym-workspace-put '(:name "zippy" :type project :root "~")))
+          (setups 0))
+      (hym-workspace-spawn-tab ws "server:api" (lambda () (setq setups (1+ setups))))
+      (hym-workspace-spawn-tab ws "notes" #'ignore)
+      (hym-workspace-spawn-tab ws "server:api" (lambda () (setq setups (1+ setups))) t)
+      (should (= setups 2))
+      (should (equal (alist-get 'name (tab-bar--current-tab)) "server:api"))
+      (should (= 1 (cl-count "server:api" (funcall tab-bar-tabs-function)
+                             :key (lambda (tab) (alist-get 'name tab))
+                             :test #'equal))))))
+
+(ert-deftest hym-workspace-spawn-tab-reuse-is-scoped-to-workspace-group ()
+  (hym-workspace-test-with-shell
+    (let ((a (hym-workspace-put '(:name "a" :type project :root "~")))
+          (b (hym-workspace-put '(:name "b" :type project :root "~"))))
+      (hym-workspace-spawn-tab a "server:api" #'ignore)
+      (hym-workspace-spawn-tab b "server:api" #'ignore t)
+      (should (equal (hym/tab-group) "b"))
+      (should (= 2 (cl-count "server:api" (funcall tab-bar-tabs-function)
+                             :key (lambda (tab) (alist-get 'name tab))
+                             :test #'equal))))))

@@ -29,10 +29,6 @@ take effect without restarting Emacs."
 (defvar hym-workspace--servers (make-hash-table :test 'equal)
   "Map (WORKSPACE-KEY REPO) to its server (`ghostel-compile') buffer name.")
 
-(defcustom hym-workspace-old-server-tab-prefix "old:"
-  "Prefix added to server tabs after their process is retired."
-  :type 'string :group 'hym-workspace)
-
 (defcustom hym-workspace-restart-server-delay 0.05
   "Seconds to wait between starting servers during a bulk restart."
   :type 'number :group 'hym-workspace)
@@ -269,7 +265,7 @@ hook via `emacsclient --eval'."
 (defun hym-workspace--server-badge (ws)
   "Status function: one badge line for each live server process in WS."
   (mapcar (lambda (entry)
-            (propertize (format "● %s server running" (car entry))
+            (propertize (format "● %s running" (car entry))
                         'face 'success))
           (hym-workspace--live-servers (hym-workspace--key ws))))
 
@@ -361,46 +357,6 @@ real key rather than the literal \"nil\"."
   (hym-workspace--server-buffer-live-p
    (gethash (list workspace-key repo) hym-workspace--servers)))
 
-(defun hym-workspace--rename-server-tab (buf)
-  "Mark every tab containing BUF as an old server tab."
-  (when (and (buffer-live-p buf) (fboundp 'tab-bar-get-buffer-tab))
-    (let ((server-tabs (tab-bar-get-buffer-tab buf nil nil t))
-          (tabs (funcall tab-bar-tabs-function))
-          renamed)
-      (dolist (tab server-tabs)
-        (let* ((name (alist-get 'name tab))
-               (pos (and name
-                         (cl-position name tabs
-                                      :key (lambda (candidate)
-                                             (alist-get 'name candidate))
-                                      :test #'equal))))
-          (when (and pos
-                     (not (member pos renamed))
-                     (stringp name)
-                     (not (string-prefix-p hym-workspace-old-server-tab-prefix
-                                           name)))
-            (push pos renamed)
-            (tab-bar-rename-tab
-             (concat hym-workspace-old-server-tab-prefix name)
-             (1+ pos))))))))
-
-(defun hym-workspace--old-server-buffer-name (name)
-  "Return an old-server buffer name derived from NAME."
-  (if (string-prefix-p "*" name)
-      (concat "*" hym-workspace-old-server-tab-prefix (substring name 1))
-    (concat hym-workspace-old-server-tab-prefix name)))
-
-(defun hym-workspace--rename-server-buffer (buf)
-  "Mark BUF as an old server buffer."
-  (when (buffer-live-p buf)
-    (with-current-buffer buf
-      (unless (string-prefix-p hym-workspace-old-server-tab-prefix
-                               (string-remove-prefix "*" (buffer-name)))
-        (rename-buffer
-         (generate-new-buffer-name
-          (hym-workspace--old-server-buffer-name (buffer-name)))
-         t)))))
-
 (defun hym-workspace--finish-killing-server (proc buf &optional after-kill)
   "Force-kill PROC if necessary, clean up BUF, then call AFTER-KILL."
   (when (process-live-p proc)
@@ -424,8 +380,6 @@ Call AFTER-KILL only once the old process has been killed and cleaned up."
          (proc (and buf (get-buffer-process buf))))
     (if (process-live-p proc)
         (progn
-          (hym-workspace--rename-server-tab buf)
-          (hym-workspace--rename-server-buffer buf)
           (set-process-query-on-exit-flag proc nil)
           ;; Ghostel's normal process filter renders every shutdown message,
           ;; and its compile sentinel synchronously redraws and parses the
@@ -479,8 +433,40 @@ When DEFER-REFRESH is non-nil, leave sidebar refresh to the caller."
       (hym-workspace--kill-server (car server-key) (cadr server-key))
       (message "Killed %s" selected))))
 
+(defun hym-workspace--other-workspace-servers (workspace-key repo)
+  "Return server keys for live REPO servers in workspaces other than WORKSPACE-KEY."
+  (mapcar #'car
+          (hym-workspace--sweep-servers
+           (lambda (server-key)
+             (and (equal repo (cadr server-key))
+                  (not (equal workspace-key (car server-key))))))))
+
+(defun hym-workspace--kill-servers-then (server-keys then)
+  "Asynchronously kill every server in SERVER-KEYS, then call THEN once."
+  (if (null server-keys)
+      (funcall then)
+    (let ((remaining (length server-keys)))
+      (dolist (server-key server-keys)
+        (hym-workspace--kill-server
+         (car server-key) (cadr server-key) t
+         (lambda ()
+           (setq remaining (1- remaining))
+           (when (zerop remaining)
+             (funcall then))))))))
+
 (defun hym-workspace--start-server (ws repo)
-  "Start REPO's conductor `run' script in a server tab for WS."
+  "Start REPO's server in WS, first stopping REPO's servers in other workspaces.
+Worktrees of one repo share its dev ports, so at most one workspace can run
+a given repo at a time."
+  (let* ((key (hym-workspace--key ws))
+         (others (hym-workspace--other-workspace-servers key repo)))
+    (dolist (server-key others)
+      (message "Stopping the %s server in %s" repo (car server-key)))
+    (hym-workspace--kill-servers-then
+     others (lambda () (hym-workspace--spawn-server ws repo)))))
+
+(defun hym-workspace--spawn-server (ws repo)
+  "Run REPO's conductor `run' script in WS's server tab, reusing any existing one."
   (let* ((key (hym-workspace--key ws))
          (code (expand-file-name hym-workspace-code-root))
          (run (alist-get 'run (hym-workspace--repo-conductor
@@ -505,7 +491,8 @@ When DEFER-REFRESH is non-nil, leave sidebar refresh to the caller."
        (when-let* ((proc (get-buffer-process (get-buffer bufname))))
          (add-function :after (process-sentinel proc)
                        (lambda (&rest _) (hym-workspace-refresh-ui))))
-       (hym-workspace-refresh-ui)))))
+       (hym-workspace-refresh-ui))
+     t)))
 
 (defun hym-workspace-run-server ()
   "Run a repo's conductor `run' script in a server tab, with live output."

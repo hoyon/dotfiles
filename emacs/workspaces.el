@@ -263,12 +263,25 @@ The workspace is available via `hym-workspace-current'.")
   (when (hym-workspace-open-p ws)
     (tab-bar-close-group-tabs (hym-workspace-name ws))))
 
-(defun hym-workspace-spawn-tab (ws name setup)
+(defun hym-workspace-tab-position (ws name)
+  "Return the 1-based position of the tab named NAME in WS's group, or nil."
+  (let ((group (hym-workspace-name ws)))
+    (hym/tab-find-position
+     (lambda (tab)
+       (and (equal (hym/tab-group tab) group)
+            (equal (alist-get 'name tab) name))))))
+
+(defun hym-workspace-spawn-tab (ws name setup &optional reuse)
   "Create a tab named NAME in WS's group and call SETUP (a function) in it.
+When REUSE is non-nil and WS already has a tab named NAME, run SETUP in
+that tab instead of creating another.
 This is the seam every later feature (notes, scratch, git, server) uses."
   (hym-workspace-open ws)
-  (hym/tab-new-in-group (hym-workspace-name ws))
-  (tab-bar-rename-tab name)
+  (let ((existing (and reuse (hym-workspace-tab-position ws name))))
+    (if existing
+        (tab-bar-select-tab existing)
+      (hym/tab-new-in-group (hym-workspace-name ws))
+      (tab-bar-rename-tab name)))
   (funcall setup))
 
 (defvar hym-workspace--saved-tab-bar-format nil

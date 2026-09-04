@@ -154,11 +154,11 @@
                 (web-proc (start-process "web-srv" web-buf "sleep" "30")))
             (puthash '("s" "api") (buffer-name api-buf) hym-workspace--servers)
             (puthash '("s" "web") (buffer-name web-buf) hym-workspace--servers)
-            (should (equal '("● api server running" "● web server running")
+            (should (equal '("● api running" "● web running")
                            (mapcar #'substring-no-properties
                                    (hym-workspace--server-badge ws))))
             (delete-process api-proc)
-            (should (equal '("● web server running")
+            (should (equal '("● web running")
                            (mapcar #'substring-no-properties
                                    (hym-workspace--server-badge ws))))
             (should (null (gethash '("s" "api") hym-workspace--servers)))
@@ -266,59 +266,6 @@
           (delete-process api-proc))
       (when (buffer-live-p api-buf) (kill-buffer api-buf))
       (when (buffer-live-p web-buf) (kill-buffer web-buf)))))
-
-(ert-deftest hym-workspace-rename-server-tab-marks-old-tab ()
-  (let* ((buf (generate-new-buffer " *api-tab-rename-test*"))
-         (tab '((name . "server:api")))
-         (renamed nil)
-         (tab-bar-tabs-function (lambda () (list tab)))
-         (orig-get-tab (symbol-function 'tab-bar-get-buffer-tab))
-         (orig-rename (symbol-function 'tab-bar-rename-tab)))
-    (unwind-protect
-        (progn
-          (fset 'tab-bar-get-buffer-tab
-                (lambda (_buf &rest _args) (list tab)))
-          (fset 'tab-bar-rename-tab
-                (lambda (name &optional tab-number)
-                  (setq renamed (list name tab-number))))
-          (hym-workspace--rename-server-tab buf)
-          (should (equal renamed '("old:server:api" 1))))
-      (fset 'tab-bar-get-buffer-tab orig-get-tab)
-      (fset 'tab-bar-rename-tab orig-rename)
-      (kill-buffer buf))))
-
-(ert-deftest hym-workspace-rename-server-tab-marks-every-containing-tab ()
-  (let* ((buf (generate-new-buffer " *api-tab-rename-test*"))
-         (api-tab '((name . "server:api")))
-         (web-tab '((name . "server:web")))
-         (file-tab '((name . "files")))
-         (renamed nil)
-         (tab-bar-tabs-function (lambda () (list file-tab api-tab web-tab)))
-         (orig-get-tab (symbol-function 'tab-bar-get-buffer-tab))
-         (orig-rename (symbol-function 'tab-bar-rename-tab)))
-    (unwind-protect
-        (progn
-          (fset 'tab-bar-get-buffer-tab
-                (lambda (_buf &rest _args) (list api-tab web-tab)))
-          (fset 'tab-bar-rename-tab
-                (lambda (name &optional tab-number)
-                  (push (list name tab-number) renamed)))
-          (hym-workspace--rename-server-tab buf)
-          (should (equal (sort renamed (lambda (a b) (< (cadr a) (cadr b))))
-                         '(("old:server:api" 2)
-                           ("old:server:web" 3)))))
-      (fset 'tab-bar-get-buffer-tab orig-get-tab)
-      (fset 'tab-bar-rename-tab orig-rename)
-      (kill-buffer buf))))
-
-(ert-deftest hym-workspace-rename-server-buffer-frees-active-name ()
-  (let ((buf (generate-new-buffer "*ws-server: s/api*")))
-    (unwind-protect
-        (progn
-          (hym-workspace--rename-server-buffer buf)
-          (should (string-prefix-p "*old:ws-server: s/api"
-                                   (buffer-name buf))))
-      (kill-buffer buf))))
 
 (ert-deftest hym-workspace-run-all-servers-starts-only-stopped-repos ()
   (let ((started nil)
@@ -579,3 +526,57 @@
     (cl-letf (((symbol-function 'hym-workspace-current) #'ignore))
       (hym-workspace--tag-terminal))
     (should (null hym-workspace--terminal-workspace))))
+
+(ert-deftest hym-workspace-start-server-reuses-its-tab ()
+  (let ((spawned nil)
+        (ws '(:name "w" :slug "s" :type worktree :root "~"))
+        (hym-workspace--servers (make-hash-table :test 'equal))
+        (orig-conductor (symbol-function 'hym-workspace--repo-conductor))
+        (orig-spawn (symbol-function 'hym-workspace-spawn-tab)))
+    (unwind-protect
+        (progn
+          (fset 'hym-workspace--repo-conductor
+                (lambda (_dir) '((run . "npm run dev"))))
+          (fset 'hym-workspace-spawn-tab
+                (lambda (_ws name _setup &optional reuse)
+                  (setq spawned (list name reuse))))
+          (hym-workspace--start-server ws "api")
+          (should (equal spawned '("server:api" t))))
+      (fset 'hym-workspace--repo-conductor orig-conductor)
+      (fset 'hym-workspace-spawn-tab orig-spawn))))
+
+(ert-deftest hym-workspace-start-server-evicts-same-repo-in-other-workspaces ()
+  (let ((events nil)
+        (ws '(:name "w" :slug "s" :type worktree :root "~"))
+        (hym-workspace--servers (make-hash-table :test 'equal))
+        (other-api-buf (generate-new-buffer " *other-api-evict-test*"))
+        (other-web-buf (generate-new-buffer " *other-web-evict-test*"))
+        (orig-conductor (symbol-function 'hym-workspace--repo-conductor))
+        (orig-kill (symbol-function 'hym-workspace--kill-server))
+        (orig-spawn (symbol-function 'hym-workspace-spawn-tab)))
+    (unwind-protect
+        (let ((other-api (start-process "other-api" other-api-buf "sleep" "30"))
+              (other-web (start-process "other-web" other-web-buf "sleep" "30")))
+          (set-process-query-on-exit-flag other-api nil)
+          (set-process-query-on-exit-flag other-web nil)
+          (puthash '("beta" "api") (buffer-name other-api-buf) hym-workspace--servers)
+          (puthash '("beta" "web") (buffer-name other-web-buf) hym-workspace--servers)
+          (fset 'hym-workspace--repo-conductor
+                (lambda (_dir) '((run . "npm run dev"))))
+          (fset 'hym-workspace--kill-server
+                (lambda (key repo &optional _defer-refresh after-kill)
+                  (push (list 'kill key repo) events)
+                  (funcall after-kill)))
+          (fset 'hym-workspace-spawn-tab
+                (lambda (_ws name _setup &optional _reuse)
+                  (push (list 'spawn name) events)))
+          (hym-workspace--start-server ws "api")
+          (should (equal (nreverse events)
+                         '((kill "beta" "api") (spawn "server:api"))))
+          (delete-process other-api)
+          (delete-process other-web))
+      (fset 'hym-workspace--repo-conductor orig-conductor)
+      (fset 'hym-workspace--kill-server orig-kill)
+      (fset 'hym-workspace-spawn-tab orig-spawn)
+      (when (buffer-live-p other-api-buf) (kill-buffer other-api-buf))
+      (when (buffer-live-p other-web-buf) (kill-buffer other-web-buf)))))
