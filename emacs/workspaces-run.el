@@ -9,6 +9,7 @@
 ;; defcustom errors with "Defining as dynamic an already lexical var".
 (defvar ghostel-compile-buffer-name)
 (defvar ghostel-environment)
+(defvar ghostel-buffer-name)
 (defvar agent-shell-buffer-name)
 (declare-function agent-shell-new-shell "agent-shell")
 
@@ -340,6 +341,13 @@ real key rather than the literal \"nil\"."
         (format "HYM_WORKSPACE_AGENT_SESSION=%s"
                 (or session (hym-workspace--agent-session-id name)))))
 
+(defun hym-workspace--terminal-buffer-name (ws kind)
+  "Return the ghostel buffer name for a KIND terminal spawned in WS.
+Ghostel keys its numbered buffer slots on `ghostel-buffer-name', so
+let-binding this per workspace and kind yields \"*WS: KIND*<2>\" for
+the second such terminal rather than a global \"*ghostel*<N>\"."
+  (format "*%s: %s*" (hym-workspace-name ws) kind))
+
 (defun hym-workspace-run-shell ()
   "Open a shell tab at the current workspace's root."
   (interactive)
@@ -349,7 +357,9 @@ real key rather than the literal \"nil\"."
      (lambda ()
        ;; `ghostel' with no arg reuses one global terminal; t forces a fresh
        ;; one so each tab is its own shell.
-       (let ((default-directory (hym-workspace-root ws)))
+       (let ((default-directory (hym-workspace-root ws))
+             (ghostel-buffer-name
+              (hym-workspace--terminal-buffer-name ws "shell")))
          (ghostel t))))))
 
 (defun hym-workspace--server-live-p (workspace-key repo)
@@ -579,6 +589,8 @@ argument when non-blank."
        ;; t forces a fresh terminal so the process actually spawns and the
        ;; injected env (HYM_WORKSPACE_SLUG) takes effect.
        (let ((default-directory (hym-workspace-root ws))
+             (ghostel-buffer-name
+              (hym-workspace--terminal-buffer-name ws name))
              (ghostel-environment
               (append (hym-workspace--agent-env ws name session)
                       (hym-workspace--ghostel-environment))))

@@ -5,6 +5,7 @@
 (load-file (expand-file-name "workspaces-worktree.el" (file-name-directory load-file-name)))
 (load-file (expand-file-name "workspaces-run.el" (file-name-directory load-file-name)))
 (defvar ghostel-environment nil)
+(defvar ghostel-buffer-name "*ghostel*")
 
 (ert-deftest hym-workspace-agent-signal-maps-events ()
   (let ((hym-workspace--agent-state (make-hash-table :test 'equal)))
@@ -435,6 +436,7 @@
         (sent nil)
         (captured-dir nil)
         (captured-env nil)
+        (captured-name nil)
         (orig-spawn (symbol-function 'hym-workspace-spawn-tab)))
     (unwind-protect
         (progn
@@ -442,12 +444,14 @@
           (makunbound 'ghostel-environment)
           (fset 'ghostel (lambda (&optional _fresh)
                            (setq captured-dir default-directory
-                                 captured-env ghostel-environment)))
+                                 captured-env ghostel-environment
+                                 captured-name ghostel-buffer-name)))
           (fset 'ghostel-send-string (lambda (s) (setq sent s)))
           (hym-workspace--start-agent
            '(:name "w" :slug "s" :type worktree :root "/tmp/w")
            "claude" "claude" "sess-1" "it's big")
           (should (equal captured-dir "/tmp/w"))
+          (should (equal captured-name "*w: claude*"))
           (should (member "HYM_WORKSPACE_SLUG=s" captured-env))
           (should (member "HYM_WORKSPACE_AGENT=claude" captured-env))
           (should (member "HYM_WORKSPACE_AGENT_SESSION=sess-1" captured-env))
@@ -455,6 +459,26 @@
       (fset 'hym-workspace-spawn-tab orig-spawn)
       (fmakunbound 'ghostel)
       (fmakunbound 'ghostel-send-string))))
+
+(ert-deftest hym-workspace-run-shell-names-buffer-after-workspace ()
+  (let ((captured-name nil)
+        (captured-dir nil)
+        (orig-spawn (symbol-function 'hym-workspace-spawn-tab))
+        (orig-current (symbol-function 'hym-workspace-current)))
+    (unwind-protect
+        (progn
+          (fset 'hym-workspace-spawn-tab (lambda (_ws _name setup) (funcall setup)))
+          (fset 'hym-workspace-current
+                (lambda () '(:name "tf flows" :slug "tf_flows" :type worktree :root "/tmp/w")))
+          (fset 'ghostel (lambda (&optional _fresh)
+                           (setq captured-dir default-directory
+                                 captured-name ghostel-buffer-name)))
+          (hym-workspace-run-shell)
+          (should (equal captured-dir "/tmp/w"))
+          (should (equal captured-name "*tf flows: shell*")))
+      (fset 'hym-workspace-spawn-tab orig-spawn)
+      (fset 'hym-workspace-current orig-current)
+      (fmakunbound 'ghostel))))
 
 (ert-deftest hym-workspace-new-from-preset-starts-agent-on-success ()
   (let* ((tmp (make-temp-file "hym-preset" t))
