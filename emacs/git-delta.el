@@ -247,6 +247,7 @@ paths from the left to fit, so long names lose their directories."
   (setq-local outline-search-function #'hym/git-delta-diff--outline-search
               outline-level #'hym/git-delta-diff--outline-level
               imenu-create-index-function #'hym/git-delta-diff--imenu-index
+              imenu-max-item-length nil
               header-line-format '(:eval (hym/git-delta-diff--sticky-header)))
   (outline-minor-mode 1))
 
