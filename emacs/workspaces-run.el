@@ -14,7 +14,7 @@
 (declare-function agent-shell-new-shell "agent-shell")
 
 (defcustom hym-workspace-agents '(("claude" . "claude")
-                                  ("codex" . "codex")
+                                  ("codex" . "codex -c tui.animations=false")
                                   ("goose" . "goose"))
   "Alist of (NAME . SHELL-COMMAND) for agents launchable in a workspace."
   :type '(alist :key-type string :value-type string) :group 'hym-workspace)
