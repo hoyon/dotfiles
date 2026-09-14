@@ -137,10 +137,36 @@ workspace as `hym-workspace-sidebar--point-name'.  Captured at the time
 of the user's action, before a workspace switch clobbers the point, so
 the cursor stays exactly where it was rather than snapping to the card.")
 
+(defvar hym-workspace-sidebar--start-line nil
+  "Buffer line the sidebar view starts at, shared by every tab and frame.
+Re-rendering erases the buffer, collapsing each window's start to the top,
+and every tab restores its own stale copy of the sidebar window, so the
+scroll position has to be recorded separately and reapplied.")
+
+(defun hym-workspace-sidebar--remember-start (win start)
+  "Record START's line in WIN as the sidebar scroll position."
+  (with-current-buffer (window-buffer win)
+    (setq hym-workspace-sidebar--start-line (line-number-at-pos start))))
+
 (defun hym-workspace-sidebar--reset-hscroll ()
   "Keep every window showing the sidebar pinned to its left edge."
   (dolist (win (get-buffer-window-list (current-buffer) nil t))
     (set-window-hscroll win 0)))
+
+(defun hym-workspace-sidebar--restore-view ()
+  "Apply the remembered scroll and the buffer's point to every sidebar window.
+The start is forced so redisplay moves point into view rather than
+scrolling the list to wherever point happens to be."
+  (let ((start (when hym-workspace-sidebar--start-line
+                 (save-excursion
+                   (goto-char (point-min))
+                   (forward-line (1- hym-workspace-sidebar--start-line))
+                   (point)))))
+    (dolist (win (get-buffer-window-list (current-buffer) nil t))
+      (when start
+        (set-window-start win start))
+      (set-window-point win (point))))
+  (hym-workspace-sidebar--reset-hscroll))
 
 (defun hym-workspace-sidebar--at-point ()
   "Return the workspace name on the current line, or nil."
@@ -193,9 +219,7 @@ point in sync."
                                              'hym-workspace)
                           name)))
       (hym-workspace-sidebar--goto-workspace name))
-    (when-let* ((win (get-buffer-window (current-buffer) t)))
-      (set-window-point win (point)))
-    (hym-workspace-sidebar--reset-hscroll)))
+    (hym-workspace-sidebar--restore-view)))
 
 (defun hym-workspace-sidebar--remember-point ()
   "Record the workspace and line at point so re-renders can restore them."
@@ -212,6 +236,7 @@ point in sync."
   (setq-local auto-hscroll-mode nil)
   (setq buffer-read-only t)
   (add-hook 'post-command-hook #'hym-workspace-sidebar--remember-point nil t)
+  (add-hook 'window-scroll-functions #'hym-workspace-sidebar--remember-start nil t)
   (add-hook 'post-command-hook #'hym-workspace-sidebar--reset-hscroll nil t))
 
 (defun hym-workspace-sidebar-refresh ()
@@ -235,12 +260,18 @@ point in sync."
 The sidebar starts visible by default.")
 
 (defun hym-workspace-sidebar--show ()
-  (display-buffer-in-side-window
-   (hym-workspace-sidebar--get-buffer)
-   `((side . left) (window-width . ,hym-workspace-sidebar-width)
-     (dedicated . t)
-     (preserve-size . (t . nil))
-     (window-parameters . ((no-delete-other-windows . t))))))
+  ;; Displaying the buffer in a fresh window reports a scroll to the top.
+  (let ((start-line hym-workspace-sidebar--start-line)
+        (buf (hym-workspace-sidebar--get-buffer)))
+    (display-buffer-in-side-window
+     buf
+     `((side . left) (window-width . ,hym-workspace-sidebar-width)
+       (dedicated . t)
+       (preserve-size . (t . nil))
+       (window-parameters . ((no-delete-other-windows . t)))))
+    (setq hym-workspace-sidebar--start-line start-line)
+    (with-current-buffer buf
+      (hym-workspace-sidebar--restore-view))))
 
 (defun hym-workspace-sidebar--set-current-tab-visible (visible)
   "Show the sidebar in the current tab when VISIBLE, otherwise hide it."

@@ -13,7 +13,8 @@
           (hym-workspace--registry nil)
           (hym-workspace--loaded t)
           (hym-workspace-sidebar--point-name nil)
-          (hym-workspace-sidebar--point-line nil))
+          (hym-workspace-sidebar--point-line nil)
+          (hym-workspace-sidebar--start-line nil))
      (unwind-protect (progn ,@body)
        (when (file-exists-p temp) (delete-file temp)))))
 
@@ -263,6 +264,23 @@
           (hym-workspace-sidebar--render)
           (should (equal (buffer-substring (line-beginning-position) (line-end-position))
                          repo)))))))
+
+(ert-deftest hym-workspace-sidebar-render-keeps-scroll-position ()
+  (hym-workspace-sidebar-test-with-registry
+    (dotimes (i 5)
+      (hym-workspace-put (list :name (format "ws%d" i) :type 'project :root "~")))
+    (let ((buf (get-buffer-create hym-workspace-sidebar-buffer-name)))
+      (unwind-protect
+          (with-current-buffer buf
+            (hym-workspace-sidebar-mode)
+            (hym-workspace-sidebar--render)
+            (let ((win (display-buffer buf)))
+              (setq hym-workspace-sidebar--start-line 4)
+              (hym-workspace-sidebar--render)
+              (should (= (line-number-at-pos (window-start win)) 4))))
+        (when-let* ((win (get-buffer-window buf t)))
+          (delete-window win))
+        (kill-buffer buf)))))
 
 (ert-deftest hym-workspace-sidebar-card-highlights-current-workspace ()
   (hym-workspace-sidebar-test-with-registry
