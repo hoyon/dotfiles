@@ -155,16 +155,14 @@ separate phases so all worktrees exist before any setup begins."
         (setup (hym-workspace--setup-command ws repo)))
     (if setup (format "%s && %s" add setup) add)))
 
-(defconst hym-workspace--claude-asset-dirs '("skills" "agents")
-  "Subdirectories of `.claude' whose entries are surfaced per repo.")
-
-(defun hym-workspace--claude-dir (root kind)
-  (expand-file-name (concat ".claude/" kind) root))
+(defconst hym-workspace--agent-asset-dirs
+  '(".claude/skills" ".claude/agents" ".agents/skills" ".codex/agents")
+  "Repo-relative directories whose entries are linked at the workspace root.")
 
 (defun hym-workspace--prune-claude-links (ws)
-  "Delete dangling `.claude' links at WS's root, left by removed worktrees."
-  (dolist (kind hym-workspace--claude-asset-dirs)
-    (let ((dir (hym-workspace--claude-dir (hym-workspace-root ws) kind)))
+  "Delete dangling Claude and Codex asset links left by removed worktrees."
+  (dolist (path hym-workspace--agent-asset-dirs)
+    (let ((dir (expand-file-name path (hym-workspace-root ws))))
       (when (file-directory-p dir)
         (dolist (name (directory-files dir nil directory-files-no-dot-files-regexp))
           (let ((link (expand-file-name name dir)))
@@ -172,17 +170,15 @@ separate phases so all worktrees exist before any setup begins."
               (delete-file link))))))))
 
 (defun hym-workspace--link-claude-assets (ws repo)
-  "Link REPO's skills and agents into WS's root `.claude'.
-An agent started at the workspace root only discovers skills and agents
-under the root's own `.claude', so each repo's entries are linked in
-individually.  Where two repos define the same name, the first repo in
-`:repos' keeps it."
+  "Link REPO's Claude and Codex skills and agents into WS's root.
+Preserve each asset's relative directory so agents launched at the root
+can discover it.  Where two repos define the same name in a directory,
+the first repo in `:repos' keeps it."
   (let ((root (hym-workspace-root ws)))
-    (dolist (kind hym-workspace--claude-asset-dirs)
-      (let ((source (hym-workspace--claude-dir
-                     (expand-file-name repo root) kind)))
+    (dolist (path hym-workspace--agent-asset-dirs)
+      (let ((source (expand-file-name path (expand-file-name repo root))))
         (when (file-directory-p source)
-          (let ((dest (hym-workspace--claude-dir root kind)))
+          (let ((dest (expand-file-name path root)))
             (make-directory dest t)
             (dolist (name (directory-files
                            source nil directory-files-no-dot-files-regexp))
@@ -192,13 +188,13 @@ individually.  Where two repos define the same name, the first repo in
                   (make-symbolic-link (expand-file-name name source) link))))))))))
 
 (defun hym-workspace--sync-claude-assets (ws repos)
-  "Refresh WS's root `.claude' so it points at REPOS' skills and agents."
+  "Refresh WS's root links to REPOS' Claude and Codex skills and agents."
   (hym-workspace--prune-claude-links ws)
   (dolist (repo repos)
     (hym-workspace--link-claude-assets ws repo)))
 
 (defun hym-workspace-link-claude-assets (ws)
-  "Refresh WS's root `.claude' links, for workspaces provisioned before this."
+  "Refresh WS's Claude and Codex links, including in existing workspaces."
   (interactive (list (or (hym-workspace-current) (user-error "Not in a workspace"))))
   (hym-workspace--sync-claude-assets ws (hym-workspace-repos ws)))
 

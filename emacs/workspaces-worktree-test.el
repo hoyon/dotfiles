@@ -192,87 +192,98 @@
       (should (eq done nil))
       (should (eq 'failed (plist-get (gethash "auth" hym-workspace--jobs) :state))))))
 
-(defun hym-workspace-worktree-test--make-assets (root repo &rest specs)
-  "Create `.claude' entries under ROOT/REPO from SPECS of (KIND . NAME)."
-  (dolist (spec specs)
-    (let ((dir (expand-file-name (format "%s/.claude/%s" repo (car spec)) root)))
-      (make-directory dir t)
-      (if (equal (car spec) "agents")
-          (with-temp-file (expand-file-name (cdr spec) dir) (insert "agent"))
-        (make-directory (expand-file-name (cdr spec) dir) t)))))
+(defun hym-workspace-worktree-test--asset-paths (name)
+  "Return representative Claude and Codex asset paths for NAME."
+  (list (format ".claude/skills/%s/SKILL.md" name)
+        (format ".claude/agents/%s.md" name)
+        (format ".agents/skills/%s/SKILL.md" name)
+        (format ".codex/agents/%s.toml" name)))
 
-(ert-deftest hym-workspace-sync-claude-assets-links-skills-and-agents ()
-  (let ((root (make-temp-file "hym-ws-root" t)))
-    (unwind-protect
-        (let ((ws (list :name "auth" :slug "auth" :type 'worktree :root root
-                        :repos '("api-server") :base-branch "main")))
-          (hym-workspace-worktree-test--make-assets
-           root "api-server" '("skills" . "security-reviewer") '("agents" . "writer.md"))
-          (hym-workspace--sync-claude-assets ws '("api-server"))
-          (let ((skill (expand-file-name ".claude/skills/security-reviewer" root))
-                (agent (expand-file-name ".claude/agents/writer.md" root)))
-            (should (file-symlink-p skill))
-            (should (file-directory-p skill))
-            (should (file-symlink-p agent))
-            (should (file-exists-p agent))))
-      (delete-directory root t))))
+(defun hym-workspace-worktree-test--asset-links (name)
+  "Return the root entries linked for assets named NAME."
+  (mapcar (lambda (path)
+            (if (equal (file-name-nondirectory path) "SKILL.md")
+                (directory-file-name (file-name-directory path))
+              path))
+          (hym-workspace-worktree-test--asset-paths name)))
 
-(ert-deftest hym-workspace-sync-claude-assets-first-repo-wins-collisions ()
-  (let ((root (make-temp-file "hym-ws-root" t)))
-    (unwind-protect
-        (let ((ws (list :name "auth" :slug "auth" :type 'worktree :root root
-                        :repos '("a" "b") :base-branch "main")))
-          (hym-workspace-worktree-test--make-assets root "a" '("skills" . "shared"))
-          (hym-workspace-worktree-test--make-assets root "b" '("skills" . "shared"))
-          (hym-workspace--sync-claude-assets ws '("a" "b"))
-          (should (equal (expand-file-name "a/.claude/skills/shared" root)
-                         (file-symlink-p
-                          (expand-file-name ".claude/skills/shared" root)))))
-      (delete-directory root t))))
+(defun hym-workspace-worktree-test--make-assets (root repo &rest names)
+  "Create Claude and Codex skills and agent files for NAMES under ROOT/REPO."
+  (dolist (name names)
+    (dolist (path (hym-workspace-worktree-test--asset-paths name))
+      (let ((file (expand-file-name path (expand-file-name repo root))))
+        (make-directory (file-name-directory file) t)
+        (with-temp-file file (insert repo))))))
 
-(ert-deftest hym-workspace-sync-claude-assets-prunes-dangling-links ()
-  (let ((root (make-temp-file "hym-ws-root" t)))
-    (unwind-protect
-        (let ((ws (list :name "auth" :slug "auth" :type 'worktree :root root
-                        :repos '("gone") :base-branch "main")))
-          (hym-workspace-worktree-test--make-assets root "gone" '("skills" . "old"))
-          (hym-workspace--sync-claude-assets ws '("gone"))
-          (delete-directory (expand-file-name "gone" root) t)
-          (hym-workspace--sync-claude-assets ws nil)
-          (should-not (file-symlink-p (expand-file-name ".claude/skills/old" root))))
-      (delete-directory root t))))
+(defun hym-workspace-worktree-test--should-link-assets (root repo name)
+  "Assert all NAME assets at ROOT link to REPO and expose its contents."
+  (dolist (path (hym-workspace-worktree-test--asset-links name))
+    (ert-info ((format "Asset link: %s" path))
+      (should (equal (expand-file-name path (expand-file-name repo root))
+                     (file-symlink-p (expand-file-name path root))))))
+  (dolist (path (hym-workspace-worktree-test--asset-paths name))
+    (ert-info ((format "Asset contents: %s" path))
+      (should (equal repo (with-temp-buffer
+                            (insert-file-contents (expand-file-name path root))
+                            (buffer-string)))))))
 
-(ert-deftest hym-workspace-sync-claude-assets-noop-without-claude-dir ()
-  (let ((root (make-temp-file "hym-ws-root" t)))
-    (unwind-protect
-        (let ((ws (list :name "auth" :slug "auth" :type 'worktree :root root
-                        :repos '("bare") :base-branch "main")))
-          (make-directory (expand-file-name "bare" root))
-          (hym-workspace--sync-claude-assets ws '("bare"))
-          (should-not (file-exists-p (expand-file-name ".claude" root))))
-      (delete-directory root t))))
+(defmacro hym-workspace-worktree-test-with-assets (&rest body)
+  "Run BODY with a temporary workspace bound to WS and its directory to ROOT."
+  (declare (indent 0) (debug t))
+  `(let* ((root (make-temp-file "hym-ws-root" t))
+          (ws (list :name "auth" :slug "auth" :type 'worktree :root root
+                    :repos '("api-server") :base-branch "main")))
+     (unwind-protect (progn ,@body)
+       (delete-directory root t))))
 
-(ert-deftest hym-workspace-provision-links-claude-assets-before-setup ()
+(ert-deftest hym-workspace-sync-assets-links-skills-and-agents ()
+  (hym-workspace-worktree-test-with-assets
+    (hym-workspace-worktree-test--make-assets root "api-server" "review")
+    ;; Repeated refreshes must preserve the same working links.
+    (dotimes (_ 2)
+      (hym-workspace--sync-claude-assets ws '("api-server"))
+      (hym-workspace-worktree-test--should-link-assets root "api-server" "review"))))
+
+(ert-deftest hym-workspace-sync-assets-first-repo-wins-collisions ()
+  (hym-workspace-worktree-test-with-assets
+    (hym-workspace-worktree-test--make-assets root "a" "shared")
+    (hym-workspace-worktree-test--make-assets root "b" "shared")
+    (hym-workspace--sync-claude-assets ws '("a" "b"))
+    (hym-workspace-worktree-test--should-link-assets root "a" "shared")))
+
+(ert-deftest hym-workspace-sync-assets-prunes-dangling-links ()
+  (hym-workspace-worktree-test-with-assets
+    (hym-workspace-worktree-test--make-assets root "gone" "old")
+    (hym-workspace-worktree-test--make-assets root "kept" "live")
+    (hym-workspace--sync-claude-assets ws '("gone" "kept"))
+    (delete-directory (expand-file-name "gone" root) t)
+    (hym-workspace--sync-claude-assets ws '("kept"))
+    (dolist (path (hym-workspace-worktree-test--asset-links "old"))
+      (ert-info ((format "Dangling asset: %s" path))
+        (should-not (file-symlink-p (expand-file-name path root)))))
+    (hym-workspace-worktree-test--should-link-assets root "kept" "live")))
+
+(ert-deftest hym-workspace-sync-assets-noop-without-asset-dirs ()
+  (hym-workspace-worktree-test-with-assets
+    (make-directory (expand-file-name "bare" root))
+    (hym-workspace--sync-claude-assets ws '("bare"))
+    (dolist (dir '(".claude" ".agents" ".codex"))
+      (should-not (file-exists-p (expand-file-name dir root))))))
+
+(ert-deftest hym-workspace-provision-links-assets-before-setup ()
   (hym-workspace-worktree-test-with-code
-    (let* ((root (make-temp-file "hym-ws-root" t))
-           (linked nil)
-           (hym-workspace--jobs (make-hash-table :test 'equal))
-           (hym-workspace--run-async
-            (lambda (_name command _buffer callback)
-              (when (string-match-p "worktree add" command)
-                (hym-workspace-worktree-test--make-assets
-                 root "api-server" '("skills" . "audit-tests")))
-              (unless (string-match-p "worktree add" command)
-                (setq linked (file-symlink-p
-                              (expand-file-name ".claude/skills/audit-tests" root))))
-              (funcall callback t)))
-           (ws (list :name "auth" :slug "auth" :type 'worktree :root root
-                     :repos '("api-server") :base-branch "main")))
-      (unwind-protect
-          (progn
-            (hym-workspace--provision ws '("api-server") nil #'ignore)
-            (should linked))
-        (delete-directory root t)))))
+    (hym-workspace-worktree-test-with-assets
+      (let* ((setup-ran nil)
+             (hym-workspace--jobs (make-hash-table :test 'equal))
+             (hym-workspace--run-async
+              (lambda (_name command _buffer callback)
+                (if (string-match-p "worktree add" command)
+                    (hym-workspace-worktree-test--make-assets root "api-server" "review")
+                  (hym-workspace-worktree-test--should-link-assets root "api-server" "review")
+                  (setq setup-ran t))
+                (funcall callback t))))
+        (hym-workspace--provision ws '("api-server") nil #'ignore)
+        (should setup-ran)))))
 
 (ert-deftest hym-workspace-job-badge-reflects-state ()
   (let ((hym-workspace--jobs (make-hash-table :test 'equal))
@@ -333,25 +344,21 @@
       (should (equal (hym-workspace-repos (hym-workspace-get "auth"))
                      '("api-server" "web-client"))))))
 
-(ert-deftest hym-workspace-add-repo-links-claude-assets-keeping-existing ()
+(ert-deftest hym-workspace-add-repo-links-assets-keeping-existing ()
   (hym-workspace-worktree-test-with-registry
     (let* ((ws (hym-workspace--register-worktree "auth" "main" '("api-server")))
            (root (hym-workspace-root ws))
            (hym-workspace--run-async
             (lambda (_n command _b cb)
               (when (string-match-p "worktree add" command)
-                (hym-workspace-worktree-test--make-assets
-                 root "web-client" '("skills" . "formatter") '("skills" . "shared")))
+                (hym-workspace-worktree-test--make-assets root "web-client" "formatter" "shared"))
               (funcall cb t))))
-      (hym-workspace-worktree-test--make-assets
-       root "api-server" '("skills" . "audit-tests") '("skills" . "shared"))
+      (hym-workspace-worktree-test--make-assets root "api-server" "review" "shared")
       (hym-workspace--sync-claude-assets ws '("api-server"))
       (hym-workspace-add-repo ws "web-client")
-      (should (file-symlink-p (expand-file-name ".claude/skills/formatter" root)))
-      (should (file-symlink-p (expand-file-name ".claude/skills/audit-tests" root)))
-      (should (equal (expand-file-name "api-server/.claude/skills/shared" root)
-                     (file-symlink-p
-                      (expand-file-name ".claude/skills/shared" root)))))))
+      (hym-workspace-worktree-test--should-link-assets root "web-client" "formatter")
+      (hym-workspace-worktree-test--should-link-assets root "api-server" "review")
+      (hym-workspace-worktree-test--should-link-assets root "api-server" "shared"))))
 
 (ert-deftest hym-workspace-add-repo-rejects-duplicate ()
   (hym-workspace-worktree-test-with-registry
