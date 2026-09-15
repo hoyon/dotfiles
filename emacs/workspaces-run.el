@@ -584,7 +584,7 @@ argument when non-blank."
   (let ((key (hym-workspace--key ws))
         (session (or session (hym-workspace--agent-session-id name))))
     (hym-workspace-spawn-tab
-     ws "agent"
+     ws name
      (lambda ()
        ;; t forces a fresh terminal so the process actually spawns and the
        ;; injected env (HYM_WORKSPACE_SLUG) takes effect.
@@ -644,6 +644,58 @@ argument when non-blank."
   (when-let* ((ws (hym-workspace-current)))
     (let ((agent (hym-workspace--pick-agent)))
       (hym-workspace--start-agent ws (car agent) (cdr agent)))))
+
+(defun hym-workspace--review-prompt (ws)
+  "Return a code review prompt describing WS's repositories and review scope."
+  (let ((root (hym-workspace-root ws))
+        (base (hym-workspace-base-branch ws)))
+    (string-join
+     (list
+      (format "Review the changes in workspace %S." (hym-workspace-name ws))
+      (format "The workspace root is %S. Repository paths to review:" root)
+      (mapconcat (lambda (repo)
+                   (format "- %S" (expand-file-name repo root)))
+                 (hym-workspace-repos ws) "\n")
+      (concat "These paths are independent Git repositories or worktrees. "
+              "Run Git commands within each listed path; the workspace root "
+              "may only be a container directory. Review these workspace "
+              "checkouts, not their canonical repositories or other workspaces. "
+              "Read applicable CLAUDE.md and AGENTS.md instructions at the "
+              "workspace root and within each repository, including nested "
+              "instructions that apply to the files being reviewed.")
+      (if base
+          (format
+           (concat "For each repository, review committed changes since the "
+                   "merge base of HEAD and base branch %S, plus staged, "
+                   "unstaged, and untracked changes. If the base branch cannot "
+                   "be resolved, report that limitation rather than guessing.")
+           base)
+        (concat "No workspace base branch is configured. For each repository, "
+                "review staged, unstaged, and untracked changes against HEAD."))
+      (concat "Consider interactions between changes across repositories. "
+              "Skip repositories with no changes and summarize the scope reviewed.")
+      (concat "Only analyze the code. Do not edit files, fix issues, run tests, "
+              "or run build commands. Report actionable bugs introduced by "
+              "these changes, ordered by severity, with repository, file, line "
+              "references, and an explanation of the concrete impact. Avoid "
+              "speculative or style-only findings. If no issues are found, "
+              "say so explicitly and mention any review limitations."))
+     "\n\n")))
+
+(defun hym-workspace-run-review ()
+  "Choose Claude or Codex to review the current workspace's repositories.
+Review branch changes against the workspace base branch when configured,
+plus uncommitted changes. Use commands from `hym-workspace-agents'."
+  (interactive)
+  (let* ((ws (or (hym-workspace-current)
+                 (user-error "No current workspace")))
+         (hym-workspace-agents
+          (seq-filter (lambda (agent)
+                        (member (car agent) '("claude" "codex")))
+                      hym-workspace-agents))
+         (agent (hym-workspace--pick-agent)))
+    (hym-workspace--start-agent
+     ws (car agent) (cdr agent) nil (hym-workspace--review-prompt ws))))
 
 (defun hym-workspace-run-agent-shell ()
   "Open an `agent-shell' tab at the workspace root."

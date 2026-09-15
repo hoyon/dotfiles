@@ -168,6 +168,7 @@ ones, so generated key strings and commands have to go straight to
   "oX" 'hym-workspace-restart-running-servers
   "ok" 'hym-workspace-kill-server
   "oc" 'hym-workspace-run-agent
+  "ov" 'hym-workspace-run-review
   "oC" 'hym-workspace-run-agent-shell
   "oP" 'hym-workspace-new-from-preset
   "og" 'hym-workspace-git-status
