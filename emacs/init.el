@@ -272,6 +272,10 @@ ones, so generated key strings and commands have to go straight to
     "hv" 'helpful-variable
     "hk" 'helpful-key))
 
+;; Unbind help keys that open GNU licence/project pages.
+(dolist (key '("C-c" "C-w" "C-o" "g"))
+  (keymap-unset help-map key t))
+
 (general-define-key
  :keymaps 'minibuffer-mode-map
  "C-S-v" 'yank)
