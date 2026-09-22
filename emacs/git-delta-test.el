@@ -348,3 +348,37 @@ added: f3.txt
   (hym/git-delta-test-with-fixture
     (hym/git-delta-test-goto-line-matching "^ 2 files changed")
     (should-error (hym/git-delta-diff-visit-file) :type 'user-error)))
+
+(ert-deftest hym/git-delta-untracked-combined-stat ()
+  (let* ((dir (make-temp-file "delta-stat-test-" t))
+         (default-directory (file-name-as-directory dir)))
+    (unwind-protect
+        (progn
+          (should (zerop (process-file "git" nil nil nil "init" "-q")))
+          (with-temp-file "tracked.txt" (insert "old\n"))
+          (should (zerop (process-file "git" nil nil nil "add" "tracked.txt")))
+          (with-temp-file "tracked.txt" (insert "changed\n"))
+          (with-temp-file "new file.txt" (dotimes (_ 147) (insert "new\n")))
+          (let ((index-before (with-temp-buffer
+                                (insert-file-contents-literally ".git/index")
+                                (buffer-string)))
+                command)
+            (cl-letf (((symbol-function 'hym/git-delta-diff)
+                       (lambda (_args _name fn) (setq command (funcall fn))))
+                      ((symbol-function 'hym/git-delta-diff--width) (lambda () 80))
+                      ((symbol-function 'hym/git-delta-diff--delta-command) (lambda (_) "cat")))
+              (hym/git-delta-diff-unstaged-with-untracked))
+            (let* ((output (shell-command-to-string command))
+                   (stat (car (split-string output "\n\n"))))
+              (should (string-match-p (regexp-quote "2 files changed, 148 insertions(+), 1 deletion(-)") stat))
+              (should-not (string-match-p "/dev/null =>" stat))
+              (let ((columns (mapcar (lambda (line) (string-match " | " line))
+                                     (seq-filter (lambda (line) (string-match-p " | " line))
+                                                 (split-string stat "\n")))))
+                (should (= (length columns) 2))
+                (should (apply #'= columns)))
+              (should (string-match-p "diff --git a/new file.txt b/new file.txt" output)))
+            (should (equal index-before (with-temp-buffer
+                                          (insert-file-contents-literally ".git/index")
+                                          (buffer-string))))))
+      (delete-directory dir t))))

@@ -387,9 +387,24 @@ COMMAND-FN, if provided, is a function returning the shell command to run."
    nil "unstaged+untracked"
    (lambda ()
      (let ((width (hym/git-delta-diff--width)))
-       (format "{ GIT_PAGER=cat git diff %1$s; git ls-files --others --exclude-standard | while IFS= read -r f; do GIT_PAGER=cat git diff %1$s --no-index /dev/null \"$f\"; done; echo; { GIT_PAGER=cat git diff -U5; git ls-files --others --exclude-standard | while IFS= read -r f; do GIT_PAGER=cat git diff --no-index /dev/null \"$f\"; done; } | %2$s; }"
-               (hym/git-delta-diff--stat-args width)
-               (hym/git-delta-diff--delta-command width))))))
+       ;; Intent-to-add entries let Git calculate one stat for all files.
+       ;; Use a private index so viewing a diff never changes staging state.
+       (format
+        (string-join
+         '("( index=$(git rev-parse --git-path index) || exit;"
+           "tmp=$(mktemp -d) || exit;"
+           "trap 'rm -rf -- \"$tmp\"' EXIT;"
+           "if test -f \"$index\"; then cp -- \"$index\" \"$tmp/index\" || exit; fi;"
+           "export GIT_INDEX_FILE=\"$tmp/index\";"
+           "if ! test -f \"$GIT_INDEX_FILE\"; then git read-tree --empty || exit; fi;"
+           "git ls-files --others --exclude-standard -z > \"$tmp/untracked\" || exit;"
+           "if test -s \"$tmp/untracked\"; then"
+           "git --literal-pathspecs add -N --pathspec-from-file=\"$tmp/untracked\" --pathspec-file-nul || exit; fi;"
+           "GIT_PAGER=cat git diff %1$s; echo;"
+           "GIT_PAGER=cat git diff -U5 | %2$s; )")
+         "\n")
+        (hym/git-delta-diff--stat-args width)
+        (hym/git-delta-diff--delta-command width))))))
 
 (defun hym/git-delta-diff-merge-base (&optional base-branch)
   "Show delta diff from merge base with BASE-BRANCH or the default branch.
