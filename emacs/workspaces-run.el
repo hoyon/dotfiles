@@ -673,8 +673,14 @@ argument when non-blank."
         (concat "No workspace base branch is configured. For each repository, "
                 "review staged, unstaged, and untracked changes against HEAD."))
       (concat "Consider interactions between changes across repositories. "
-              "Skip repositories with no changes and summarize the scope reviewed.")
-      (concat "Only analyze the code. Do not edit files, fix issues, run tests, "
+              "Skip repositories with no changes and summarise the scope reviewed.")
+      (concat "Limit findings to bugs introduced or made worse by the diff "
+              "defined above. You may read unchanged code to understand the "
+              "impact, but do not report pre-existing bugs or unrelated issues "
+              "discovered while exploring. For every finding, identify the "
+              "specific change that causes the problem and explain the causal "
+              "link. If you cannot establish that link, omit the finding.")
+      (concat "Only analyse the code. Do not edit files, fix issues, run tests, "
               "or run build commands. Report actionable bugs introduced by "
               "these changes, ordered by severity, with repository, file, line "
               "references, and an explanation of the concrete impact. Avoid "
