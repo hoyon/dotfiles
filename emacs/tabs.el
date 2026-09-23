@@ -5,8 +5,8 @@
 (defvar hym/default-tab-group "general"
   "Catch-all tab group used when a tab has no group assigned.")
 
-(defun hym-tabs--apply-settings ()
-  "Apply tab-bar settings used by `hym-tabs-mode'."
+(defun hym/tabs--apply-settings ()
+  "Apply tab-bar settings used by `hym/tabs-mode'."
   (setq tab-bar-new-tab-group t
         tab-bar-new-tab-to 'right
         tab-bar-close-button-show nil
@@ -16,12 +16,12 @@
         tab-bar-separator " "
         tab-bar-format '(tab-bar-format-tabs-groups tab-bar-separator)))
 
-(define-minor-mode hym-tabs-mode
+(define-minor-mode hym/tabs-mode
   "Enable custom grouped tab-bar behavior."
   :global t
-  (if hym-tabs-mode
+  (if hym/tabs-mode
       (progn
-        (hym-tabs--apply-settings)
+        (hym/tabs--apply-settings)
         (tab-bar-mode 1)
         (add-hook 'emacs-startup-hook #'hym/ensure-tab-in-group)
         (add-hook 'after-make-frame-functions #'hym/ensure-tab-in-group)
@@ -55,10 +55,10 @@
 
 (defun hym/tab-id (tab)
   "Return TAB's stable private ID, creating one when necessary."
-  (or (alist-get 'hym-id tab)
+  (or (alist-get 'hym/id tab)
       (let ((id (gensym "hym-tab-")))
         ;; Tab-bar preserves custom alist entries when switching tabs.
-        (setcdr (last tab) (list (cons 'hym-id id)))
+        (setcdr (last tab) (list (cons 'hym/id id)))
         id)))
 
 (defun hym/tab-groups (&optional tabs)
@@ -79,7 +79,7 @@
   "Return the 1-based position of the tab with ID in TABS."
   (and id
        (hym/tab-find-position
-        (lambda (tab) (eq (alist-get 'hym-id tab) id))
+        (lambda (tab) (eq (alist-get 'hym/id tab) id))
         tabs)))
 
 (defun hym/tab-group-key (group)
@@ -101,7 +101,7 @@
              (hym/tab-find-position
               (lambda (tab)
                 (and (equal (hym/tab-group tab) group)
-                     (eq (alist-get 'hym-id tab) preferred-id)))
+                     (eq (alist-get 'hym/id tab) preferred-id)))
               tabs))
         (hym/tab-find-position
          (lambda (tab) (equal (hym/tab-group tab) group))
@@ -308,24 +308,24 @@ If the group exists, the tab is moved into it. Otherwise a new group is created.
   "Return a command selecting the Nth tab in the current tab group."
   (lambda () (interactive) (hym/tab-select-in-group n)))
 
-(defun hym-tabs--number-bindings (format-string)
+(defun hym/tabs--number-bindings (format-string)
   "Return key/command pairs binding FORMAT-STRING applied to 1-9."
   (mapcan (lambda (n)
             (list (format format-string n)
                   (hym/tab-select-in-group-command n)))
           (number-sequence 1 9)))
 
-(defun hym-tabs-setup-keybindings ()
+(defun hym/tabs-setup-keybindings ()
   "Install keybindings for grouped tab-bar commands."
   (hym/leader-def
     "tc" 'tab-close
     "tC" 'hym/tab-close-current-group
     "tr" 'tab-bar-rename-tab
     "tn" 'tab-new)
-  (apply #'hym/leader-apply (hym-tabs--number-bindings "t%d"))
+  (apply #'hym/leader-apply (hym/tabs--number-bindings "t%d"))
 
   ;; Use cmd+number to change tab.
-  (apply #'general-define-key (hym-tabs--number-bindings "s-%d"))
+  (apply #'general-define-key (hym/tabs--number-bindings "s-%d"))
 
   (general-define-key
    "C-<tab>" 'hym/tab-next-in-group
@@ -367,7 +367,7 @@ was supplied explicitly, or when the current tab is the last in its group."
                      (null (hym/tab-position-by-id closing-id)))
             (when-let* ((replacement-pos
                         (hym/tab-position-by-id replacement-id)))
-              (unless (eq (alist-get 'hym-id (tab-bar--current-tab))
+              (unless (eq (alist-get 'hym/id (tab-bar--current-tab))
                           replacement-id)
                 (let ((hym/tab-restore-group-selection nil))
                   (tab-bar-select-tab replacement-pos)))
@@ -435,6 +435,6 @@ was supplied explicitly, or when the current tab is the last in its group."
 (when (and (fboundp 'hym/leader-def)
            (fboundp 'hym/leader-apply)
            (fboundp 'general-define-key))
-  (hym-tabs-setup-keybindings))
+  (hym/tabs-setup-keybindings))
 
-(provide 'hym-tabs)
+(provide 'hym/tabs)

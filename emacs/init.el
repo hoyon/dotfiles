@@ -148,7 +148,7 @@ ones, so generated key strings and commands have to go straight to
 (load-config "packages.el")
 
 (load-config "tabs.el")
-(hym-tabs-mode 1)
+(hym/tabs-mode 1)
 
 (load-config "workspaces.el")
 (load-config "workspaces-sidebar.el")
@@ -158,35 +158,35 @@ ones, so generated key strings and commands have to go straight to
 (load-config "workspaces-notes.el")
 (load-config "workspaces-project.el")
 (load-config "ghostel-monitor.el")
-(hym-workspace-mode 1)
+(hym/workspace-mode 1)
 (hym/leader-def
-  "oo" 'hym-workspace-sidebar-toggle
-  "on" 'hym-workspace-new
-  "oa" 'hym-workspace-add-repo
-  "ot" 'hym-workspace-run-shell
-  "or" 'hym-workspace-run-server
-  "oR" 'hym-workspace-run-all-servers
-  "oX" 'hym-workspace-restart-running-servers
-  "ok" 'hym-workspace-kill-server
-  "oc" 'hym-workspace-run-agent
-  "ov" 'hym-workspace-run-review
-  "oC" 'hym-workspace-run-agent-shell
-  "oP" 'hym-workspace-new-from-preset
-  "og" 'hym-workspace-git-status
-  "od" 'hym-workspace-git-diff
-  "oD" 'hym-workspace-git-diff-unstaged-with-untracked
-  "ol" 'hym-workspace-git-log
-  "oN" 'hym-workspace-notes
-  "os" 'hym-workspace-scratch
-  "tj" 'hym-workspace-prev
-  "tk" 'hym-workspace-next
-  "tt" 'hym-workspace-switch
+  "oo" 'hym/workspace-sidebar-toggle
+  "on" 'hym/workspace-new
+  "oa" 'hym/workspace-add-repo
+  "ot" 'hym/workspace-run-shell
+  "or" 'hym/workspace-run-server
+  "oR" 'hym/workspace-run-all-servers
+  "oX" 'hym/workspace-restart-running-servers
+  "ok" 'hym/workspace-kill-server
+  "oc" 'hym/workspace-run-agent
+  "ov" 'hym/workspace-run-review
+  "oC" 'hym/workspace-run-agent-shell
+  "oP" 'hym/workspace-new-from-preset
+  "og" 'hym/workspace-git-status
+  "od" 'hym/workspace-git-diff
+  "oD" 'hym/workspace-git-diff-unstaged-with-untracked
+  "ol" 'hym/workspace-git-log
+  "oN" 'hym/workspace-notes
+  "os" 'hym/workspace-scratch
+  "tj" 'hym/workspace-prev
+  "tk" 'hym/workspace-next
+  "tt" 'hym/workspace-switch
   "0" 'hym/tab-switch-to-default-group)
 
 (apply #'hym/leader-apply
        (mapcan (lambda (n)
                  (list (number-to-string n)
-                       (hym-workspace-select-index-command n)))
+                       (hym/workspace-select-index-command n)))
                (number-sequence 1 9)))
 
 (defun hym/grep-for-symbol-at-point ()

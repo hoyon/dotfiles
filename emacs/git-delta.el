@@ -309,9 +309,9 @@ Reuse an existing tab only when it belongs to the current group."
 
 (defun hym/git-delta-diff--workspace-name ()
   "Return the current workspace name, or the current tab group as a fallback."
-  (if-let* ((ws (and (fboundp 'hym-workspace-current)
-                    (hym-workspace-current))))
-      (hym-workspace-name ws)
+  (if-let* ((ws (and (fboundp 'hym/workspace-current)
+                    (hym/workspace-current))))
+      (hym/workspace-name ws)
     (if (fboundp 'hym/tab-group)
         (hym/tab-group)
       "global")))

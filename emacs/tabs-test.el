@@ -10,22 +10,22 @@
   `(let ((saved-tabs (frame-parameter nil 'tabs))
          (saved-tab-bar-mode tab-bar-mode)
          (saved-history-mode tab-bar-history-mode)
-         (saved-hym-tabs-mode hym-tabs-mode)
+         (saved-hym-tabs-mode hym/tabs-mode)
          (hym/tab-group-last-tab (make-hash-table :test 'equal)))
      (unwind-protect
          (progn
-           (when hym-tabs-mode
-             (hym-tabs-mode -1))
+           (when hym/tabs-mode
+             (hym/tabs-mode -1))
            (set-frame-parameter nil 'tabs nil)
            (tab-bar-history-mode 1)
-           (hym-tabs-mode 1)
+           (hym/tabs-mode 1)
            ,@body)
-       (hym-tabs-mode -1)
+       (hym/tabs-mode -1)
        (tab-bar-history-mode (if saved-history-mode 1 -1))
        (set-frame-parameter nil 'tabs saved-tabs)
        (tab-bar-mode (if saved-tab-bar-mode 1 -1))
        (when saved-hym-tabs-mode
-         (hym-tabs-mode 1)))))
+         (hym/tabs-mode 1)))))
 
 (defun hym/tabs-test-create (name group)
   "Create a tab named NAME in GROUP."
@@ -62,7 +62,7 @@
     (let ((general-id (hym/tab-id (tab-bar--current-tab-find))))
       (hym/tabs-test-create "workspace-2" "workspace")
       (hym/tab-switch-to-default-group)
-      (should (eq (alist-get 'hym-id (tab-bar--current-tab)) general-id)))))
+      (should (eq (alist-get 'hym/id (tab-bar--current-tab)) general-id)))))
 
 (ert-deftest hym/open-dir-standalone-command-targets-default-group ()
   (hym/tabs-test-with-clean-frame
@@ -116,7 +116,7 @@
     (let ((expected-id (hym/tab-id (tab-bar--current-tab-find))))
       (hym/tab-group-switch-to "A")
       (hym/tab-group-switch-to "B")
-      (should (eq (alist-get 'hym-id (tab-bar--current-tab))
+      (should (eq (alist-get 'hym/id (tab-bar--current-tab))
                   expected-id)))))
 
 (ert-deftest hym/tab-close-last-in-group-may-leave-group ()
@@ -137,7 +137,7 @@
           (tab-bar-tab-prevent-close-functions (list (lambda (&rest _) t))))
       (tab-close)
       (should (= (length (funcall tab-bar-tabs-function)) 3))
-      (should (eq (alist-get 'hym-id (tab-bar--current-tab))
+      (should (eq (alist-get 'hym/id (tab-bar--current-tab))
                   current-id))
       (should (equal (hym/tabs-test-current-name) "B2")))))
 
@@ -178,8 +178,8 @@
     (funcall (hym/tab-select-in-group-command 1))
     (should (equal (hym/tabs-test-current-name) "first"))))
 
-(ert-deftest hym-tabs-number-bindings-cover-one-to-nine ()
-  (let ((bindings (hym-tabs--number-bindings "t%d")))
+(ert-deftest hym/tabs-number-bindings-cover-one-to-nine ()
+  (let ((bindings (hym/tabs--number-bindings "t%d")))
     (should (= 18 (length bindings)))
     (should (equal "t1" (nth 0 bindings)))
     (should (equal "t9" (nth 16 bindings)))

@@ -18,5 +18,5 @@ session="${HYM_WORKSPACE_AGENT_SESSION:-default}"
 case "$HYM_WORKSPACE_SLUG" in *[!A-Za-z0-9_.:@+-]*) exit 0 ;; esac
 case "$agent" in *[!A-Za-z0-9_.:@+-]*) exit 0 ;; esac
 case "$session" in *[!A-Za-z0-9_.:@+-]*) exit 0 ;; esac
-emacsclient --eval "(hym-workspace-agent-signal \"$HYM_WORKSPACE_SLUG\" \"$agent\" \"$session\" \"$event\")" >/dev/null 2>&1 || true
+emacsclient --eval "(hym/workspace-agent-signal \"$HYM_WORKSPACE_SLUG\" \"$agent\" \"$session\" \"$event\")" >/dev/null 2>&1 || true
 exit 0

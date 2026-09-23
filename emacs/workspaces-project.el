@@ -9,22 +9,22 @@ Only worktree workspaces count: every other type's root is a single repo,
 which project.el already scopes correctly."
   (let ((dir (file-name-as-directory (expand-file-name dir))))
     (seq-find (lambda (ws)
-                (and (eq (hym-workspace-type ws) 'worktree)
-                     (string-prefix-p (file-name-as-directory (hym-workspace-root ws))
+                (and (eq (hym/workspace-type ws) 'worktree)
+                     (string-prefix-p (file-name-as-directory (hym/workspace-root ws))
                                       dir)))
-              (hym-workspace-registry))))
+              (hym/workspace-registry))))
 
 (defun hym/workspace--project (ws)
-  (cons 'hym-workspace (file-name-as-directory (hym-workspace-root ws))))
+  (cons 'hym/workspace (file-name-as-directory (hym/workspace-root ws))))
 
-(cl-defmethod project-root ((project (head hym-workspace)))
+(cl-defmethod project-root ((project (head hym/workspace)))
   (cdr project))
 
 ;; The workspace root is not a git repo but each sub-repo is, so fd applies
 ;; every sub-repo's .gitignore while still listing the root's loose files.
 ;; Symlinks are not followed: the root's .claude/.agents links point back
 ;; into the sub-repos and would duplicate their files.
-(cl-defmethod project-files ((project (head hym-workspace)) &optional dirs)
+(cl-defmethod project-files ((project (head hym/workspace)) &optional dirs)
   (let ((dirs (or dirs (list (project-root project)))))
     (mapcan
      (lambda (dir)
@@ -67,4 +67,4 @@ With prefix argument INCLUDE-ALL, include gitignored files."
   (let ((consult-project-function #'hym/project-root))
     (consult-ripgrep)))
 
-(provide 'hym-workspaces-project)
+(provide 'hym/workspaces-project)

@@ -11,15 +11,15 @@
 
 (defmacro hym/workspace-project-test--with-registry (registry &rest body)
   (declare (indent 1))
-  `(let ((hym-workspace--registry ,registry)
-         (hym-workspace--loaded t))
+  `(let ((hym/workspace--registry ,registry)
+         (hym/workspace--loaded t))
      ,@body))
 
 (ert-deftest hym/workspace-at-matches-worktree-root-and-subdirs ()
   (hym/workspace-project-test--with-registry
       '((:name "ws" :type worktree :root "/tmp/ws" :repos ("api" "web")))
-    (should (equal (hym-workspace-name (hym/workspace-at "/tmp/ws")) "ws"))
-    (should (equal (hym-workspace-name (hym/workspace-at "/tmp/ws/api/lib/")) "ws"))
+    (should (equal (hym/workspace-name (hym/workspace-at "/tmp/ws")) "ws"))
+    (should (equal (hym/workspace-name (hym/workspace-at "/tmp/ws/api/lib/")) "ws"))
     (should-not (hym/workspace-at "/tmp/ws2/"))
     (should-not (hym/workspace-at "/tmp/"))))
 
@@ -53,7 +53,7 @@
               (write-region "_build/\n" nil (expand-file-name ".gitignore" dir))
               (write-region "" nil (expand-file-name "main.ex" dir))
               (write-region "" nil (expand-file-name "_build/junk" dir))))
-          (let ((project (cons 'hym-workspace root)))
+          (let ((project (cons 'hym/workspace root)))
             (should (equal (sort (let ((project-files-relative-names t))
                                    (project-files project))
                                  #'string<)
