@@ -156,6 +156,7 @@ ones, so generated key strings and commands have to go straight to
 (load-config "workspaces-run.el")
 (load-config "workspaces-git.el")
 (load-config "workspaces-notes.el")
+(load-config "workspaces-project.el")
 (load-config "ghostel-monitor.el")
 (hym-workspace-mode 1)
 (hym/leader-def
@@ -236,7 +237,8 @@ ones, so generated key strings and commands have to go straight to
   ":" 'execute-extended-command
   "," 'consult-buffer
   "<" 'consult-fd
-  "SPC" 'project-find-file
+  "SPC" 'hym/workspace-find-file
+  "/" 'consult-ripgrep
   "fs" 'evil-write
   "fy" 'hym/copy-buffer-file-name
   "fY" 'hym/copy-buffer-file-name-claude

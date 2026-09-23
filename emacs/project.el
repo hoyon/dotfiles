@@ -66,7 +66,7 @@
   "pp" 'project-switch-project
   "pf" 'project-find-file
   "pF" 'hym/project-find-file-all
-  "p/" 'consult-ripgrep
+  "p/" 'hym/project-ripgrep
   "pc" 'hym/project-compile
   "pr" 'hym/project-run
   "pt" 'hym/project-test

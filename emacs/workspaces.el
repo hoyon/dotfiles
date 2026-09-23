@@ -42,6 +42,8 @@
 ;;                          badges; `hym-workspace-agent-signal'.
 ;;   workspaces-git.el      per-repo magit status / delta PR-diff / log.
 ;;   workspaces-notes.el    per-workspace org notes + plain scratch.
+;;   workspaces-project.el  workspace-wide find-file / ripgrep across every
+;;                          sub-repo plus the root's loose files.
 ;;   claude/hooks/          hym-agent-hook + install-hooks: Claude/Codex/goose
 ;;                          lifecycle events -> emacsclient ->
 ;;                          `hym-workspace-agent-signal'.
@@ -68,7 +70,8 @@
 ;;
 ;; Keys (leader `SPC o'): oo sidebar, on new, oa add-repo, ot shell, or server,
 ;; oc Ghostty agent, oC agent-shell, og/od/ol git status/diff/log, oN notes,
-;; os scratch; `SPC t j/k/t' and `SPC 1-9' switch between workspaces; `SPC 0'
+;; os scratch; `SPC SPC' / `SPC /' find / search across the workspace;
+;; `SPC t j/k/t' and `SPC 1-9' switch between workspaces; `SPC 0'
 ;; switches to the non-registry general group.
 
 ;;; Code:
