@@ -1,6 +1,9 @@
 ;; -*- lexical-binding: t -*-
 
 (require 'ert)
+(defmacro hym/leader-def (&rest _))
+(defmacro general-define-key (&rest _))
+(load-file (expand-file-name "git-delta.el" (file-name-directory load-file-name)))
 (load-file (expand-file-name "workspaces.el" (file-name-directory load-file-name)))
 (load-file (expand-file-name "workspaces-worktree.el" (file-name-directory load-file-name)))
 (load-file (expand-file-name "workspaces-run.el" (file-name-directory load-file-name)))
@@ -396,7 +399,7 @@
   (should (equal (hym/workspace--agent-launch-string "claude" nil) "claude"))
   (should (equal (hym/workspace--agent-launch-string "claude" "   ") "claude"))
   (should (equal (hym/workspace--agent-launch-string "claude" "fix it")
-                 "claude 'fix it'")))
+                 " claude 'fix it'")))
 
 (ert-deftest hym/workspace-run-agent-shell-uses-workspace-context ()
   (let ((hym/workspace--agent-state (make-hash-table :test 'equal))
@@ -455,7 +458,7 @@
           (should (member "HYM_WORKSPACE_SLUG=s" captured-env))
           (should (member "HYM_WORKSPACE_AGENT=claude" captured-env))
           (should (member "HYM_WORKSPACE_AGENT_SESSION=sess-1" captured-env))
-          (should (equal sent "claude 'it'\\''s big'\n")))
+          (should (equal sent " claude 'it'\\''s big'\n")))
       (fset 'hym/workspace-spawn-tab orig-spawn)
       (fmakunbound 'ghostel)
       (fmakunbound 'ghostel-send-string))))
@@ -604,3 +607,82 @@
       (fset 'hym/workspace-spawn-tab orig-spawn)
       (when (buffer-live-p other-api-buf) (kill-buffer other-api-buf))
       (when (buffer-live-p other-web-buf) (kill-buffer other-web-buf)))))
+
+(defun hym/workspace-run-test--git (dir &rest args)
+  "Run git ARGS in DIR, returning trimmed stdout."
+  (let ((default-directory dir))
+    (with-temp-buffer
+      (apply #'call-process "git" nil (list t nil) nil
+             "-c" "user.name=t" "-c" "user.email=t@t" args)
+      (string-trim (buffer-string)))))
+
+(defun hym/workspace-run-test--repo-behind-origin (dir)
+  "Make DIR a repo whose local main lags origin/main, with HEAD branched off origin/main.
+Return the origin/main SHA."
+  (make-directory dir t)
+  (hym/workspace-run-test--git dir "init" "--quiet" "-b" "main")
+  (hym/workspace-run-test--git dir "commit" "--allow-empty" "-m" "stale main")
+  (hym/workspace-run-test--git dir "checkout" "--quiet" "-b" "upstream")
+  (hym/workspace-run-test--git dir "commit" "--allow-empty" "-m" "upstream")
+  (let ((upstream (hym/workspace-run-test--git dir "rev-parse" "HEAD")))
+    (hym/workspace-run-test--git dir "update-ref" "refs/remotes/origin/main" upstream)
+    (hym/workspace-run-test--git dir "checkout" "--quiet" "-b" "feature")
+    (hym/workspace-run-test--git dir "branch" "--quiet" "-D" "upstream")
+    upstream))
+
+(ert-deftest hym/workspace-review-prompt-uses-origin-merge-base-and-skips-unchanged ()
+  (let ((root (make-temp-file "hym-review" t)))
+    (unwind-protect
+        (let* ((changed-dir (expand-file-name "api" root))
+               (clean-dir (expand-file-name "web" root))
+               (upstream (hym/workspace-run-test--repo-behind-origin changed-dir))
+               (stale (hym/workspace-run-test--git changed-dir "rev-parse" "main")))
+          (hym/workspace-run-test--git changed-dir "commit" "--allow-empty" "-m" "mine")
+          (hym/workspace-run-test--repo-behind-origin clean-dir)
+          (let ((prompt (hym/workspace--review-prompt
+                         (list :name "w" :root root :repos '("api" "web")
+                               :base-branch "main"))))
+            (should (string-match-p (regexp-quote (format "`git diff %s`" upstream))
+                                    prompt))
+            (should-not (string-match-p stale prompt))
+            (should (string-match-p
+                     (regexp-quote (format "do not review them:\n- %S" clean-dir))
+                     prompt))
+            (should-not (string-match-p "CLAUDE.md" prompt))))
+      (delete-directory root t))))
+
+(ert-deftest hym/workspace-review-prompt-errors-without-changes ()
+  (let ((root (make-temp-file "hym-review" t)))
+    (unwind-protect
+        (progn
+          (hym/workspace-run-test--repo-behind-origin (expand-file-name "api" root))
+          (should-error (hym/workspace--review-prompt
+                         (list :name "w" :root root :repos '("api")
+                               :base-branch "main"))
+                        :type 'user-error))
+      (delete-directory root t))))
+
+(ert-deftest hym/workspace-review-prompt-includes-uncommitted-only-repos ()
+  (let ((root (make-temp-file "hym-review" t)))
+    (unwind-protect
+        (let ((dir (expand-file-name "api" root)))
+          (hym/workspace-run-test--repo-behind-origin dir)
+          (with-temp-file (expand-file-name "new.txt" dir) (insert "x"))
+          (should (string-match-p
+                   (regexp-quote (format "- %S: `git diff" dir))
+                   (hym/workspace--review-prompt
+                    (list :name "w" :root root :repos '("api")
+                          :base-branch "main")))))
+      (delete-directory root t))))
+
+(ert-deftest hym/workspace-review-prompt-reports-unresolvable-base ()
+  (let ((root (make-temp-file "hym-review" t)))
+    (unwind-protect
+        (let ((dir (expand-file-name "api" root)))
+          (hym/workspace-run-test--repo-behind-origin dir)
+          (should (string-match-p
+                   "base branch \"develop\" could not be resolved"
+                   (hym/workspace--review-prompt
+                    (list :name "w" :root root :repos '("api")
+                          :base-branch "develop")))))
+      (delete-directory root t))))

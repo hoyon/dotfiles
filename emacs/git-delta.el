@@ -406,17 +406,28 @@ COMMAND-FN, if provided, is a function returning the shell command to run."
         (hym/git-delta-diff--stat-args width)
         (hym/git-delta-diff--delta-command width))))))
 
+(defun hym/git-branch-merge-base (branch &optional directory)
+  "Return the merge-base SHA of HEAD and BRANCH in DIRECTORY, or nil.
+Prefers origin/BRANCH over the local BRANCH: worktree branches fork from
+origin/<base>, so a stale local default branch would drag unrelated
+upstream commits into the diff."
+  (let* ((default-directory (or directory default-directory))
+         (remote-branch (concat "origin/" branch))
+         (base (if (= 0 (call-process "git" nil nil nil "rev-parse" "--verify"
+                                      "--quiet" (concat remote-branch "^{commit}")))
+                   remote-branch
+                 branch)))
+    (with-temp-buffer
+      (when (= 0 (call-process "git" nil (list t nil) nil "merge-base" base "HEAD"))
+        (string-trim (buffer-string))))))
+
 (defun hym/git-delta-diff-merge-base (&optional base-branch)
-  "Show delta diff from merge base with BASE-BRANCH or the default branch.
-Prefers the remote-tracking ref over the local branch: worktree branches
-fork from origin/<base>, so a stale local default branch would drag
-unrelated upstream commits into the diff."
+  "Show delta diff from merge base with BASE-BRANCH or the default branch."
   (interactive)
   (let* ((default-directory (magit-toplevel))
          (branch (or base-branch (magit-main-branch)))
-         (remote-branch (concat "origin/" branch))
-         (base (if (magit-rev-verify remote-branch) remote-branch branch))
-         (merge-base (magit-git-string "merge-base" base "HEAD")))
+         (merge-base (or (hym/git-branch-merge-base branch)
+                         (user-error "Cannot find merge base with %s" branch))))
     (message merge-base)
     (hym/git-delta-diff (format "%s..HEAD" merge-base) "merge-base")))
 

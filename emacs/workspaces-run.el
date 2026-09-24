@@ -12,6 +12,7 @@
 (defvar ghostel-buffer-name)
 (defvar agent-shell-buffer-name)
 (declare-function agent-shell-new-shell "agent-shell")
+(declare-function hym/git-branch-merge-base "git-delta")
 
 (defcustom hym/workspace-agents '(("claude" . "claude")
                                   ("codex" . "codex -c tui.animations=false")
@@ -572,9 +573,11 @@ is unsafe against fish globbing/history expansion."
   (concat "'" (replace-regexp-in-string "'" "'\\''" s nil t) "'"))
 
 (defun hym/workspace--agent-launch-string (command prompt)
-  "Return the shell line launching COMMAND, seeded with PROMPT when non-blank."
+  "Return the shell line launching COMMAND, seeded with PROMPT when non-blank.
+A seeded line starts with a space so fish keeps the prompt out of its
+history."
   (if (and prompt (not (string-empty-p (string-trim prompt))))
-      (format "%s %s" command (hym/workspace--shell-quote prompt))
+      (format " %s %s" command (hym/workspace--shell-quote prompt))
     command))
 
 (defun hym/workspace--start-agent (ws name command &optional session prompt)
@@ -645,47 +648,100 @@ argument when non-blank."
     (let ((agent (hym/workspace--pick-agent)))
       (hym/workspace--start-agent ws (car agent) (cdr agent)))))
 
+(defun hym/workspace--review-scope (dir base)
+  "Return the review scope plist for the checkout at DIR against BASE.
+Keys are :dir, :merge-base (nil without BASE or when it cannot be
+resolved), :commits (count since the merge base) and :dirty."
+  (let ((merge-base (and base (hym/git-branch-merge-base base dir))))
+    (list :dir dir
+          :merge-base merge-base
+          :commits (if merge-base
+                       (string-to-number
+                        (or (hym/workspace--git-string
+                             dir "rev-list" "--count"
+                             (format "%s..HEAD" merge-base))
+                            "0"))
+                     0)
+          :dirty (not (string-empty-p
+                       (or (hym/workspace--git-string
+                            dir "status" "--porcelain")
+                           ""))))))
+
+(defun hym/workspace--review-scope-changed-p (scope base)
+  "Return non-nil when SCOPE has anything to review.
+An unresolvable BASE counts as changed so the agent reports it."
+  (or (plist-get scope :dirty)
+      (> (plist-get scope :commits) 0)
+      (and base (null (plist-get scope :merge-base)))))
+
+(defun hym/workspace--review-scope-line (scope base)
+  "Return the prompt line describing what to review for SCOPE."
+  (let ((dir (plist-get scope :dir))
+        (merge-base (plist-get scope :merge-base)))
+    (cond
+     (merge-base
+      (format (concat "- %S: `git diff %s` (committed, staged and unstaged "
+                      "changes since the merge base with base branch %S), "
+                      "plus untracked files.")
+              dir merge-base base))
+     (base
+      (format (concat "- %S: base branch %S could not be resolved. Review "
+                      "staged, unstaged and untracked changes against HEAD, "
+                      "and report that committed changes were not reviewed.")
+              dir base))
+     (t
+      (format "- %S: staged, unstaged and untracked changes against HEAD."
+              dir)))))
+
 (defun hym/workspace--review-prompt (ws)
-  "Return a code review prompt describing WS's repositories and review scope."
-  (let ((root (hym/workspace-root ws))
-        (base (hym/workspace-base-branch ws)))
+  "Return a code review prompt describing WS's repositories and review scope.
+Each repository's range is resolved here rather than by the agent, which
+would otherwise diff against a possibly stale local base branch."
+  (let* ((root (hym/workspace-root ws))
+         (base (hym/workspace-base-branch ws))
+         (scopes (mapcar (lambda (repo)
+                           (hym/workspace--review-scope
+                            (expand-file-name repo root) base))
+                         (hym/workspace-repos ws)))
+         (changed (seq-filter (lambda (scope)
+                                (hym/workspace--review-scope-changed-p scope base))
+                              scopes))
+         (unchanged (seq-difference scopes changed)))
+    (unless changed
+      (user-error "No changes to review in workspace %s" (hym/workspace-name ws)))
     (string-join
-     (list
-      (format "Review the changes in workspace %S." (hym/workspace-name ws))
-      (format "The workspace root is %S. Repository paths to review:" root)
-      (mapconcat (lambda (repo)
-                   (format "- %S" (expand-file-name repo root)))
-                 (hym/workspace-repos ws) "\n")
-      (concat "These paths are independent Git repositories or worktrees. "
-              "Run Git commands within each listed path; the workspace root "
-              "may only be a container directory. Review these workspace "
-              "checkouts, not their canonical repositories or other workspaces. "
-              "Read applicable CLAUDE.md and AGENTS.md instructions at the "
-              "workspace root and within each repository, including nested "
-              "instructions that apply to the files being reviewed.")
-      (if base
-          (format
-           (concat "For each repository, review committed changes since the "
-                   "merge base of HEAD and base branch %S, plus staged, "
-                   "unstaged, and untracked changes. If the base branch cannot "
-                   "be resolved, report that limitation rather than guessing.")
-           base)
-        (concat "No workspace base branch is configured. For each repository, "
-                "review staged, unstaged, and untracked changes against HEAD."))
-      (concat "Consider interactions between changes across repositories. "
-              "Skip repositories with no changes and summarise the scope reviewed.")
-      (concat "Limit findings to bugs introduced or made worse by the diff "
-              "defined above. You may read unchanged code to understand the "
-              "impact, but do not report pre-existing bugs or unrelated issues "
-              "discovered while exploring. For every finding, identify the "
-              "specific change that causes the problem and explain the causal "
-              "link. If you cannot establish that link, omit the finding.")
-      (concat "Only analyse the code. Do not edit files, fix issues, run tests, "
-              "or run build commands. Report actionable bugs introduced by "
-              "these changes, ordered by severity, with repository, file, line "
-              "references, and an explanation of the concrete impact. Avoid "
-              "speculative or style-only findings. If no issues are found, "
-              "say so explicitly and mention any review limitations."))
+     (delq
+      nil
+      (list
+       (format "Review the changes in workspace %S." (hym/workspace-name ws))
+       (format "The workspace root is %S. Repositories and the exact scope to review in each:"
+               root)
+       (mapconcat (lambda (scope) (hym/workspace--review-scope-line scope base))
+                  changed "\n")
+       (when unchanged
+         (concat "These repositories have no changes; do not review them:\n"
+                 (mapconcat (lambda (scope) (format "- %S" (plist-get scope :dir)))
+                            unchanged "\n")))
+       (concat "These paths are independent Git repositories or worktrees. "
+               "Run Git commands within each listed path; the workspace root "
+               "may only be a container directory. Review these workspace "
+               "checkouts, not their canonical repositories or other workspaces. "
+               "Use exactly the ranges given above; do not recompute them "
+               "against local branches.")
+       (concat "Consider interactions between changes across repositories "
+               "and summarise the scope reviewed.")
+       (concat "Limit findings to bugs introduced or made worse by the diff "
+               "defined above. You may read unchanged code to understand the "
+               "impact, but do not report pre-existing bugs or unrelated issues "
+               "discovered while exploring. For every finding, identify the "
+               "specific change that causes the problem and explain the causal "
+               "link. If you cannot establish that link, omit the finding.")
+       (concat "Only analyse the code. Do not edit files, fix issues, run tests, "
+               "or run build commands. Report actionable bugs introduced by "
+               "these changes, ordered by severity, with repository, file, line "
+               "references, and an explanation of the concrete impact. Avoid "
+               "speculative or style-only findings. If no issues are found, "
+               "say so explicitly and mention any review limitations.")))
      "\n\n")))
 
 (defun hym/workspace-run-review ()
@@ -699,9 +755,9 @@ plus uncommitted changes. Use commands from `hym/workspace-agents'."
           (seq-filter (lambda (agent)
                         (member (car agent) '("claude" "codex")))
                       hym/workspace-agents))
+         (prompt (hym/workspace--review-prompt ws))
          (agent (hym/workspace--pick-agent)))
-    (hym/workspace--start-agent
-     ws (car agent) (cdr agent) nil (hym/workspace--review-prompt ws))))
+    (hym/workspace--start-agent ws (car agent) (cdr agent) nil prompt)))
 
 (defun hym/workspace-run-agent-shell ()
   "Open an `agent-shell' tab at the workspace root."
