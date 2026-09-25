@@ -304,6 +304,31 @@ If the group exists, the tab is moved into it. Otherwise a new group is created.
   (interactive)
   (tab-bar-close-group-tabs (hym/tab-group)))
 
+(defvar hym/tab-terminal-modes '(ghostel-mode agent-shell-mode)
+  "Major modes whose buffers `hym/tab-close-and-kill-terminals' kills.")
+
+(defun hym/tab--terminal-buffer-p (buf)
+  "Return non-nil when BUF is in one of `hym/tab-terminal-modes'."
+  (with-current-buffer buf
+    (apply #'derived-mode-p hym/tab-terminal-modes)))
+
+(defun hym/tab-close-and-kill-terminals ()
+  "Close the current tab and kill the terminal buffers it was showing.
+Closing a tab only discards its window layout, which would leave agents and
+shells running unseen.  A terminal still shown in another tab or frame is
+kept."
+  (interactive)
+  (let ((terminals (seq-filter #'hym/tab--terminal-buffer-p
+                               (delete-dups
+                                (mapcar #'window-buffer (window-list))))))
+    (tab-bar-close-tab)
+    (dolist (buf terminals)
+      (when (and (buffer-live-p buf)
+                 (null (tab-bar-get-buffer-tab buf t)))
+        ;; Ghostel's own query function ignores `process-query-on-exit-flag'.
+        (let ((kill-buffer-query-functions nil))
+          (kill-buffer buf))))))
+
 (defun hym/tab-select-in-group-command (n)
   "Return a command selecting the Nth tab in the current tab group."
   (lambda () (interactive) (hym/tab-select-in-group n)))
@@ -318,7 +343,8 @@ If the group exists, the tab is moved into it. Otherwise a new group is created.
 (defun hym/tabs-setup-keybindings ()
   "Install keybindings for grouped tab-bar commands."
   (hym/leader-def
-    "tc" 'tab-close
+    "tc" 'hym/tab-close-and-kill-terminals
+    "tx" 'tab-close
     "tC" 'hym/tab-close-current-group
     "tr" 'tab-bar-rename-tab
     "tn" 'tab-new)
@@ -328,6 +354,7 @@ If the group exists, the tab is moved into it. Otherwise a new group is created.
   (apply #'general-define-key (hym/tabs--number-bindings "s-%d"))
 
   (general-define-key
+   "s-w" 'hym/tab-close-and-kill-terminals
    "C-<tab>" 'hym/tab-next-in-group
    "C-S-<iso-lefttab>" 'hym/tab-previous-in-group
    "C-<backtab>" 'hym/tab-previous-in-group))
