@@ -3,11 +3,9 @@
 (require 'seq)
 (require 'subr-x)
 
-;; Declared special so our `let' binds them dynamically even before
-;; ghostel-compile.el (autoloaded) defines `ghostel-compile-buffer-name';
-;; without this the lexical-binding file binds it lexically and the later
-;; defcustom errors with "Defining as dynamic an already lexical var".
-(defvar ghostel-compile-buffer-name)
+;; Declared special so our `let' binds them dynamically even before ghostel
+;; loads; without this the lexical-binding file binds them lexically and the
+;; later defcustom errors with "Defining as dynamic an already lexical var".
 (defvar ghostel-environment)
 (defvar ghostel-buffer-name)
 (defvar agent-shell-buffer-name)
@@ -19,25 +17,6 @@
                                   ("goose" . "goose"))
   "Alist of (NAME . SHELL-COMMAND) for agents launchable in a workspace."
   :type '(alist :key-type string :value-type string) :group 'hym/workspace)
-
-(defcustom hym/workspace-server-environments-file
-  (expand-file-name "server-environments.eld" hym/workspace-home)
-  "File mapping repo names to environment variables for their servers.
-The file contains an alist whose keys are repo names and whose values are
-lists of \"KEY=VALUE\" strings.  It is read on every server start, so edits
-take effect without restarting Emacs."
-  :type 'file :group 'hym/workspace)
-
-(defvar hym/workspace--servers (make-hash-table :test 'equal)
-  "Map (WORKSPACE-KEY REPO) to its server (`ghostel-compile') buffer name.")
-
-(defcustom hym/workspace-restart-server-delay 0.05
-  "Seconds to wait between starting servers during a bulk restart."
-  :type 'number :group 'hym/workspace)
-
-(defcustom hym/workspace-server-shutdown-timeout 3
-  "Seconds to let a server exit after SIGTERM before sending SIGKILL."
-  :type 'number :group 'hym/workspace)
 
 (defvar hym/workspace--agent-state (make-hash-table :test 'equal)
   "Map (SLUG SESSION) to agent state plists.
@@ -90,27 +69,6 @@ right even when another workspace's tab is selected."
   (message "%s" (hym/workspace--notification-text title body)))
 
 (setq ghostel-notification-function #'hym/workspace-notify)
-
-(defun hym/workspace--server-environment (repo)
-  "Return the configured server environment for REPO.
-Read `hym/workspace-server-environments-file' on every call.  A missing file
-or an unconfigured repo yields nil; malformed entries signal an error rather
-than starting a server with an unexpected environment."
-  (let ((entries
-         (hym/workspace--read-eld hym/workspace-server-environments-file
-                                  "server environments file")))
-    (unless
-        (and (listp entries)
-             (seq-every-p
-              (lambda (entry)
-                (and (consp entry)
-                     (stringp (car entry))
-                     (listp (cdr entry))
-                     (seq-every-p #'stringp (cdr entry))))
-              entries))
-      (error "Invalid server environments in %s"
-             hym/workspace-server-environments-file))
-    (alist-get repo entries nil nil #'equal)))
 
 (defun hym/workspace--agent-state-key (slug session)
   "Return the hash key for SLUG and SESSION."
@@ -264,61 +222,8 @@ hook via `emacsclient --eval'."
               (hym/workspace--agent-badge-line entry entries))
             entries)))
 
-(defun hym/workspace--server-badge (ws)
-  "Status function: one badge line for each live server process in WS."
-  (mapcar (lambda (entry)
-            (propertize (format "● %s running" (car entry))
-                        'face 'success))
-          (hym/workspace--live-servers (hym/workspace--key ws))))
-
-(defun hym/workspace--server-buffer-live-p (name)
-  "Return non-nil when the server buffer NAME still has a live process."
-  (let ((buf (and name (get-buffer name))))
-    (and buf (process-live-p (get-buffer-process buf)))))
-
-(defun hym/workspace--sweep-servers (predicate)
-  "Return (SERVER-KEY . BUFFER-NAME) for live servers matching PREDICATE.
-Dead entries are dropped from the table on the way past, whether or not
-they match."
-  (let (live dead)
-    (maphash
-     (lambda (server-key name)
-       (if (not (hym/workspace--server-buffer-live-p name))
-           (push server-key dead)
-         (when (funcall predicate server-key)
-           (push (cons server-key name) live))))
-     hym/workspace--servers)
-    (dolist (server-key dead)
-      (remhash server-key hym/workspace--servers))
-    live))
-
-(defun hym/workspace--live-servers (workspace-key)
-  "Return live (REPO . BUFFER-NAME) servers for WORKSPACE-KEY.
-Remove dead server entries while collecting the result."
-  (sort (mapcar (lambda (entry) (cons (cadr (car entry)) (cdr entry)))
-                (hym/workspace--sweep-servers
-                 (lambda (server-key)
-                   (equal workspace-key (car-safe server-key)))))
-        (lambda (a b) (string< (car a) (car b)))))
-
 (with-eval-after-load 'hym/workspaces-sidebar
-  (add-to-list 'hym/workspace-sidebar-status-functions #'hym/workspace--server-badge)
   (add-to-list 'hym/workspace-sidebar-status-functions #'hym/workspace--agent-badge))
-
-(defun hym/workspace--teardown-servers (ws)
-  "Stop WS's servers, leaving the redraw to whoever is tearing WS down."
-  (hym/workspace-kill-workspace-servers ws t))
-
-(add-hook 'hym/workspace-teardown-functions #'hym/workspace--teardown-servers)
-
-(defun hym/workspace--repos-with-run (ws)
-  "Return WS's repos whose conductor.json defines a `run' script."
-  (let ((code (expand-file-name hym/workspace-code-root)))
-    (seq-filter
-     (lambda (repo)
-       (alist-get 'run (hym/workspace--repo-conductor
-                        (expand-file-name repo code))))
-     (hym/workspace-repos ws))))
 
 (defun hym/workspace--pick-agent ()
   "Return a chosen (NAME . COMMAND) from `hym/workspace-agents'.
@@ -362,208 +267,6 @@ the second such terminal rather than a global \"*ghostel*<N>\"."
              (ghostel-buffer-name
               (hym/workspace--terminal-buffer-name ws "shell")))
          (ghostel t))))))
-
-(defun hym/workspace--server-live-p (workspace-key repo)
-  "Return non-nil when REPO has a live server in WORKSPACE-KEY."
-  (hym/workspace--server-buffer-live-p
-   (gethash (list workspace-key repo) hym/workspace--servers)))
-
-(defun hym/workspace--finish-killing-server (proc buf &optional after-kill)
-  "Force-kill PROC if necessary, clean up BUF, then call AFTER-KILL."
-  (when (process-live-p proc)
-    (ignore-errors (kill-process proc)))
-  (when (buffer-live-p buf)
-    (kill-buffer buf))
-  (when after-kill
-    (funcall after-kill)))
-
-(defun hym/workspace--kill-server (workspace-key repo
-                                                &optional defer-refresh after-kill)
-  "Asynchronously kill REPO's tracked server in WORKSPACE-KEY.
-Send SIGTERM first, then SIGKILL after
-`hym/workspace-server-shutdown-timeout' seconds if it is still alive.
-The retired buffer is cleaned up after that timeout.
-When DEFER-REFRESH is non-nil, leave sidebar refresh to the caller.
-Call AFTER-KILL only once the old process has been killed and cleaned up."
-  (let* ((server-key (list workspace-key repo))
-         (name (gethash server-key hym/workspace--servers))
-         (buf (and name (get-buffer name)))
-         (proc (and buf (get-buffer-process buf))))
-    (if (process-live-p proc)
-        (progn
-          (set-process-query-on-exit-flag proc nil)
-          ;; Ghostel's normal process filter renders every shutdown message,
-          ;; and its compile sentinel synchronously redraws and parses the
-          ;; whole buffer on exit.  Detach both before signalling so a noisy
-          ;; or large server shutdown cannot monopolize Emacs.
-          (set-process-filter proc #'ignore)
-          (set-process-sentinel proc #'ignore)
-          (set-process-buffer proc nil)
-          (ignore-errors (signal-process proc 'SIGTERM))
-          (when (buffer-live-p buf)
-            (kill-buffer buf))
-          (run-at-time hym/workspace-server-shutdown-timeout nil
-                       #'hym/workspace--finish-killing-server
-                       proc buf after-kill))
-      (when (buffer-live-p buf)
-        (kill-buffer buf))
-      (when after-kill
-        (funcall after-kill)))
-    (remhash server-key hym/workspace--servers)
-    (unless defer-refresh
-      (hym/workspace-refresh-ui))))
-
-(defun hym/workspace-kill-workspace-servers (ws &optional defer-refresh)
-  "Kill every tracked server for WS.
-When DEFER-REFRESH is non-nil, leave sidebar refresh to the caller."
-  (let* ((key (hym/workspace--key ws))
-         (repos (mapcar #'car (hym/workspace--live-servers key))))
-    (dolist (repo repos)
-      (hym/workspace--kill-server key repo t))
-    (unless defer-refresh
-      (hym/workspace-refresh-ui))
-    repos))
-
-(defun hym/workspace--running-server-choices ()
-  "Return (DISPLAY . SERVER-KEY) choices for every live tracked server."
-  (sort (mapcar (lambda (entry)
-                  (let ((server-key (car entry)))
-                    (cons (format "%s/%s" (car server-key) (cadr server-key))
-                          server-key)))
-                (hym/workspace--sweep-servers #'always))
-        (lambda (a b) (string< (car a) (car b)))))
-
-(defun hym/workspace-kill-server ()
-  "Prompt for and kill any running workspace server."
-  (interactive)
-  (let ((choices (hym/workspace--running-server-choices)))
-    (unless choices
-      (user-error "No workspace servers are running"))
-    (let* ((selected (completing-read "Kill server: " choices nil t))
-           (server-key (cdr (assoc selected choices))))
-      (hym/workspace--kill-server (car server-key) (cadr server-key))
-      (message "Killed %s" selected))))
-
-(defun hym/workspace--other-workspace-servers (workspace-key repo)
-  "Return server keys for live REPO servers in workspaces other than WORKSPACE-KEY."
-  (mapcar #'car
-          (hym/workspace--sweep-servers
-           (lambda (server-key)
-             (and (equal repo (cadr server-key))
-                  (not (equal workspace-key (car server-key))))))))
-
-(defun hym/workspace--kill-servers-then (server-keys then)
-  "Asynchronously kill every server in SERVER-KEYS, then call THEN once."
-  (if (null server-keys)
-      (funcall then)
-    (let ((remaining (length server-keys)))
-      (dolist (server-key server-keys)
-        (hym/workspace--kill-server
-         (car server-key) (cadr server-key) t
-         (lambda ()
-           (setq remaining (1- remaining))
-           (when (zerop remaining)
-             (funcall then))))))))
-
-(defun hym/workspace--start-server (ws repo)
-  "Start REPO's server in WS, first stopping REPO's servers in other workspaces.
-Worktrees of one repo share its dev ports, so at most one workspace can run
-a given repo at a time."
-  (let* ((key (hym/workspace--key ws))
-         (others (hym/workspace--other-workspace-servers key repo)))
-    (dolist (server-key others)
-      (message "Stopping the %s server in %s" repo (car server-key)))
-    (hym/workspace--kill-servers-then
-     others (lambda () (hym/workspace--spawn-server ws repo)))))
-
-(defun hym/workspace--spawn-server (ws repo)
-  "Run REPO's conductor `run' script in WS's server tab, reusing any existing one."
-  (let* ((key (hym/workspace--key ws))
-         (code (expand-file-name hym/workspace-code-root))
-         (run (alist-get 'run (hym/workspace--repo-conductor
-                               (expand-file-name repo code))))
-         (bufname (format "*ws-server: %s/%s*" key repo)))
-    (hym/workspace-spawn-tab
-     ws (format "server:%s" repo)
-     (lambda ()
-       (let ((default-directory (expand-file-name repo (hym/workspace-root ws)))
-             (ghostel-compile-buffer-name bufname)
-             (ghostel-environment
-              (append (hym/workspace--server-environment repo)
-                      (hym/workspace--ghostel-environment))))
-         (ghostel-compile run t))
-       ;; ghostel-compile splits; make its output fill the new tab's main
-       ;; window instead of sitting beside the cloned old buffer. The
-       ;; sidebar survives via its no-delete-other-windows parameter.
-       (when-let* ((buf (get-buffer bufname)))
-         (switch-to-buffer buf)
-         (delete-other-windows))
-       (puthash (list key repo) bufname hym/workspace--servers)
-       (when-let* ((proc (get-buffer-process (get-buffer bufname))))
-         (add-function :after (process-sentinel proc)
-                       (lambda (&rest _) (hym/workspace-refresh-ui))))
-       (hym/workspace-refresh-ui))
-     t)))
-
-(defun hym/workspace-run-server ()
-  "Run a repo's conductor `run' script in a server tab, with live output."
-  (interactive)
-  (when-let* ((ws (hym/workspace-current)))
-    (let ((key (hym/workspace--key ws)))
-      (let* ((repos (hym/workspace--repos-with-run ws))
-             (repo (cond ((null repos) (user-error "No repo has a run script"))
-                         ((null (cdr repos)) (car repos))
-                         (t (completing-read "Server repo: " repos nil t)))))
-        (if (hym/workspace--server-live-p key repo)
-            (if (yes-or-no-p
-                 (format "The %s server is already running; kill and restart it? "
-                         repo))
-                (hym/workspace--kill-server
-                 key repo nil
-                 (lambda () (hym/workspace--start-server ws repo)))
-              (user-error "The %s server is still running" repo))
-          (hym/workspace--start-server ws repo))))))
-
-(defun hym/workspace-run-all-servers ()
-  "Run every configured server in the current workspace.
-Servers that are already live are left running."
-  (interactive)
-  (when-let* ((ws (hym/workspace-current)))
-    (let* ((key (hym/workspace--key ws))
-           (repos (hym/workspace--repos-with-run ws))
-           started)
-      (unless repos
-        (user-error "No repo has a run script"))
-      (dolist (repo repos)
-        (unless (hym/workspace--server-live-p key repo)
-          (hym/workspace--start-server ws repo)
-          (push repo started)))
-      (if started
-          (message "Started %d server%s" (length started)
-                   (if (= (length started) 1) "" "s"))
-        (message "All workspace servers are already running")))))
-
-(defun hym/workspace-restart-running-servers ()
-  "Restart every live server in the current workspace.
-Servers that are not currently running are left stopped."
-  (interactive)
-  (when-let* ((ws (hym/workspace-current)))
-    (let* ((key (hym/workspace--key ws))
-           (repos (mapcar #'car (hym/workspace--live-servers key))))
-      (unless repos
-        (user-error "No servers are running in this workspace"))
-      (cl-loop for repo in repos
-               for delay from 0 by hym/workspace-restart-server-delay
-               do (let ((repo repo)
-                        (delay delay))
-                    (hym/workspace--kill-server
-                     key repo t
-                     (lambda ()
-                       (run-at-time delay nil
-                                    #'hym/workspace--start-server ws repo)))))
-      (hym/workspace-refresh-ui)
-      (message "Restarting %d server%s" (length repos)
-               (if (= (length repos) 1) "" "s")))))
 
 (defun hym/workspace--shell-quote (s)
   "Single-quote S for the login shell (fish), which the agent terminal runs.

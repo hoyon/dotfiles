@@ -153,6 +153,7 @@ ones, so generated key strings and commands have to go straight to
 (load-config "workspaces.el")
 (load-config "workspaces-sidebar.el")
 (load-config "workspaces-worktree.el")
+(load-config "workspaces-server.el")
 (load-config "workspaces-run.el")
 (load-config "workspaces-git.el")
 (load-config "workspaces-notes.el")

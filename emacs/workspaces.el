@@ -38,8 +38,11 @@
 ;;                          archived section.
 ;;   workspaces-worktree.el git-worktree provisioning from conductor.json
 ;;                          (async), add-repo, archive/unarchive, retry.
-;;   workspaces-run.el      ghostel shell/server/agent tabs; server + agent
-;;                          badges; `hym/workspace-agent-signal'.
+;;   workspaces-server.el   per-repo dev servers behind a runner interface
+;;                          (`hym/workspace-server-*' generics); one server
+;;                          per repo per host; server badge.
+;;   workspaces-run.el      ghostel shell/agent tabs; agent badge;
+;;                          `hym/workspace-agent-signal'.
 ;;   workspaces-git.el      per-repo magit status / delta PR-diff / log.
 ;;   workspaces-notes.el    per-workspace org notes + plain scratch.
 ;;   workspaces-project.el  workspace-wide find-file / ripgrep across every
