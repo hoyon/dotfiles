@@ -498,3 +498,94 @@
           (make-directory (expand-file-name "api-server" root) t)
           (should (null (hym/workspace--setup-command ws "api-server"))))
       (delete-directory root t))))
+
+(ert-deftest hym/workspace-worktree-command-uses-reset-branch ()
+  (hym/workspace-worktree-test-with-code
+    (let ((ws '(:name "auth" :slug "auth" :type worktree
+                :root "~/workspaces/auth" :repos ("api-server")
+                :base-branch "main" :branch "auth_20261001_120000")))
+      (should (string-match-p "worktree add .* auth_20261001_120000\\'"
+                              (hym/workspace--worktree-command ws "api-server" t)))
+      (should (string-match-p "worktree add -b auth_20261001_120000 "
+                              (hym/workspace--worktree-command ws "api-server" nil))))))
+
+(ert-deftest hym/workspace-reset-command-fetches-then-switches ()
+  (hym/workspace-worktree-test-with-code
+    (let* ((ws '(:name "auth" :slug "auth" :type worktree
+                 :root "~/workspaces/auth" :repos ("api-server")
+                 :base-branch "main"))
+           (cmd (hym/workspace--reset-command ws "api-server" "auth_new")))
+      (should (string-match-p "fetch origin .*&& git -C .* switch -c auth_new origin/main\\'"
+                              cmd))
+      (should (string-match-p (regexp-quote (shell-quote-argument
+                                             (expand-file-name "~/workspaces/auth/api-server")))
+                              cmd)))))
+
+(defun hym/workspace-worktree-test--git (dir &rest args)
+  "Run git ARGS in DIR, returning trimmed stdout."
+  (with-temp-buffer
+    (let ((default-directory (file-name-as-directory dir)))
+      (apply #'call-process "git" nil t nil
+             "-c" "user.name=t" "-c" "user.email=t@t" args)
+      (string-trim (buffer-string)))))
+
+(ert-deftest hym/workspace-reset-command-moves-worktree-to-latest-base ()
+  (let* ((tmp (make-temp-file "hym-reset" t))
+         (origin (expand-file-name "origin" tmp))
+         (hym/workspace-code-root (expand-file-name "code" tmp))
+         (code (expand-file-name "api-server" hym/workspace-code-root))
+         (ws (list :name "auth" :slug "auth" :type 'worktree
+                   :root (expand-file-name "ws" tmp)
+                   :repos '("api-server") :base-branch "main"))
+         (dest (hym/workspace--repo-dest ws "api-server")))
+    (unwind-protect
+        (progn
+          (make-directory origin)
+          (hym/workspace-worktree-test--git origin "init" "--quiet" "-b" "main")
+          (hym/workspace-worktree-test--git origin "commit" "--allow-empty" "-m" "one")
+          (make-directory hym/workspace-code-root)
+          (hym/workspace-worktree-test--git hym/workspace-code-root
+                                            "clone" "--quiet" origin "api-server")
+          (hym/workspace-worktree-test--git code "worktree" "add" "--quiet"
+                                            "-b" "auth" dest "origin/main")
+          (hym/workspace-worktree-test--git dest "commit" "--allow-empty" "-m" "old work")
+          (hym/workspace-worktree-test--git origin "commit" "--allow-empty" "-m" "two")
+          (should (= 0 (call-process shell-file-name nil nil nil shell-command-switch
+                                     (hym/workspace--reset-command ws "api-server" "auth_new"))))
+          (should (equal "auth_new"
+                         (hym/workspace-worktree-test--git dest "branch" "--show-current")))
+          (should (equal (hym/workspace-worktree-test--git origin "rev-parse" "main")
+                         (hym/workspace-worktree-test--git dest "rev-parse" "HEAD")))
+          (should (equal "old work"
+                         (hym/workspace-worktree-test--git code "log" "-1" "--format=%s" "auth"))))
+      (delete-directory tmp t))))
+
+(ert-deftest hym/workspace-reset-worktree-records-branch-on-success ()
+  (hym/workspace-worktree-test-with-registry
+    (let* ((ran nil)
+           (hym/workspace--run-async
+            (lambda (_n cmd _b cb) (push cmd ran) (funcall cb t)))
+           (ws (hym/workspace--register-worktree "auth" "main" '("a" "b"))))
+      (hym/workspace-reset-worktree ws)
+      (let ((branch (hym/workspace-branch (hym/workspace-get "auth"))))
+        (should (string-match-p "\\`auth_[0-9]\\{8\\}_[0-9]\\{6\\}\\'" branch))
+        (should (= 2 (length ran)))
+        (should (seq-every-p (lambda (cmd) (string-match-p (concat "switch -c " branch) cmd))
+                             ran)))
+      (should (null (gethash "auth" hym/workspace--jobs))))))
+
+(ert-deftest hym/workspace-reset-worktree-keeps-branch-on-failure ()
+  (hym/workspace-worktree-test-with-registry
+    (let ((hym/workspace--run-async (lambda (_n _c _b cb) (funcall cb nil)))
+          (ws (hym/workspace--register-worktree "auth" "main" '("api-server"))))
+      (cl-letf (((symbol-function 'hym/workspace--show-setup-error) #'ignore))
+        (hym/workspace-reset-worktree ws))
+      (should (equal "auth" (hym/workspace-branch (hym/workspace-get "auth"))))
+      (should (eq 'reset-failed
+                  (plist-get (gethash "auth" hym/workspace--jobs) :state))))))
+
+(ert-deftest hym/workspace-reset-worktree-refuses-while-busy ()
+  (hym/workspace-worktree-test-with-registry
+    (let ((ws (hym/workspace--register-worktree "auth" "main" '("api-server"))))
+      (puthash "auth" '(:repo "api-server" :state running) hym/workspace--jobs)
+      (should-error (hym/workspace-reset-worktree ws) :type 'user-error))))

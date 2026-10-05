@@ -16,11 +16,12 @@
 ;; (default <hym/workspace-home>/registry.eld). Each entry:
 ;;
 ;;   (:name "auth refactor"   ; display name = the tab-group name; renamable
-;;    :slug "auth_refactor"   ; frozen id for worktree types: dir/branch/DB name
+;;    :slug "auth_refactor"   ; frozen id for worktree types: dir/first branch/DB name
 ;;    :type worktree          ; worktree | directory
 ;;    :root "~/workspaces/auth_refactor"
 ;;    :repos ("api" "web")  ; (".") for directory
-;;    :base-branch "main" :archived nil)
+;;    :base-branch "main" :archived nil
+;;    :branch "auth_refactor_20261001_142501") ; only once reset; else :slug
 ;;
 ;; `hym/workspace-home' (~/workspaces) is the one home: the registry plus a dir
 ;; per workspace (`hym/workspace-dir' = <home>/<key>) holding its worktrees,
@@ -58,7 +59,7 @@
 ;;   `hym/workspace-sidebar-status-functions'  add a sidebar badge
 ;;   `hym/workspace-type-creators'             provision a new workspace type
 ;;   `hym/workspace-type-handlers'             per-type archive/unarchive/
-;;                                             add-repo/retry, so the sidebar
+;;                                             add-repo/retry/reset, so the sidebar
 ;;                                             never needs to know about
 ;;                                             worktrees
 ;;   `hym/workspace-agents'                    add a coding agent
@@ -71,9 +72,9 @@
 ;; Tests live beside each module as <module>-test.el; `make test' in this
 ;; directory runs them all.
 ;;
-;; Keys (leader `SPC o'): oo sidebar, on new, oa add-repo, ot shell, or server,
-;; oc Ghostty agent, oC agent-shell, og/od/ol git status/diff/log, oN notes,
-;; os scratch; `SPC SPC' / `SPC /' find / search across the workspace;
+;; Keys (leader `SPC o'): oo sidebar, on new, oa add-repo, ob fresh branch,
+;; ot shell, or server, oc Ghostty agent, oC agent-shell, og/od/ol git
+;; status/diff/log, oN notes, os scratch; `SPC SPC' / `SPC /' find / search across the workspace;
 ;; `SPC t j/k/t' and `SPC 1-9' switch between workspaces; `SPC 0'
 ;; switches to the non-registry general group.
 
@@ -250,6 +251,8 @@ listeners when the workspace can be moved; return non-nil in that case."
 (defun hym/workspace-base-branch (ws) (plist-get ws :base-branch))
 (defun hym/workspace-archived-p (ws) (plist-get ws :archived))
 (defun hym/workspace-slug (ws) (plist-get ws :slug))
+(defun hym/workspace-branch (ws)
+  (or (plist-get ws :branch) (hym/workspace-slug ws)))
 
 (defun hym/workspace-active ()
   "Return non-archived workspaces in registry order."
@@ -439,10 +442,10 @@ that command instead of creating a bare entry.")
 
 (defvar hym/workspace-type-handlers nil
   "Alist mapping a workspace TYPE symbol to a plist of operations.
-Recognised keys are `:archive', `:unarchive', `:add-repo' and `:retry',
-each a function of one argument, the workspace.  Types absent here fall
-back to the generic registry-only behaviour, which is how the sidebar
-offers these actions without knowing which types support them.")
+Recognised keys are `:archive', `:unarchive', `:add-repo', `:retry' and
+`:reset', each a function of one argument, the workspace.  Types absent
+here fall back to the generic registry-only behaviour, which is how the
+sidebar offers these actions without knowing which types support them.")
 
 (defun hym/workspace-type-handler (ws op)
   "Return WS's handler function for OP, or nil when its type has none."

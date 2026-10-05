@@ -164,6 +164,7 @@ ones, so generated key strings and commands have to go straight to
   "oo" 'hym/workspace-sidebar-toggle
   "on" 'hym/workspace-new
   "oa" 'hym/workspace-add-repo
+  "ob" 'hym/workspace-reset-worktree
   "ot" 'hym/workspace-run-shell
   "or" 'hym/workspace-run-server
   "oR" 'hym/workspace-run-all-servers

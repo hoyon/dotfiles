@@ -388,6 +388,14 @@ restores a layout without the side window; this puts it back."
               (retry (hym/workspace-type-handler ws :retry)))
     (funcall retry ws)))
 
+(defun hym/workspace-sidebar-reset ()
+  "Move the workspace on the current line onto a fresh branch off its base."
+  (interactive)
+  (when-let* ((ws (hym/workspace-sidebar--workspace-at-point))
+              (reset (hym/workspace-type-handler ws :reset)))
+    (when (y-or-n-p (format "Start %s on a fresh branch? " (hym/workspace-name ws)))
+      (funcall reset ws))))
+
 (defun hym/workspace-sidebar-archive ()
   "Archive the workspace on the current line.
 Types with an `:archive' handler tear their resources down first; the
@@ -476,6 +484,7 @@ rest are simply closed and flagged."
         (cons "a" #'hym/workspace-sidebar-add-repo)
         (cons "u" #'hym/workspace-sidebar-unarchive)
         (cons "r" #'hym/workspace-sidebar-rename)
+        (cons "R" #'hym/workspace-sidebar-reset)
         (cons (kbd "M-<up>") #'hym/workspace-sidebar-move-up)
         (cons (kbd "M-<down>") #'hym/workspace-sidebar-move-down)
         (cons (kbd "M-k") #'hym/workspace-sidebar-move-up)

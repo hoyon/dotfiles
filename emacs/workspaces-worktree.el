@@ -118,8 +118,8 @@ The conductor environment names the canonical repo and the workspace."
 
 (defun hym/workspace--worktree-command (ws repo reuse-branch)
   "Return the shell command that adds REPO's worktree for WS.
-Create branch `:slug' unless REUSE-BRANCH is non-nil."
-  (let* ((slug (hym/workspace-slug ws))
+Create WS's branch unless REUSE-BRANCH is non-nil."
+  (let* ((branch (hym/workspace-branch ws))
          (code (hym/workspace--code-dir repo))
          (dest (hym/workspace--repo-dest ws repo))
          (base (hym/workspace-base-branch ws)))
@@ -127,20 +127,24 @@ Create branch `:slug' unless REUSE-BRANCH is non-nil."
         (format "git -C %s worktree add %s %s"
                 (shell-quote-argument code)
                 (shell-quote-argument dest)
-                (shell-quote-argument slug))
+                (shell-quote-argument branch))
       (pcase-let* ((`(,fetch-refspec . ,start-point)
                     (hym/workspace--branch-start-point code base))
                    (add (format "git -C %s worktree add -b %s %s %s"
                                 (shell-quote-argument code)
-                                (shell-quote-argument slug)
+                                (shell-quote-argument branch)
                                 (shell-quote-argument dest)
                                 (shell-quote-argument start-point))))
-        (if fetch-refspec
-            (format "git -C %s fetch origin %s && %s"
-                    (shell-quote-argument code)
-                    (shell-quote-argument fetch-refspec)
-                    add)
-          add)))))
+        (hym/workspace--fetch-then code fetch-refspec add)))))
+
+(defun hym/workspace--fetch-then (code fetch-refspec command)
+  "Return COMMAND, preceded by fetching FETCH-REFSPEC into CODE when non-nil."
+  (if fetch-refspec
+      (format "git -C %s fetch origin %s && %s"
+              (shell-quote-argument code)
+              (shell-quote-argument fetch-refspec)
+              command)
+    command))
 
 (defun hym/workspace--setup-command (ws repo)
   "Return REPO's setup command for WS, or nil when none is configured."
@@ -216,7 +220,8 @@ CALLBACK is called with t on success, nil on failure. Rebound in tests.")
 
 (defvar hym/workspace--jobs (make-hash-table :test 'equal)
   "Map workspace key to `(:repo R :state S)' while a repo job is in flight.
-S is one of `running', `failed', `archiving' or `archive-failed'.
+S is one of `running', `failed', `archiving', `archive-failed',
+`resetting' or `reset-failed'.
 Runtime only; never persisted.")
 
 (defun hym/workspace--set-job (ws repo state)
@@ -293,7 +298,11 @@ Call ON-DONE with t when all succeed, nil on the first failure."
             ('archiving (propertize (format "~ archiving %s..." (plist-get st :repo))
                                     'face 'warning))
             ('archive-failed (propertize (format "! archive failed (%s)" (plist-get st :repo))
-                                         'face 'error))))))
+                                         'face 'error))
+            ('resetting (propertize (format "~ resetting %s..." (plist-get st :repo))
+                                    'face 'warning))
+            ('reset-failed (propertize (format "! reset failed (%s)" (plist-get st :repo))
+                                       'face 'error))))))
 
 (with-eval-after-load 'hym/workspaces-sidebar
   (add-to-list 'hym/workspace-sidebar-status-functions
@@ -484,6 +493,50 @@ before its worktree was created is re-provisioned from scratch."
        ws missing nil
        (lambda (ok) (unless ok (hym/workspace--show-setup-error ws)))))))
 
+(defun hym/workspace--fresh-branch-name (ws)
+  "Return a new branch name for WS, unique by the time it is cut."
+  (format "%s_%s" (hym/workspace-slug ws) (format-time-string "%Y%m%d_%H%M%S")))
+
+(defun hym/workspace--reset-command (ws repo branch)
+  "Return the shell command moving REPO's worktree in WS onto new BRANCH.
+BRANCH is cut from the freshly fetched base branch."
+  (pcase-let* ((code (hym/workspace--code-dir repo))
+               (`(,fetch-refspec . ,start-point)
+                (hym/workspace--branch-start-point
+                 code (hym/workspace-base-branch ws))))
+    (hym/workspace--fetch-then
+     code fetch-refspec
+     (format "git -C %s switch -c %s %s"
+             (shell-quote-argument (hym/workspace--repo-dest ws repo))
+             (shell-quote-argument branch)
+             (shell-quote-argument start-point)))))
+
+(defun hym/workspace-reset-worktree (ws)
+  "Put every repo in WS on a fresh, auto-named branch off the latest base.
+Nothing is reprovisioned and no setup runs.  The old branch is kept, and
+uncommitted changes carry over unless they conflict, in which case git
+refuses and that repo stays where it was."
+  (interactive (list (or (hym/workspace-current) (user-error "Not in a workspace"))))
+  (unless (eq (hym/workspace-type ws) 'worktree)
+    (user-error "%s is not a worktree workspace" (hym/workspace-name ws)))
+  (when (memq (plist-get (gethash (hym/workspace--key ws) hym/workspace--jobs)
+                         :state)
+              '(running archiving resetting))
+    (user-error "%s is busy" (hym/workspace-name ws)))
+  (let ((branch (hym/workspace--fresh-branch-name ws)))
+    (hym/workspace--run-per-repo
+     ws (hym/workspace-repos ws)
+     (lambda (repo) (hym/workspace--reset-command ws repo branch))
+     'resetting
+     (lambda (result)
+       (if (not (eq result t))
+           (progn
+             (hym/workspace--set-job ws result 'reset-failed)
+             (hym/workspace--show-setup-error ws))
+         (hym/workspace-update ws :branch branch)
+         (hym/workspace--clear-job ws)
+         (message "%s is now on %s" (hym/workspace-name ws) branch))))))
+
 (with-eval-after-load 'hym/workspaces
   (add-to-list 'hym/workspace-type-creators
                '(worktree . hym/workspace-create-worktree))
@@ -492,6 +545,7 @@ before its worktree was created is re-provisioned from scratch."
                      :archive #'hym/workspace-archive-worktree
                      :unarchive #'hym/workspace-unarchive
                      :retry #'hym/workspace-provision-retry
+                     :reset #'hym/workspace-reset-worktree
                      :add-repo (lambda (ws)
                                  (hym/workspace-add-repo
                                   ws (hym/workspace--read-add-repo ws))))))
