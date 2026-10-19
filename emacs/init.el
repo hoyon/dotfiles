@@ -138,6 +138,7 @@ ones, so generated key strings and commands have to go straight to
 (load-config "project.el")
 (load-config "docs.el")
 (load-config "lang.el")
+(load-config "markdown.el")
 (load-config "completion.el")
 (load-config "compile.el")
 (load-config "org.el")

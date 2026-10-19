@@ -8,7 +8,6 @@
   (setq show-trailing-whitespace t))
 
 (add-hook 'prog-mode-hook 'hym/show-trailing-whitespace)
-(add-hook 'markdown-mode-hook 'hym/show-trailing-whitespace)
 
 (add-hook 'prog-mode-hook #'hs-minor-mode)
 (setq hs-display-lines-hidden t
@@ -110,13 +109,6 @@
   :config
   (setq web-mode-engines-alist
         '(("elixir" . "\\.heex"))))
-
-(use-package markdown-ts-mode
-  :straight nil
-  :ensure nil
-  :mode ("\\.md\\'" "\\.mdx\\'" "\\.markdown\\'")
-  :config
-  (require 'markdown-ts-mode-x))
 
 (use-package rust-mode
   :init
