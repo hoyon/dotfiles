@@ -16,6 +16,7 @@ set -x THEFUCK_PRIORITY "git_hook_bypass=1100"
 set -x CPM_SOURCE_CACHE "$HOME/.cache/CPM" # CMake Package Manager
 set -x GODOT "$HOME/.config/godotenv/godot/bin"
 set -x npm_config_prefix "$HOME/.local"
+set -x ASDF_NODEJS_AUTO_ENABLE_COREPACK 1
 
 if type -q fd
     set -x FZF_DEFAULT_COMMAND 'fd --type f'
